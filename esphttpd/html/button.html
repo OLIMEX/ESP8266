@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="style.css">
+
+<script type="text/javascript" src="140midley.min.js"></script>
+<script type="text/javascript">
+
+
+var scanIntervalId;
+
+function printButtonState() {
+	var xhr = j();
+    xhr.open("GET", "button.cgi");
+    xhr.onreadystatechange = function () {
+    	if (xhr.readyState == 4 && xhr.status == 200){
+            var data = JSON.parse(xhr.responseText);
+	        document.getElementById("button_state").innerHTML = data.button.status;
+            if(data.button.status === "on"){
+            	document.getElementById("button_state").style.color = "green";
+            }else{
+            	document.getElementById("button_state").style.color = "red";
+            }
+    	}
+    };
+    xhr.timeout=800;
+    xhr.send();
+}
+
+function startScan() {
+	scanIntervalId = setInterval(printButtonState, 1000);
+}
+
+function stopScan() {
+	clearInterval(scanIntervalId);
+	document.getElementById("button_state").innerHTML="";
+}
+
+</script>
+</head>
+<body>
+<h2>Read button state</h2>
+<p>ESP8266-EVB has one push button. It can be used as general purpose button as long <strong>GPIO0</strong> is 
+set as input.</p>
+<p>If you hold the button during power-up, then the board will go into loader mode and new firmware can
+be uploaded. This could be done using <strong>USB-Serial-Cable-F</strong> (or <strong>MOD-USB-RS232</strong>) 
+connected to UEXT connector.</p>
+<p>What this demo does is constantly to ask the board for the state of the button. If it's not pressed, the 
+level at the input is logical "1", and if it's pressed - logical "0". This is done with the help of cgi module.</p>
+<p>Go ahead and try it!</p>
+<hr>
+<div id="button-state">
+	<span>Button state: </span>
+	<span id="button_state"></span>
+</div>
+<div class="btn_container">
+	<button class="btn" type="button" onclick="startScan()">Start scan</button>
+	<button class="btn" type="button" onclick="stopScan()">Stop scan</button>
+</div>
+</body>
+</html>

@@ -1,0 +1,124 @@
+
+* {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	line-height: 20px;
+	overflow: hidden;
+}
+
+.container {
+	width: 800px;
+	margin: 0 auto;
+	border: 1px solid #000000;
+	overflow: hidden;
+}
+
+.header {
+	margin: 0;
+	padding: 10px;
+	border-bottom: 1px solid #000000;
+}
+
+.logo {
+	float: left;
+}
+
+.logo img {
+	vertical-align: middle;
+}
+
+.title {
+	float: left;
+	display: table-cell;
+	vertical-align: middle;
+}
+
+.text {
+	float: left;
+	width: 600px;
+	height: 80%;
+	margin: 10px;
+}
+
+.menu {
+	float: left;
+	margin: 10px;
+	padding: 0;
+	width: 150px;
+}
+
+.menu li {
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+	margin: 5px 0;
+}
+
+.menu a {
+	display: block;
+	width: auto;
+	padding: 3px 12px 3px 8px;
+	text-decoration: none;
+	border: 1px solid #000000;
+	color: #000000;
+}
+
+.menu a:hover {
+	background-color: #369;
+	color: #FFF;
+}
+
+
+
+span {
+	display: inline-block;
+	vertical-align: middle;
+	font-size: 32;
+	font-family: Impact,Charcoal,sans-serif;
+}
+
+h1 {
+	font-size: 18px;
+}
+
+h2 {
+	font-size: 14px;
+}
+
+p {
+	text-align: justify;
+}
+
+iframe {
+	border-style: none;
+	height: 100%;
+	width: 100%;
+}
+
+.btn {
+  font-family: Arial;
+  color: #000000;
+  padding: 10px 20px 10px 20px;
+  border: solid #000000 1px;
+  text-decoration: none;
+  background: #ffffff;
+  margin: 20px;
+}
+
+.btn:hover {
+  background: beige;
+  text-decoration: none;
+}
+
+.btn_container {
+	width: 100%;
+	display:inline-block;
+	overflow: auto;
+	white-space: nowrap;
+	margin: 0px auto;
+	text-align: center;
+}
+
+#button-state span {
+	font-size: 24px;
+}

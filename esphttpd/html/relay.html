@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="style.css">
+<script type="text/javascript" src="140midley.min.js"></script>
+<script type="text/javascript">
+
+var scanIntervalId;
+
+function setRelay(value) {
+	var xhr = j();
+	xhr.open("POST", "relay.cgi");
+	
+	
+	xhr.onreadystatechange=function() {
+		if (xhr.readyState == 4 && xhr.status == 200){
+		    var data = JSON.parse(xhr.responseText);
+		    if(data.relay.status != "ok"){
+		    	alert("Failed to toggle relay!");
+		    }
+		}
+	};
+	xhr.timeout=800;
+	xhr.send("relay="+value);
+	
+}
+
+</script>
+</head>
+<body>
+<h2>Toggle relay</h2>
+<p>ESP8266-EVB has a relay output. It can be used to switch loads, running at 220VAC, up to 10A.</p>
+<p>This could be done by switching <strong>GPIO5</strong> on MOD-ESP8266-DEV.</p>
+<p>Go ahead and try it!</p>
+<hr>
+<div class="btn_container">
+	<button class="btn" type="button" onclick="setRelay(1)">ON</button>
+	<button class="btn" type="button" onclick="setRelay(0)">OFF</button>
+</div>
+</body>
+</html>
