@@ -12,80 +12,97 @@ In this file we will not discuss how to install working toolchain. If you don't 
 
 Clone this repository:
 
-	# mkdir -p /home/foo/checkout 
-	# cd /home/foo/checkout
-	# svn checkout https://github.com/OLIMEX/ESP8266/trunk/arduino_style
+``` bash
+# mkdir -p /home/foo/checkout 
+# cd /home/foo/checkout
+# svn checkout https://github.com/OLIMEX/ESP8266/trunk/arduino_style
+```
 
 Let's say that you've previously copied sdk to **/home/foo/sdk/**. You should see the this tree:
 
-	# cd /home/foo/sdk/
-	# tree -d
-	.
-	├── app
-	├── bin
-	│   ├── at
-	│   └── upgrade
-	├── document
-	│   ├── Chinese
-	│   └── English
-	├── examples
-	│   ├── at
-	│   │   ├── include
-	│   │   └── user
-	│   ├── IoT_Demo
-	│   │   ├── driver
-	│   │   ├── include
-	│   │   │   ├── driver
-	│   │   │   └── ssl
-	│   │   └── user
-	│   └── smart_config
-	│       ├── include
-	│       └── user
-	├── include
-	│   └── json
-	├── ld
-	├── lib
-	└── tools
+``` bash
+# cd /home/foo/sdk/
+# tree -d
+.
+├── app
+├── bin
+│   ├── at
+│   └── upgrade
+├── document
+│   ├── Chinese
+│   └── English
+├── examples
+│   ├── at
+│   │   ├── include
+│   │   └── user
+│   ├── IoT_Demo
+│   │   ├── driver
+│   │   ├── include
+│   │   │   ├── driver
+│   │   │   └── ssl
+│   │   └── user
+│   └── smart_config
+│       ├── include
+│       └── user
+├── include
+│   └── json
+├── ld
+├── lib
+└── tools
 	
+```
 Let's build IoT_Demo. Copy example folder to the root folder of the SDK:
 
-	# cp -r examples/IoT_Demo .
+``` bash
+# cp -r examples/IoT_Demo .
+```
 	
 If you installed toolchain corectly the build should work perfect:
 
-	# make COMPILE=gcc
-	
-	!!!
-	No boot needed.
-	Generate eagle.flash.bin and eagle.irom0text.bin successfully in folder bin.
-	eagle.flash.bin-------->0x00000
-	eagle.irom0text.bin---->0x40000
-	!!!
+``` bash
+# make COMPILE=gcc
+
+!!!
+No boot needed.
+Generate eagle.flash.bin and eagle.irom0text.bin successfully in folder bin.
+eagle.flash.bin-------->0x00000
+eagle.irom0text.bin---->0x40000
+!!!
+```
 	
 Now to use arduino_style library copy **arduino** folder and **arduinostyle.h** from this repository into **user** directory:
 
-	# cp -r /home/foo/checkout/arduino /home/foo/sdk/IoT_Demo/user/
-	# cp /home/foo/checkout/arduinostyle.h /home/foo/sdk/IoT_Demo/user/
+``` bash
+# cp -r /home/foo/checkout/arduino /home/foo/sdk/IoT_Demo/user/
+# cp /home/foo/checkout/arduinostyle.h /home/foo/sdk/IoT_Demo/user/
+```
 	
 Now what's left is to make a little modification to the **Makefile**:
 
-	# nano Makefile
+``` bash
+# nano Makefile
+```
 	
 Find **COMPONENTS_eagle.app.v6** and edit it to looks like this:
 
-	COMPONENTS_eagle.app.v6 = \
-	user/libuser.a  \
-	user/arduino/libarduino.a \
-	driver/libdriver.a 
-	
+``` c
+COMPONENTS_eagle.app.v6 = \
+user/libuser.a  \
+user/arduino/libarduino.a \
+driver/libdriver.a 
+```	
+
 Type again *make* and everything should be fine:
 
-	# make COMPILE=gcc
+``` bash
+# make COMPILE=gcc
+```
 	
 Now to use this library simply include *arduinostyle.h* in your project
 
-	#include "arduinostyle.h
-	
+``` c
+#include "arduinostyle.h
+```	
 
 ## Available functions
 
@@ -95,8 +112,10 @@ The following functions are available for using gpio:
 
 #### Set direction
 
-	pinMode(uint8 pin, pinmode_t mode)	
-	
+``` c
+pinMode(uint8 pin, pinmode_t mode)	
+```
+
 * pin - Can be between 0 and 5 and between 12 and 15. The other pins are used for the spi flash.
 
 * mode - Can be *INPUT*, *OUTPUT*, *INPUT_PULLUP*. You can also use 0 for input, 1 - ouptut and 2 - input with pull-up resistor.
