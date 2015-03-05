@@ -122,7 +122,9 @@ pinMode(uint8 pin, pinmode_t mode)
 
 #### Set output level
 
-	digitalWrite(uint8 pin, pinvalue_t value)
+```c
+digitalWrite(uint8 pin, pinvalue_t value)
+```
 	
 * pin - Can be between 0 and 5 and between 12 and 15. The other pins are used for the spi flash.
 
@@ -130,7 +132,9 @@ pinMode(uint8 pin, pinmode_t mode)
 
 #### Read input level
 
-	digitalRead(uint8 pin)
+``` c
+digitalRead(uint8 pin)
+```
 
 * pin - Can be between 0 and 5 and between 12 and 15. The other pins are used for the spi flash.
 
@@ -143,7 +147,9 @@ For printing messages on the serial interface we recommends to use the build-in 
 
 #### Setup communication
 
-	Serial.begin(buad)
+``` c
+Serial.begin(buad)
+```
 	
 * baud - Communication speed. Available speeds are: **9600**, **19200**, **38400**, **57600**, **74880**, **115200**, **230400**, **460800**, **921600**.
 
@@ -151,18 +157,23 @@ This will only initialize *UART1* (the one on the UEXT connector).
 
 #### Print line with CR/LF
 
-	Serial.println(char *buffer)
+``` c
+Serial.println(char *buffer)
+```
 	
 * buffer - Message to be printed. Note that if you want to print number you should previously create buffer with *sprintf*.
 
 #### Print line without CR/LF
 
-	Serial.print(char *buffer)
+``` c
+Serial.print(char *buffer)
+```
 	
 #### Print single character
 
-	Serial.write(char c)
-	
+``` c
+Serial.write(char c)
+```	
 	
 ### I2C	
 
@@ -170,25 +181,33 @@ I2C pins are pins 5 and 6 in the UEXT conector. The following functions are avai
 
 #### Setup communication
 
-	Wire.begin()
+``` c
+Wire.begin()
+```
 	
 Setup SDA and SCL pins.
 
 #### Send slave addess with W flag
 
-	Wire.beginTransmission(uint8 address)
+``` c
+Wire.beginTransmission(uint8 address)
+```
 	
 * address - The address of the slave device **without** W/R flag at the end.
 
 #### Send one byte of data
 
-	Wire.write(uint8 data)
+``` c
+Wire.write(uint8 data)
+```
 	
 * data - One byte of data to be sended to the slave device.
 
 #### Send Stop condition and check for status of previously commands
 
-	Wire.endTransmission()
+``` c
+Wire.endTransmission()
+```
 	
 The function check for address NACK or data NACK and returns:
 
@@ -205,7 +224,9 @@ The function check for address NACK or data NACK and returns:
 
 #### Read bytes from slave device
 
-	Wire.requestFrom(uint8 address, uint8 bytes)
+``` c
+Wire.requestFrom(uint8 address, uint8 bytes)
+```
 	
 * address - The address of the slave device **witout** W/R flag at the end.
 
@@ -213,13 +234,17 @@ The function check for address NACK or data NACK and returns:
 
 #### Check if there are any available data for reading
 
-	Wire.available()
+``` c
+Wire.available()
+```
 	
 Check for available data in the buffer and returns their count.
 
 #### Read single byte of data
 
-	Wire.read()
+``` c
+Wire.read()
+```
 	
 Return byte of data from the data buffer.
 
@@ -230,7 +255,9 @@ You could use the spi flash memory for storing user data. **Make sure that the p
 
 #### Erase sectors in range
 
-	flash.erase(uint32 startAddress, uint32 endAddress)
+``` c
+flash.erase(uint32 startAddress, uint32 endAddress)
+```
 	
 * startAddress - Start address of the segment
 * endAddress - End address of the segment
@@ -240,7 +267,9 @@ Note that this function will erase the sectors where start and end addresses are
 
 #### Read data from address
 
-	flash.read(uint32 address)
+``` c
+flash.read(uint32 address)
+```
 	
 * address - The address of the data field.
 
@@ -249,7 +278,9 @@ This function returns 4bytes of data.
 
 #### Write data to address
 
-	flash.write(uint32 address, uint32 data)
+``` c
+flash.write(uint32 address, uint32 data)
+```
 	
 * address - The address of the data field.
 
@@ -262,29 +293,39 @@ This function returns 4bytes of data.
 There is hardware SPI, but in this library we make it bit-banging. This way you can have more control. 
 If you want to increase speed change the delay value in *arduino/arduino_spi.c*:
 
-		spi_config.delay = 10;
+``` c
+spi_config.delay = 10;
+```
 		
 #### Setup SPI
 
-	spi.begin(uint8 pin)
+``` c
+spi.begin(uint8 pin)
+```
 	
 * pin - Chip select pin to be used. For UEXT connector it should be **15**.
 
 #### Set data order
 
-	spi.setBitOrder(spiOrder_t order)
+``` c
+spi.setBitOrder(spiOrder_t order)
+```
 	
 * order - can be MSBFIRST (default) or LSBFIRST.
 
 #### Set communication mode
 
-	spi.setDataMode(spiMode_t mode)
+``` c
+spi.setDataMode(spiMode_t mode)
+```
 
 * mode - Can be *SPI_MODE0*, *SPI_MODE1*, *SPI_MODE2* or  *SPI_MODE3*.
 
 #### Transfer data with slave device
 
-	spi.transfer(uint8 pin, uint8 val, spiTransferMode_t transferMode)
+``` c
+spi.transfer(uint8 pin, uint8 val, spiTransferMode_t transferMode)
+```
 	
 * pin - Chip-select pin.
 
