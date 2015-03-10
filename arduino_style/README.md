@@ -338,7 +338,7 @@ The function return one byte of data from slave to master.
 
 ## Contact
 
-*support@olimex.dev*
+*support@olimex.com*
 
 ## Revision
 
