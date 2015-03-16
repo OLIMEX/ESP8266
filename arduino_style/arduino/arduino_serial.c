@@ -23,9 +23,15 @@
 
 #include "ets_sys.h"
 #include "osapi.h"
-
 #include "driver/uart.h"
 #include "arduino_serial.h"
+
+#define UART0   0
+
+// UartDev is defined and initialized in rom code.
+extern UartDevice UartDev;
+
+void ICACHE_FLASH_ATTR uart0_rx_intr_handler(void *para);
 
 serial_t Serial =
 {
@@ -33,6 +39,8 @@ serial_t Serial =
 		.print = uart_print,
 		.println = uart_println,
 		.write = uart_write,
+		.available = uart_available,
+		.read = uart_read
 };
 
 /**
@@ -83,20 +91,23 @@ void uart0_init(UartBautRate baud)
 			&& baud != BIT_RATE_921600)
 		return;
 
+	/* rcv_buff size if 0x100 */
+	ETS_UART_INTR_ATTACH(uart0_rx_intr_handler,  &(UartDev.rcv_buff));
+
 	//Enable TxD pin
 	PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
 
 	//Set baud rate and other serial parameters to 115200,n,8,1
-	uart_div_modify(0, UART_CLK_FREQ / baud);
-	WRITE_PERI_REG(UART_CONF0(0),
+	uart_div_modify(UART0, UART_CLK_FREQ / baud);
+	WRITE_PERI_REG(UART_CONF0(UART0),
 			(STICK_PARITY_DIS) | (ONE_STOP_BIT << UART_STOP_BIT_NUM_S) | (EIGHT_BITS << UART_BIT_NUM_S));
 
 	//Reset tx & rx fifo
-	SET_PERI_REG_MASK(UART_CONF0(0), UART_RXFIFO_RST | UART_TXFIFO_RST);
-	CLEAR_PERI_REG_MASK(UART_CONF0(0), UART_RXFIFO_RST | UART_TXFIFO_RST);
+	SET_PERI_REG_MASK(UART_CONF0(UART0), UART_RXFIFO_RST | UART_TXFIFO_RST);
+	CLEAR_PERI_REG_MASK(UART_CONF0(UART0), UART_RXFIFO_RST | UART_TXFIFO_RST);
 	//Clear pending interrupts
-	WRITE_PERI_REG(UART_INT_CLR(0), 0xffff);
+	WRITE_PERI_REG(UART_INT_CLR(UART0), 0xffff);
 
 	//Install our own putchar handler
 	os_install_putc1((void *) uart_put_char);
@@ -133,4 +144,92 @@ void uart_print(char *buffer)
 void uart_write(char c)
 {
 	os_printf("%c", c);
+}
+
+/**
+ * Internal UART0 interrupt handler
+ *
+ * @param   void *para - point to ETS_UART_INTR_ATTACH's arg
+ * @return  None
+*******************************************************************************/
+void
+uart0_rx_intr_handler(void *para)
+{
+    /* uart0 and uart1 intr combine together, when interrupt occur, see reg 0x3ff20020, bit2, bit0 represents
+     * uart1 and uart0 respectively
+     */
+    RcvMsgBuff *pRxBuff = (RcvMsgBuff *)para;
+    uint8 RcvChar;
+
+    if (UART_RXFIFO_FULL_INT_ST != (READ_PERI_REG(UART_INT_ST(UART0)) & UART_RXFIFO_FULL_INT_ST)) {
+        return;
+    }
+
+    WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_CLR);
+
+    while (READ_PERI_REG(UART_STATUS(UART0)) & (UART_RXFIFO_CNT << UART_RXFIFO_CNT_S)) {
+        RcvChar = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
+
+        /* you can add your handle code below.*/
+
+        *(pRxBuff->pWritePos) = RcvChar;
+
+        // insert here for get one command line from uart
+        if (RcvChar == '\r' || RcvChar == '\n' ) {
+            pRxBuff->BuffState = WRITE_OVER;
+        }
+
+        if (pRxBuff->pWritePos == (pRxBuff->pRcvMsgBuff + RX_BUFF_SIZE)) {
+            // overflow ...we may need more error handle here.
+            pRxBuff->pWritePos = pRxBuff->pRcvMsgBuff ;
+        } else {
+            pRxBuff->pWritePos++;
+        }
+
+        if (pRxBuff->pWritePos == pRxBuff->pReadPos){   // overflow one byte, need push pReadPos one byte ahead
+            if (pRxBuff->pReadPos == (pRxBuff->pRcvMsgBuff + RX_BUFF_SIZE)) {
+                pRxBuff->pReadPos = pRxBuff->pRcvMsgBuff ;
+            } else {
+                pRxBuff->pReadPos++;
+            }
+        }
+    }
+}
+
+/**
+ * Check if there are available bytes to read
+ *
+ * @param None
+ * @return int available bytes
+ */
+int uart_available(void)
+{
+	RcvMsgBuff *pRxBuff = &(UartDev.rcv_buff);
+	return (pRxBuff->pWritePos - pRxBuff->pReadPos);
+}
+
+/**
+ * Reads internal input buffer
+ *
+ * @return char*
+ */
+char* uart_read()
+{
+	RcvMsgBuff *pRxBuff = &(UartDev.rcv_buff);
+	if(pRxBuff->pWritePos == pRxBuff->pReadPos){   // empty
+		return "";
+	}
+
+	char * c;
+	// ETS_UART_INTR_DISABLE();
+	ETS_INTR_LOCK();
+	*c = (char)*(pRxBuff->pReadPos);
+	if (pRxBuff->pReadPos == (pRxBuff->pRcvMsgBuff + RX_BUFF_SIZE)) {
+		pRxBuff->pReadPos = pRxBuff->pRcvMsgBuff ;
+	} else {
+		pRxBuff->pReadPos++;
+	}
+	// ETS_UART_INTR_ENABLE();
+	ETS_INTR_UNLOCK();
+	return c;
 }

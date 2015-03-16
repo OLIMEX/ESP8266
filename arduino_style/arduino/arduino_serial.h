@@ -32,6 +32,8 @@ typedef struct
 	void (*println)(char *buffer);
 	void (*print)(char *buffer);
 	void (*write)(char c);
+	char * (*read)(void);
+	int  (*available)(void);
 } serial_t;
 
 
@@ -39,6 +41,8 @@ void uart0_init(UartBautRate baud);
 void uart_print(char *buffer);
 void uart_println(char *buffer);
 void uart_write(char c);
+int uart_available(void);
+char* uart_read();
 
 extern serial_t Serial;
 
