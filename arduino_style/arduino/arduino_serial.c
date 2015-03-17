@@ -92,6 +92,8 @@ void uart0_init(UartBautRate baud)
 			&& baud != BIT_RATE_921600)
 		return;
 
+	ETS_UART_INTR_DISABLE();
+
 	// Attach RX interrupt handler. Rcv_buff size if 0x100
 	ETS_UART_INTR_ATTACH(uart0_rx_intr_handler,  &(UartDev.rcv_buff));
 	//Enable TxD pin
@@ -120,6 +122,8 @@ void uart0_init(UartBautRate baud)
 
 	//Install our own putchar handler
 	os_install_putc1((void *) uart_put_char);
+
+	ETS_UART_INTR_ENABLE();
 }
 
 /**
