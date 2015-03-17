@@ -20,18 +20,19 @@
  *	   Company: Olimex LTD.
  *     Contact: support@olimex.com 
  */
-
+#include "eagle_soc.h"
 #include "ets_sys.h"
 #include "osapi.h"
 #include "driver/uart.h"
 #include "arduino_serial.h"
 
 #define UART0   0
+#define ICACHE_RAM_ATTR __attribute__((section(".iram0.text")))
 
 // UartDev is defined and initialized in rom code.
 extern UartDevice UartDev;
 
-void ICACHE_FLASH_ATTR uart0_rx_intr_handler(void *para);
+LOCAL void ICACHE_RAM_ATTR uart0_rx_intr_handler(void *para);
 
 serial_t Serial =
 {
@@ -91,12 +92,14 @@ void uart0_init(UartBautRate baud)
 			&& baud != BIT_RATE_921600)
 		return;
 
-	/* rcv_buff size if 0x100 */
+	// Attach RX interrupt handler. Rcv_buff size if 0x100
 	ETS_UART_INTR_ATTACH(uart0_rx_intr_handler,  &(UartDev.rcv_buff));
-
 	//Enable TxD pin
 	PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
+	//Enable RxD pin
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_U0RXD_U);
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD);
 
 	//Set baud rate and other serial parameters to 115200,n,8,1
 	uart_div_modify(UART0, UART_CLK_FREQ / baud);
@@ -106,8 +109,14 @@ void uart0_init(UartBautRate baud)
 	//Reset tx & rx fifo
 	SET_PERI_REG_MASK(UART_CONF0(UART0), UART_RXFIFO_RST | UART_TXFIFO_RST);
 	CLEAR_PERI_REG_MASK(UART_CONF0(UART0), UART_RXFIFO_RST | UART_TXFIFO_RST);
+
+	//set rx fifo trigger
+	WRITE_PERI_REG(UART_CONF1(UART0), (UartDev.rcv_buff.TrigLvl & UART_RXFIFO_FULL_THRHD) << UART_RXFIFO_FULL_THRHD_S);
+
 	//Clear pending interrupts
 	WRITE_PERI_REG(UART_INT_CLR(UART0), 0xffff);
+	//enable rx_interrupt
+	SET_PERI_REG_MASK(UART_INT_ENA(UART0), UART_RXFIFO_FULL_INT_ENA);
 
 	//Install our own putchar handler
 	os_install_putc1((void *) uart_put_char);
@@ -152,7 +161,7 @@ void uart_write(char c)
  * @param   void *para - point to ETS_UART_INTR_ATTACH's arg
  * @return  None
 *******************************************************************************/
-void
+LOCAL void
 uart0_rx_intr_handler(void *para)
 {
     /* uart0 and uart1 intr combine together, when interrupt occur, see reg 0x3ff20020, bit2, bit0 represents
@@ -197,10 +206,11 @@ uart0_rx_intr_handler(void *para)
 }
 
 /**
- * Check if there are available bytes to read
+ * Get the number of bytes (characters) available for reading from the serial port.
+ * This is data that's already arrived and stored in the serial receive buffer
  *
  * @param None
- * @return int available bytes
+ * @return int the number of bytes available to read
  */
 int uart_available(void)
 {
@@ -209,21 +219,23 @@ int uart_available(void)
 }
 
 /**
- * Reads internal input buffer
+ * Reads incoming serial data.
  *
- * @return char*
+ * @param None
+ * @return int the first byte of incoming serial data available (or -1 if no data is available)
  */
-char* uart_read()
+int uart_read(void)
 {
 	RcvMsgBuff *pRxBuff = &(UartDev.rcv_buff);
 	if(pRxBuff->pWritePos == pRxBuff->pReadPos){   // empty
-		return "";
+		return -1;
 	}
 
-	char * c;
+	int firstByte;
+
 	// ETS_UART_INTR_DISABLE();
 	ETS_INTR_LOCK();
-	*c = (char)*(pRxBuff->pReadPos);
+	firstByte = (int)(*pRxBuff->pReadPos);
 	if (pRxBuff->pReadPos == (pRxBuff->pRcvMsgBuff + RX_BUFF_SIZE)) {
 		pRxBuff->pReadPos = pRxBuff->pRcvMsgBuff ;
 	} else {
@@ -231,5 +243,5 @@ char* uart_read()
 	}
 	// ETS_UART_INTR_ENABLE();
 	ETS_INTR_UNLOCK();
-	return c;
+	return firstByte;
 }

@@ -32,7 +32,7 @@ typedef struct
 	void (*println)(char *buffer);
 	void (*print)(char *buffer);
 	void (*write)(char c);
-	char * (*read)(void);
+	int  (*read)(void);
 	int  (*available)(void);
 } serial_t;
 
@@ -42,7 +42,7 @@ void uart_print(char *buffer);
 void uart_println(char *buffer);
 void uart_write(char c);
 int uart_available(void);
-char* uart_read();
+int uart_read(void);
 
 extern serial_t Serial;
 
