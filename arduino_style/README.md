@@ -1,14 +1,14 @@
-# Arduino style programing for ESP8266
+# Arduino style programming for ESP8266
 
 
 ## Description
 
-This is simple code library that uses Espressif drivers without any modification, so you can use it with fresh copy of the SDK. The point of this library is to ease the use of the gpio, i2c, spi, uart and flash memory. It's writen with **esp_iot_sdk_v0.9.5**. We don't guarantee compatability with older SDK.
+This is simple code library that uses Espressif drivers without any modification, so you can use it with fresh copy of the SDK. The point of this library is to ease the use of the gpio, i2c, spi, uart and flash memory. It's written with **esp_iot_sdk_v0.9.5**. We don't guarantee compatibility with older SDK.
 
 
 ## Installation
 
-In this file we will not discuss how to install working toolchain. If you don't know how, we recomend using [this](http://www.esp8266.com/wiki/doku.php?id=toolchain).
+In this file we will not discuss how to install working toolchain. If you don't know how, we recommend using [this](http://www.esp8266.com/wiki/doku.php?id=toolchain).
 
 Clone this repository:
 
@@ -57,7 +57,7 @@ Let's build IoT_Demo. Copy example folder to the root folder of the SDK:
 # cp -r examples/IoT_Demo .
 ```
 	
-If you installed toolchain corectly the build should work perfect:
+If you installed the toolchain correctly the build should work perfect:
 
 ``` bash
 # make COMPILE=gcc
@@ -118,7 +118,7 @@ pinMode(uint8 pin, pinmode_t mode)
 
 * pin - Can be between 0 and 5 and between 12 and 15. The other pins are used for the spi flash.
 
-* mode - Can be *INPUT*, *OUTPUT*, *INPUT_PULLUP*. You can also use 0 for input, 1 - ouptut and 2 - input with pull-up resistor.
+* mode - Can be *INPUT*, *OUTPUT*, *INPUT_PULLUP*. You can also use 0 for input, 1 - output and 2 - input with pull-up resistor.
 
 #### Set output level
 
@@ -143,7 +143,7 @@ Function return the input level, if pin is configured as input. Otherwise it ret
 
 ### UART
 
-For printing messages on the serial interface we recommends to use the build-in function *os_printf* because is much more flexable than *Serial.println*. 
+For printing messages on the serial interface we recommends to use the build-in function *os_printf* because is much more flexible than *Serial.println*. 
 
 #### Setup communication
 
@@ -174,10 +174,19 @@ Serial.print(char *buffer)
 ``` c
 Serial.write(char c)
 ```	
+
+#### Reads incoming serial data.
+
+``` c
+i = Serial.read()
+```
+
+* Function returns the first byte of incoming serial data available (or -1 if no data is available).
+
 	
 ### I2C	
 
-I2C pins are pins 5 and 6 in the UEXT conector. The following functions are available.
+I2C pins are pins 5 and 6 in the UEXT connector. The following functions are available.
 
 #### Setup communication
 
@@ -187,7 +196,7 @@ Wire.begin()
 	
 Setup SDA and SCL pins.
 
-#### Send slave addess with W flag
+#### Send slave address with W flag
 
 ``` c
 Wire.beginTransmission(uint8 address)
@@ -201,7 +210,7 @@ Wire.beginTransmission(uint8 address)
 Wire.write(uint8 data)
 ```
 	
-* data - One byte of data to be sended to the slave device.
+* data - One byte of data to be sent to the slave device.
 
 #### Send Stop condition and check for status of previously commands
 
@@ -228,7 +237,7 @@ The function check for address NACK or data NACK and returns:
 Wire.requestFrom(uint8 address, uint8 bytes)
 ```
 	
-* address - The address of the slave device **witout** W/R flag at the end.
+* address - The address of the slave device **without** W/R flag at the end.
 
 * bytes - Number of bytes to read.
 
@@ -329,7 +338,7 @@ spi.transfer(uint8 pin, uint8 val, spiTransferMode_t transferMode)
 	
 * pin - Chip-select pin.
 
-* val - Data to be transmited to the slave device
+* val - Data to be transmitted to the slave device
 
 * transferMode - Can be *SPI_CONTINUE* or *SPI_LAST*. The first one will hold chip-select active.
 
