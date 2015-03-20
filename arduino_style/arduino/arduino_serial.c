@@ -27,12 +27,11 @@
 #include "arduino_serial.h"
 
 #define UART0   0
-#define ICACHE_RAM_ATTR __attribute__((section(".iram0.text")))
 
 // UartDev is defined and initialized in rom code.
 extern UartDevice UartDev;
 
-LOCAL void ICACHE_RAM_ATTR uart0_rx_intr_handler(void *para);
+LOCAL void uart0_rx_intr_handler(void *para);
 
 serial_t Serial =
 {
@@ -239,6 +238,7 @@ int uart_read(void)
 
 	// ETS_UART_INTR_DISABLE();
 	ETS_INTR_LOCK();
+
 	firstByte = (int)(*pRxBuff->pReadPos);
 	if (pRxBuff->pReadPos == (pRxBuff->pRcvMsgBuff + RX_BUFF_SIZE)) {
 		pRxBuff->pReadPos = pRxBuff->pRcvMsgBuff ;
