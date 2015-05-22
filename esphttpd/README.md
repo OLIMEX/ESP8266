@@ -22,6 +22,8 @@ Clone this repository into Espressif install directory
 cd /opt/Espressif
 git clone https://github.com/OLIMEX/ESP8266.git
 cd ESP8266/esphttpd
+git submodule init
+git submodule update
 make
 ```
 Once you make the project the next step is to upload it to [ESP8266-EVB](https://www.olimex.com/Products/IoT/ESP8266-EVB/open-source-hardware/ "ESP8266-EVB") board.
