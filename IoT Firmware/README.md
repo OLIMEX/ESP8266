@@ -176,295 +176,322 @@ Sample Response:
 
 ## CONFIGURATION
 
-	General Configuration
-	--------------------------------------------------------------------------------------
-		URL : /config
-		Sample Response:
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data"   : {
-					"Config" : {
-						"SDKVersion"     : "1.1.2", 
-						"AccessPointMAC" : "1A:FE:34:9C:61:DE", 
-						"StationMAC"     : "18:FE:34:9C:61:DE", 
-						"User"           : "olimex", 
-						"Password"       : "olimex", 
-						"Mode"           : "Access Point and Station", 
-						"Authentication" : 1, 
-						"SSL"            : 0
-					}
-				}
-			}
-		
-		Data fields description:
-		
-			SDKVersion     : <read-only>, 
-			AccessPointMAC : <read-only>, 
-			StationMAC     : <read-only>, 
-			
-			User           : <user name>, 
-			Password       : <password>, 
-			
-			Mode           : <Access Point | Station | Access Point and Station>, 
-				WiFi operational mode. 
-				Default - Access Point and Station
-				Recommended - Station
-			
-			Authentication : 1, 
-				Use or not authentication
-			
-			SSL            : 0
-				If set to 1 redirects to HTTPS if non SSL request is received
-		
-		Sample POST Data:
-			{
-				"Config" : {
-					"User"           : "john", 
-					"Password"       : "doe", 
-					"Mode"           : "Station", 
-					"Authentication" : 1, 
-					"SSL"            : 0
-				}
-			}
+### General Configuration
 	
-	Access Point Configuration
-	--------------------------------------------------------------------------------------
+	URL : /config
+
+Sample Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data"   : {
+			"Config" : {
+				"SDKVersion"     : "1.1.2", 
+				"AccessPointMAC" : "1A:FE:34:9C:61:DE", 
+				"StationMAC"     : "18:FE:34:9C:61:DE", 
+				"User"           : "olimex", 
+				"Password"       : "olimex", 
+				"Mode"           : "Access Point and Station", 
+				"Authentication" : 1, 
+				"SSL"            : 0
+			}
+		}
+	}
+		
+Data fields description:
+	
+	SDKVersion     : <read-only>, 
+	AccessPointMAC : <read-only>, 
+	StationMAC     : <read-only>, 
+	
+	User           : <user name>, 
+	Password       : <password>, 
+	
+	Mode           : <Access Point | Station | Access Point and Station>, 
+		WiFi operational mode. 
+		Default - Access Point and Station
+		Recommended - Station
+	
+	Authentication : 1, 
+		Use or not authentication
+	
+	SSL            : 0
+		If set to 1 redirects to HTTPS if non SSL request is received
+		
+Sample POST Data:
+	
+	{
+		"Config" : {
+			"User"           : "john", 
+			"Password"       : "doe", 
+			"Mode"           : "Station", 
+			"Authentication" : 1, 
+			"SSL"            : 0
+		}
+	}
+	
+### Access Point Configuration
+	
 	URL : /config/access-point
-		Sample Response:
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data"   : {
-					"AccessPoint" : {
-						"SSID" : "ESP_OLIMEX", 
-						"Password" : "olimex-ap", 
-						"Mode" : "WPA2 PSK", 
-						"Hidden" : 0, 
-						"MaxConnections" : 2, 
-						"BeaconInterval" : 100, 
-						"DHCP" : 1, 
-						"IP" : {
-							"Address" : "192.168.4.1", 
-							"NetMask" : "255.255.255.0", 
-							"Gateway" : "192.168.4.1"
-						}
-					}
-				}
-			}
-		
-		Data fields description:
-			SSID     : <desired WiFi SSID>, 
-			Password : <password>, 
-			Mode     : <Open | WEP | WPA PSK | WPA2 PSK | WPA WPA2 PSK>, 
-				WiFi Encryption Mode
-				Default: WPA2 PSK
-				
-			Hidden   : 0, 
-				Do not broadcast SSID
-				
-			MaxConnections   : 2,
-				Maximum allowed Access Point connections
-					Default: 2
-					Maximum: 4
-				
-			BeaconInterval   : 100, 
-				
-			DHCP     : 1, 
-				Enable DHCP Server
-				
-			IP : {
-				Address : <Access Point IP address>, 
-					Default: 192.168.4.1
-					
-				NetMask : <Network Mask>, 
-					Default: 255.255.255.0
-					
-				Gateway : <Gateway>
-					Default: 192.168.4.1
-			}
-		
-	Station Configuration
-	--------------------------------------------------------------------------------------
-		URL : /config/station
-		Sample Response:
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data" : {
-					"Station" : {
-						"SSID"        : "SampleWiFiNetwork", 
-						"Password"    : "HardToBreak", 
-						"AutoConnect" : 1, 
-						"DHCP"        : 1, 
-						"IP" : {
-							"Address" : "192.168.0.125", 
-							"NetMask" : "255.255.255.0", 
-							"Gateway" : "192.168.0.1"
-						}
-					}
-				}
-			}
-		
-		Data fields description:
-			SSID        : <SSID of the network to connect>, 
-			Password    : <password>, 
-			
-			AutoConnect : 1, 
-				Auto connect to the network
-				Default: 1
-				
-			DHCP        : 1, 
-				Use DHCP to get IP address
-				Default: 1
-				
-			IP : {
-				Address : <read-only if DHCP is 1>, 
-					Default: 192.168.10.2
-					
-				NetMask : <read-only if DHCP is 1>, 
-					Default: 255.255.255.0
-					
-				Gateway : <read-only if DHCP is 1> 
-					Default: 192.168.10.1
-			}
-		
-	IoT Server Configuration
-	--------------------------------------------------------------------------------------
-		URL : /config/iot
-		Sample Response:
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data" : {
-					"IoT" : {
-						"WebSocket" : 1, 
-						"SSL" : 0, 
-						"Server" : "iot.olimex.com", 
-						"User" : "", 
-						"Password" : "", 
-						"Path" : "/", 
-						"Name" : "Termometer", 
-						"Token" : "123456789ABC"
-					}
-				}
-			}
-			
-		Data fields description:
-			WebSocket : 1, 
-				use WebSocket to connect to IoT Server
-				
-			SSL       : 0, 
-				use secure connection - work in progress
-				
-			Server    : <host name or IP address>, 
-				
-			User      : <user name>, 
-			Password  : <password>, 
-				Credentials to authenticate to server.
-				If WebSocket is used they are send as first message.
-				Otherwise Basic HTTP Authentication headers are used.
-			
-			Path      : "/", 
-				IoT Server Entry point
-				
-			Name      : "Termometer", 
-				Human friendly device name
-				
-			Token     : "123456789ABC"
-				Device token
-		
-	SSL Configuration
-	--------------------------------------------------------------------------------------
-		URL : /config/ssl
-		Sample Response:
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data"   : {}
-			}
-		
-		Upload SSL Private key and Certificate.
-		Sample POST data:
-			{
-				"SSL" : {
-					"PrivateKey"  : "FILE-DATA:493",
-					"Certificate" : "FILE-DATA:449"
-				}
-			}
-			<0>PrivateKey:493:<493 bytes data>Certificate:449:<449 bytes data>
-			
-		Sample WebSocket data (binary message)
-			{
-				"URL" : "/config/ssl",
-				"Method" : "POST",
-				"Data" : {
-					"SSL" : {
-						"PrivateKey"  : "FILE-DATA:493",
-						"Certificate" : "FILE-DATA:449"
-					}
-				}
-			}
-			<0>PrivateKey:493:<493 bytes data>Certificate:449:<449 bytes data>
-			
-	Firmware Update
-	--------------------------------------------------------------------------------------
-		URL : /config/firmware
-		Sample Response:
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data"   : {
-					"Firmware" : {
-						"Current" : "user2.bin", 
-						"Boot"    : "v2 normal 0x00FFFFFF"
-					}
-				}
-			}
-		
-		If Current is user1.bin you MUST upload user2.bin and vice versa.
-		
-		Sample POST data
-			{
-				"Firmware" : {
-					"boot.bin"  : "FILE-DATA:0",
-					"user1.bin" : "FILE-DATA:278880",
-					"user2.bin" : "FILE-DATA:0",
-				}
-			}
-			<0>user1.bin:278880:<278880 bytes data>
-
-DEVICES
-==========================================================================================			
-
-Native
-	Button - Long Poll, timeout 30 seconds
-	--------------------------------------------------------------------------------------
-		URL : /button
-		Sample Response:
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data"   : {
-					"Button" : "Short Press"
-				}
-			}
 	
-	Relay
-	--------------------------------------------------------------------------------------
-		URL : /relay
-		Sample Response:
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data" : {
-					"Relay" : 0
+Sample Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data"   : {
+			"AccessPoint" : {
+				"SSID" : "ESP_OLIMEX", 
+				"Password" : "olimex-ap", 
+				"Mode" : "WPA2 PSK", 
+				"Hidden" : 0, 
+				"MaxConnections" : 2, 
+				"BeaconInterval" : 100, 
+				"DHCP" : 1, 
+				"IP" : {
+					"Address" : "192.168.4.1", 
+					"NetMask" : "255.255.255.0", 
+					"Gateway" : "192.168.4.1"
 				}
 			}
-		Sample POST data
-			{
-				"Relay" : 1
+		}
+	}
+		
+Data fields description:
+	
+	SSID     : <desired WiFi SSID>, 
+	Password : <password>, 
+	Mode     : <Open | WEP | WPA PSK | WPA2 PSK | WPA WPA2 PSK>, 
+		WiFi Encryption Mode
+		Default: WPA2 PSK
+		
+	Hidden   : 0, 
+		Do not broadcast SSID
+		
+	MaxConnections   : 2,
+		Maximum allowed Access Point connections
+			Default: 2
+			Maximum: 4
+		
+	BeaconInterval   : 100, 
+		
+	DHCP     : 1, 
+		Enable DHCP Server
+		
+	IP : {
+		Address : <Access Point IP address>, 
+			Default: 192.168.4.1
+			
+		NetMask : <Network Mask>, 
+			Default: 255.255.255.0
+			
+		Gateway : <Gateway>
+			Default: 192.168.4.1
+	}
+		
+### Station Configuration
+	
+	URL : /config/station
+
+Sample Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data" : {
+			"Station" : {
+				"SSID"        : "SampleWiFiNetwork", 
+				"Password"    : "HardToBreak", 
+				"AutoConnect" : 1, 
+				"DHCP"        : 1, 
+				"IP" : {
+					"Address" : "192.168.0.125", 
+					"NetMask" : "255.255.255.0", 
+					"Gateway" : "192.168.0.1"
+				}
 			}
+		}
+	}
+		
+Data fields description:
+	
+	SSID        : <SSID of the network to connect>, 
+	Password    : <password>, 
+	
+	AutoConnect : 1, 
+		Auto connect to the network
+		Default: 1
+		
+	DHCP        : 1, 
+		Use DHCP to get IP address
+		Default: 1
+		
+	IP : {
+		Address : <read-only if DHCP is 1>, 
+			Default: 192.168.10.2
+			
+		NetMask : <read-only if DHCP is 1>, 
+			Default: 255.255.255.0
+			
+		Gateway : <read-only if DHCP is 1> 
+			Default: 192.168.10.1
+	}
+		
+### IoT Server Configuration
+	
+	URL : /config/iot
+
+Sample Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data" : {
+			"IoT" : {
+				"WebSocket" : 1, 
+				"SSL" : 0, 
+				"Server" : "iot.olimex.com", 
+				"User" : "", 
+				"Password" : "", 
+				"Path" : "/", 
+				"Name" : "Termometer", 
+				"Token" : "123456789ABC"
+			}
+		}
+	}
+			
+Data fields description:
+	
+	WebSocket : 1, 
+		use WebSocket to connect to IoT Server
+		
+	SSL       : 0, 
+		use secure connection - work in progress
+		
+	Server    : <host name or IP address>, 
+		
+	User      : <user name>, 
+	Password  : <password>, 
+		Credentials to authenticate to server.
+		If WebSocket is used they are send as first message.
+		Otherwise Basic HTTP Authentication headers are used.
+	
+	Path      : "/", 
+		IoT Server Entry point
+		
+	Name      : "Termometer", 
+		Human friendly device name
+		
+	Token     : "123456789ABC"
+		Device token
+		
+### SSL Configuration
+	
+	URL : /config/ssl
+
+Sample Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data"   : {}
+	}
+		
+Upload SSL Private key and Certificate.
+
+Sample POST data:
+	
+	{
+		"SSL" : {
+			"PrivateKey"  : "FILE-DATA:493",
+			"Certificate" : "FILE-DATA:449"
+		}
+	}
+	<0>PrivateKey:493:<493 bytes data>Certificate:449:<449 bytes data>
+			
+Sample WebSocket data (binary message)
+	
+	{
+		"URL" : "/config/ssl",
+		"Method" : "POST",
+		"Data" : {
+			"SSL" : {
+				"PrivateKey"  : "FILE-DATA:493",
+				"Certificate" : "FILE-DATA:449"
+			}
+		}
+	}
+	<0>PrivateKey:493:<493 bytes data>Certificate:449:<449 bytes data>
+			
+### Firmware Update
+
+	URL : /config/firmware
+
+Sample Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data"   : {
+			"Firmware" : {
+				"Current" : "user2.bin", 
+				"Boot"    : "v2 normal 0x00FFFFFF"
+			}
+		}
+	}
+		
+If Current is user1.bin you MUST upload user2.bin and vice versa.
+
+Sample POST data
+	
+	{
+		"Firmware" : {
+			"boot.bin"  : "FILE-DATA:0",
+			"user1.bin" : "FILE-DATA:278880",
+			"user2.bin" : "FILE-DATA:0",
+		}
+	}
+	<0>user1.bin:278880:<278880 bytes data>
+
+## DEVICES REFERENCE
+
+* Native
+	* Button - Long Poll, timeout 30 seconds
+		
+		URL : /button
+	
+	Sample Response:
+		
+		{
+			"Device" : "ESP8266", 
+			"Status" : "OK", 
+			"Data"   : {
+				"Button" : "Short Press"
+			}
+		}
+	
+	* Relay
+		 	
+		URL : /relay
+	
+	Sample Response:
+		
+		{
+			"Device" : "ESP8266", 
+			"Status" : "OK", 
+			"Data" : {
+				"Relay" : 0
+			}
+		}
+	
+	Sample POST data
+		
+		{
+			"Relay" : 1
+		}
+
+
 		
 	ADC - Voltage on CON3 pin 16 max 1V step 1/1024V.
 	--------------------------------------------------------------------------------------
