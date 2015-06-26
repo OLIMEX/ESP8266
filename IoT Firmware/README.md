@@ -922,5 +922,5 @@ Sample Event Message
 
 See *document* folder - ESP-Sample-Application.html			
 	
-
+![Sample Application Screenshot](ESP8266-Sample-HTML-JS-Application.jpg "Sample Application Screenshot")
 	
