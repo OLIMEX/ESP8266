@@ -14,12 +14,12 @@ Successfully tested with 512 bit keys. Unfortunately after upgrading to SDK vers
 it stop working. Work in progress to be fixed.
 
 Firmware operates in two different modes:
-	HTTP REST Service
-	WebSockets
+* HTTP REST Service
+* WebSockets
 
 Support Events:
-	to connected clients
-	to IoT Server
+* to connected clients
+* to IoT Server
 
 ESP8266-EVB It can works as Access Point, WiFi Station or both at the same time. 
 Reset to defaults: hold button pressed for 5 seconds.
@@ -43,20 +43,20 @@ Default credentials
 
 Supported Devices
 	
-	Native
-		Button
-		Relay
-		ADC
-	I2C
-		MOD-RGB
-		MOD-TC-MK2-31855
-		MOD-IO2
-		MOD-IRDA+
-	SPI
-		MOD-LED8x8RGB
-	UART
-		MOD-RFID125-BOX
-		Fingerprint - work in progress
+* Native
+	* Button
+	* Relay
+	* ADC
+* I2C
+	* MOD-RGB
+	* MOD-TC-MK2-31855
+	* MOD-IO2
+	* MOD-IRDA+
+* SPI
+	* MOD-LED8x8RGB
+* UART
+	* MOD-RFID125-BOX
+	* Fingerprint - work in progress
 
 QUICK START
 ==========================================================================================
