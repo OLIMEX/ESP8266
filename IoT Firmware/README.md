@@ -1,5 +1,4 @@
 # ABOUT Olimex ESP8266-EVB IoT Firmware
-==========================================================================================
 
 ESP8266-EVB IoT Firmware implements JSON Based Web Server and Client.
 
@@ -8,7 +7,7 @@ development, without the need of any knowledge in embedded technologies. The IoT
 allows such developers to use UEXT modules manufactured by Olimex with ease.
 
 ## Security
-------------------------------------------------------------------------------------------
+
 SSL implementation is quite restricted due to small RAM amount. 
 Successfully tested with 512 bit keys. Unfortunately after upgrading to SDK version 1.1.2 
 it stop working. Work in progress to be fixed.
@@ -60,11 +59,10 @@ Supported Devices
 	* Fingerprint - work in progress
 
 ## QUICK START
-==========================================================================================
+
 JavaScript code example
 
 ## OPERATION
-==========================================================================================
 
 Two modes of operation 
 * HTTP REST Service (Long poll for events handling)
@@ -95,15 +93,17 @@ Two modes of operation
 	
 ### Requests
 	
-Devices & Entry Points
+#### Devices & Entry Points
+
+To get information about installed device drivers and URL for entry points you have to issue GET request to the root.
 	
 	GET /
 	
-REST Service - read relay status
+To read relay status using REST Service - issue GET request to /relay
 	
 	GET /relay
 	
-Response:
+Sample Response:
 	
 	{
 		"Device" : "ESP8266", 
@@ -113,14 +113,14 @@ Response:
 		}
 	}
 
-REST Service - set relay status
+To set relay status via REST Service - issue POST to /relay with following data
 	
 	POST /relay
 	{
 		Relay   : 1
 	}
 
-Response:
+Sample Response:
 	
 	{
 		"Device" : "ESP8266", 
@@ -130,14 +130,14 @@ Response:
 		}
 	}
 			
-WebSockets - read relay status
+Read relay status via WebSockets -  send following message
 	
 	{
 		"URL"       : "/relay", 
 		"Method"    : "GET"
 	}
 		
-Response: 
+Sample Response: 
 	
 	{
 		"Device" : "ESP8266", 
@@ -147,7 +147,7 @@ Response:
 		}
 	}
 			
-WebSockets - set relay status
+Set relay status via WebSockets - send following message
 	
 	{
 		"URL"       : "/relay",
@@ -157,7 +157,7 @@ WebSockets - set relay status
 		}
 	}
 
-Response:
+Sample Response:
 	
 	{
 		"Device" : "ESP8266", 
