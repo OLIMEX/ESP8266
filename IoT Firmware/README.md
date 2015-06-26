@@ -97,11 +97,15 @@ Two modes of operation
 
 To get information about installed device drivers and URL for entry points you have to issue GET request to the root.
 	
-	GET /
+	GET / HTTP/1.1
+	Host: 192.168.4.1
+	Authorization: Basic b2xpbWV4Om9saW1leA==
 	
-To read relay status using REST Service - issue GET request to /relay
+To read relay status using REST Service - execute following GET request
 	
-	GET /relay
+	GET /relay HTTP/1.1
+	Host: 192.168.4.1
+	Authorization: Basic b2xpbWV4Om9saW1leA==
 	
 Sample Response:
 	
@@ -113,12 +117,15 @@ Sample Response:
 		}
 	}
 
-To set relay status via REST Service - issue POST to /relay with following data
+To set relay status via REST Service - execute following POST
 	
-	POST /relay
-	{
-		Relay   : 1
-	}
+	POST /relay HTTP/1.1
+	Host: 192.168.4.1
+	Content-Length: 11
+	Authorization: Basic b2xpbWV4Om9saW1leA==
+	Content-Type: text/plain;charset=UTF-8
+	
+	{"Relay":1}
 
 Sample Response:
 	
@@ -167,8 +174,8 @@ Sample Response:
 		}
 	}
 
-CONFIGURATION
-==========================================================================================
+## CONFIGURATION
+
 	General Configuration
 	--------------------------------------------------------------------------------------
 		URL : /config
