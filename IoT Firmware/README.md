@@ -64,7 +64,7 @@ JavaScript code example
 
 ```javascript
 // Connect to ESP8266-EVB events entry point
-var socket = new WebSocket('ws://192.168.0.125/events');
+var socket = new WebSocket('ws://192.168.4.1/events');
 
 socket.onopen = function () {
 	// Send authentication message
