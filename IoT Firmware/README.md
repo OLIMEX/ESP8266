@@ -458,9 +458,9 @@ Sample POST data
 
 * Native
 	* Button - Long Poll, timeout 30 seconds
+			
+			URL : /button
 		
-		URL : /button
-	
 		Sample Response:
 			
 			{
@@ -473,7 +473,7 @@ Sample POST data
 	
 	* Relay
 		 	
-		URL : /relay
+			URL : /relay
 	
 		Sample Response:
 			
@@ -494,8 +494,8 @@ Sample POST data
 
 		
 	* ADC - Voltage on CON3 pin 16 max 1V step 1/1024V.
-		
-		URL : /adc
+			
+			URL : /adc
 		
 		Sample Response:
 			
@@ -549,10 +549,11 @@ Sample POST data
 	If address is not present then the default I2C address is used
 	
 	* MOD-RGB
-		URL : 
-			/mod-rgb
-			/mod-rgb/<address>
-			
+			 	
+			URL : 
+				/mod-rgb
+				/mod-rgb/<address>
+				
 			Default address: 0x20
 	
 		Sample Response:
@@ -593,11 +594,11 @@ Sample POST data
 	
 	
 	* MOD-TC-MK2-31855
-		
-		URL : 
-			/mod-tc-mk2
-			/mod-tc-mk2/<address>
 			
+			URL : 
+				/mod-tc-mk2
+				/mod-tc-mk2/<address>
+				
 			Default address: 0x23
 		
 		Sample Response:
@@ -644,11 +645,11 @@ Sample POST data
 			}
 	
 	* MOD-IO2
-		
-		URL : 
-			/mod-io2
-			/mod-io2/<address>
 			
+			URL : 
+				/mod-io2
+				/mod-io2/<address>
+				
 			Default address: 0x21
 			
 		Sample Response:
@@ -715,11 +716,11 @@ Sample POST data
 			}
 	
 	* MOD-IRDA+
-		
-		URL : 
-			/mod-irda
-			/mod-irda/<address>
 			
+			URL : 
+				/mod-irda
+				/mod-irda/<address>
+				
 			Default address: 0x24
 	
 		Sample Response:
@@ -755,7 +756,8 @@ Sample POST data
 	
 * SPI
 	* MOD-LED8x8RGB
-		URL : /mod-led-8x8-rgb
+			
+			URL : /mod-led-8x8-rgb
 		
 		Panels have to be connected from left to right and up from bottom.
 		Maximum number of panels - 48
@@ -792,7 +794,8 @@ Sample POST data
 
 * UART
 	* MOD-RFID125-BOX
-		URL : /mod-rfid
+			
+			URL : /mod-rfid
 		
 		Event is generated on every read tag
 		
@@ -823,8 +826,8 @@ Sample POST data
 	
 
 * EVENTS
-
-URL : /events
+	
+	URL : /events
 
 Long poll GET request or WebSockets (Recommended)
 
