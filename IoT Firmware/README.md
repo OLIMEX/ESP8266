@@ -80,7 +80,14 @@ Supported Devices
 
 ## QUICK START
 
-JavaScript code example
+**How to load firmware for the first time:**
+
+You will need a seral connection established. This connection requires seral cable with level shifter. We will use esptool. Use the following command issued from root folder:
+	
+	esptool/esptool.py --baud 576000 write_flash 0x00000 bin/boot_v1.2.bin 0x01000 bin/upgrade/user1.1024.new.bin 0x81000 bin/upgrade/user2.1024.new.bin --flash_size 16m
+
+
+**JavaScript code example**
 
 ```javascript
 // Connect to ESP8266-EVB events entry point
