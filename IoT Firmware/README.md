@@ -25,21 +25,24 @@ ESP8266-EVB It can works as Access Point, WiFi Station or both at the same time.
 Reset to defaults: hold button pressed for 5 seconds.
  
 Default Access Point
+	
 	SSID     : ESP_OLIMEX
 	Password : olimex-ap
 	Mode     : WPA2 PSK
-	
 	IP       : 192.168.4.1
 	
 Optional Authentication - enabled by default
+	
 	Basic HTTP Authentication
 	WebSockets - Authentication message
+
+Default credentials
 	
-	Default credentials
-		User     : olimex
-		Password : olimex
+	User     : olimex
+	Password : olimex
 
 Supported Devices
+	
 	Native
 		Button
 		Relay
@@ -67,30 +70,33 @@ Two modes of operation
 		Long poll for events handling
 	WebSockets - RECOMMENDED
 	
-	Basic Response Message Format
-		{
-			"Device" : "ESP8266",
-			
-			"Status" : "OK", 
-			<or>
-			"Error"  : "Device not found",
-			
-			"Data"   : {
-				<device dependent>
-			}
-		}
-		
-	Events Message Format
-		{
-			EventURL   : "/button",
-			EventsData : {
-				<Basic Response Message>
-			}
-		}
+Basic Response Message Format
 	
-	Requests
-		Devices & Entry Points 
-			GET /
+	{
+		"Device" : "ESP8266",
+		
+		"Status" : "OK", 
+		<or>
+		"Error"  : "Device not found",
+		
+		"Data"   : {
+			<device dependent>
+		}
+	}
+		
+Events Message Format
+	
+	{
+		EventURL   : "/button",
+		EventsData : {
+			<Basic Response Message>
+		}
+	}
+	
+Requests
+	
+	Devices & Entry Points 
+		GET /
 		
 		REST Service 
 			GET /relay
