@@ -22,6 +22,7 @@ Support Events:
 * to IoT Server
 
 ESP8266-EVB It can works as Access Point, WiFi Station or both at the same time. 
+
 Reset to defaults: hold button pressed for 5 seconds.
  
 Default Access Point
@@ -33,8 +34,8 @@ Default Access Point
 	
 Optional Authentication - enabled by default
 	
-	Basic HTTP Authentication
-	WebSockets - Authentication message
+* Basic HTTP Authentication
+* WebSockets - Authentication message
 
 Default credentials
 	
@@ -66,9 +67,8 @@ OPERATION
 ==========================================================================================
 
 Two modes of operation 
-	HTTP REST Service
-		Long poll for events handling
-	WebSockets - RECOMMENDED
+* HTTP REST Service (Long poll for events handling)
+* WebSockets - RECOMMENDED
 	
 Basic Response Message Format
 	
