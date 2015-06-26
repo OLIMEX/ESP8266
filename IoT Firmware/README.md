@@ -1,3 +1,21 @@
+- [ABOUT Olimex ESP8266-EVB IoT Firmware](#)
+	- [Security](#)
+	- [QUICK START](#)
+	- [OPERATION](#)
+		- [Basic Response Message Format](#)
+		- [Events Message Format](#)
+		- [Requests](#)
+		- [Devices & Entry Points](#)
+	- [CONFIGURATION](#)
+		- [General Configuration](#)
+		- [Access Point Configuration](#)
+		- [Station Configuration](#)
+		- [IoT Server Configuration](#)
+		- [SSL Configuration](#)
+		- [Firmware Update](#)
+	- [DEVICES REFERENCE](#)
+	- [Sample HTML / JavaScript application](#)
+
 # ABOUT Olimex ESP8266-EVB IoT Firmware
 
 ESP8266-EVB IoT Firmware implements JSON Based Web Server and Client.
@@ -144,7 +162,7 @@ Two modes of operation
 	
 ### Requests
 	
-#### Devices & Entry Points
+### Devices & Entry Points
 
 To get information about installed device drivers and URL for entry points you have to issue GET request to the root.
 	
@@ -918,7 +936,7 @@ Sample Event Message
 	}
 	
 	
-# Sample HTML / JavaScript application
+## Sample HTML / JavaScript application
 
 See *document* folder - ESP-Sample-Application.html			
 	
