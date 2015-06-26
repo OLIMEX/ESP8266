@@ -844,6 +844,7 @@ Status values
 	Reconnect station
 	Rebooting
 	Restored defaults
+	Authorization success
 	
 Common Events Message Format
 	
