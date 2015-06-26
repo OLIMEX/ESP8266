@@ -6,6 +6,8 @@
 		- [Events Message Format](#events-message-format)
 		- [Requests](#requests)
 			- [Devices & Entry Points](#devices--entry-points)
+			- [REST Service](#rest-service)
+			- [WebSockets](#websockets)
 	- [CONFIGURATION](#configuration)
 		- [General Configuration](#general-configuration)
 		- [Access Point Configuration](#access-point-consiguration)
@@ -170,6 +172,8 @@ To get information about installed device drivers and URL for entry points you h
 	Host: 192.168.4.1
 	Authorization: Basic b2xpbWV4Om9saW1leA==
 	
+### REST Service
+
 To read relay status using REST Service - execute following GET request
 	
 	GET /relay HTTP/1.1
@@ -205,7 +209,9 @@ Sample Response:
 			"Relay" : 1
 		}
 	}
-			
+
+### WebSockets
+
 Read relay status via WebSockets -  send following message
 	
 	{
