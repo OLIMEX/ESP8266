@@ -1,4 +1,4 @@
-ABOUT Olimex ESP8266-EVB IoT Firmware
+# ABOUT Olimex ESP8266-EVB IoT Firmware
 ==========================================================================================
 
 ESP8266-EVB IoT Firmware implements JSON Based Web Server and Client.
@@ -7,7 +7,7 @@ The firmware is intended to be used by people with sufficient knowledge in web a
 development, without the need of any knowledge in embedded technologies. The IoT firmware
 allows such developers to use UEXT modules manufactured by Olimex with ease.
 
-Security
+## Security
 ------------------------------------------------------------------------------------------
 SSL implementation is quite restricted due to small RAM amount. 
 Successfully tested with 512 bit keys. Unfortunately after upgrading to SDK version 1.1.2 
@@ -59,18 +59,18 @@ Supported Devices
 	* MOD-RFID125-BOX
 	* Fingerprint - work in progress
 
-QUICK START
+## QUICK START
 ==========================================================================================
 JavaScript code example
 
-OPERATION
+## OPERATION
 ==========================================================================================
 
 Two modes of operation 
 * HTTP REST Service (Long poll for events handling)
 * WebSockets - RECOMMENDED
 	
-Basic Response Message Format
+### Basic Response Message Format
 	
 	{
 		"Device" : "ESP8266",
@@ -84,7 +84,7 @@ Basic Response Message Format
 		}
 	}
 		
-Events Message Format
+### Events Message Format
 	
 	{
 		EventURL   : "/button",
@@ -93,38 +93,79 @@ Events Message Format
 		}
 	}
 	
-Requests
+### Requests
 	
-	Devices & Entry Points 
-		GET /
+Devices & Entry Points
+	
+	GET /
+	
+REST Service - read relay status
+	
+	GET /relay
+	
+Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data" : {
+			"Relay" : 0
+		}
+	}
+
+REST Service - set relay status
+	
+	POST /relay
+	{
+		Relay   : 1
+	}
+
+Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data" : {
+			"Relay" : 1
+		}
+	}
+			
+WebSockets - read relay status
+	
+	{
+		"URL"       : "/relay", 
+		"Method"    : "GET"
+	}
 		
-		REST Service 
-			GET /relay
+Response: 
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data" : {
+			"Relay" : 0
+		}
+	}
 			
-			Response: {"Device" : "ESP8266", "Status" : "OK", "Data" : {"Relay" : 0}}
-			
-			POST /relay
-				{
-					Relay   : 1
-				}
-			Response: {"Device" : "ESP8266", "Status" : "OK", "Data" : {"Relay" : 1}}
-			
-		WebSockets
-			{
-				"URL"       : "/relay", 
-				"Method"    : "GET"
-			}
-			
-			Response: {"Device" : "ESP8266", "Status" : "OK", "Data" : {"Relay" : 0}}
-			
-			{
-				"URL"       : "/relay",
-				"Method"    : "POST",
-				"Data"      : {
-					"Relay" : 1
-				}
-			}
-			Response: {"Device" : "ESP8266", "Status" : "OK", "Data" : {"Relay" : 1}}
+WebSockets - set relay status
+	
+	{
+		"URL"       : "/relay",
+		"Method"    : "POST",
+		"Data"      : {
+			"Relay" : 1
+		}
+	}
+
+Response:
+	
+	{
+		"Device" : "ESP8266", 
+		"Status" : "OK", 
+		"Data" : {
+			"Relay" : 1
+		}
+	}
 
 CONFIGURATION
 ==========================================================================================
