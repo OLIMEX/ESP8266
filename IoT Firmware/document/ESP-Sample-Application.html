@@ -1,0 +1,1544 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>ESP8266 Direct Connection</title>
+	
+	<meta name="viewport" content="width=device-width" />
+	
+	<style>
+		* {
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+		}
+		
+		body {
+			font: 14px Arial, sans-serif;
+			line-height: 30px;
+			white-space: nowrap;
+		}
+		
+		#container {
+			display: inline-block;
+			border: solid 1px black;
+			min-width: 360px;
+			min-height: 470px;
+			padding: 10px;
+		}
+		
+		#menu {
+			position: absolute;
+			right: 0;
+			margin: 10px;
+			width: 30px;
+			height: 30px;
+			background: white;
+			text-align: center;
+			font-size: 40px;
+			display: none;
+		}
+		
+		#menu:hover {
+			cursor: pointer;
+		}
+		
+		
+		#tabs {
+			text-align: right;
+			display: block;
+			position: relative;
+			width: 170px;
+			float: left;
+		}
+		
+		#tabs div {
+			display: block;
+			margin: 0;
+			margin-bottom: 4px;
+			padding: 0 10px;
+			
+			border: solid 1px lightgray;
+			border-right: solid 1px black;
+			border-radius: 7px 0 0 0;
+			
+			background: white;
+			
+			z-index: 999;
+			position: relative;
+			left: 1px;
+			color: gray;
+			cursor: pointer;
+		}
+		
+		#tabs div.active {
+			color: black;
+			border-color: black;
+			border-right: solid 1px white;
+		}
+		
+		#tabs div.activity {
+			color: blue;
+		}
+		
+		#tabs div.error {
+			color: red;
+		}
+		
+		form {
+			display: inline-block;
+			vertical-align: top;
+			margin: 0;
+		}
+		
+		form.esp {
+			display: none;
+		}
+		
+		form.active input	{
+			background: green !important;
+			color: white;
+		}
+		form.disabled input {
+			background: red	!important;
+			color: white;
+		}
+		
+		form.esp.long-poll {
+			display: inline-block;
+		}
+		
+		fieldset {
+			display: block;
+			border: solid 1px black;
+		}
+		
+		label {
+			display: inline-block;
+			width: 120px;
+		}
+		
+		input[type=range] {
+			height: 3px;
+			border: none;
+			width: 175px;
+		}
+		input[type=range]:focus {
+			outline: none;
+		}
+		input[type=range].red {
+			-webkit-appearance: none;
+			background: red;
+		}
+		input[type=range].green {
+			-webkit-appearance: none;
+			background: green;
+		}
+		input[type=range].blue {
+			-webkit-appearance: none;
+			background: blue;
+		}
+		
+		@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+			/* IE10+ CSS styles go here */
+			input[type=range] {
+				height: 75px;
+				background: none !important;
+			}
+			input[type=range]::-ms-track {
+				height: 3px;
+				color: transparent;
+				border: none;
+				background: grey;
+			}
+			input[type=range]::-ms-thumb {
+				height: 22px;
+				width: 7px;
+				border: 1px solid black;
+				background: lightgrey;
+			}
+			input[type=range].red::-ms-fill-lower {
+				background: red;
+			}
+			input[type=range].green::-ms-fill-lower {
+				background: green;
+			}
+			input[type=range].blue::-ms-fill-lower {
+				background: blue;
+			}
+		}
+		
+		input[type=text] {
+			width: 150px;
+		}
+		
+		input[type=file],
+		#config-firmware input[type=text] {
+			width: 180px;
+		}
+		
+		.status {
+			font-size: 10px;
+			line-height: 20px;
+			background: gray;
+			color: white;
+			padding: 0 10px;
+			margin: 0 2px;
+		}
+		
+		.activity {
+			background: gray;
+			color: lightblue;
+		}
+		
+		.error {
+			background: red;
+			color: white;
+		}
+		
+		@media only screen and (max-device-width:640px) {
+			body {
+				margin:0;
+				padding: 0;
+			}
+			
+			#tabs {
+				position: absolute;
+				right: 0;
+				float: none;
+				
+				background: white;
+				border: solid 1px black;
+				padding: 1px;
+			}
+			
+			#tabs div {
+				border: none;
+				border-radius: 0;
+				text-align: left;
+			}
+			
+			#tabs div:hover {
+				background: lightgray;
+			}
+			
+			#container {
+				width: 100%;
+				border: none;
+			}
+		}
+	</style>
+	
+	<script src="jquery-1.11.3.min.js"></script>
+	
+	<script>
+		
+		var MOD_IRDA = {
+			RC5: {
+				Device: [
+					{id:  0, name: 'TV 1'},
+					{id:  1, name: 'TV 2'},
+					{id:  5, name: 'VCR 1'},
+					{id:  6, name: 'VCR 2'},
+					{id:  8, name: 'Sat 1'},
+					{id: 10, name: 'Sat 2'},
+					{id: 17, name: 'Radio'},
+					{id: 20, name: 'CD'},
+					{id: 26, name: 'CD-R'},
+				],
+				Command: [
+					{id: 16, name: 'Volume +'},
+					{id: 17, name: 'Volume -'},
+					{id: 13, name: 'Mute'},
+					{id: 32, name: 'Channel +'},
+					{id: 33, name: 'Channel -'},
+				]
+			},
+			
+			SIRC: {
+				Device: [
+					{id:  1, name: 'TV'},
+					{id:  2, name: 'VCR 1'},
+					{id:  3, name: 'VCR 2'},
+					{id: 17, name: 'CD'},
+				],
+				Command: [
+					{id: 16, name: 'Channel  +'},
+					{id: 17, name: 'Channel  -'},
+					{id: 18, name: 'Volume  +'},
+					{id: 19, name: 'Volume  -'},
+					{id: 20, name: 'Mute'},
+				]
+			}
+		};
+		
+		(function ($) {
+			$(document).ready(
+				function () {
+					$.support.cors = true;
+					
+					$('#menu').menu();
+					$('input[type=range]').range();
+					
+					$('#tabs').formTabs('#esp, .esp:not(.long-poll)', 'legend:first');
+					$('#esp').connection();
+					
+					$('.esp').esp8266();
+					$('.event').event8266();
+					
+					if (false) {
+						$('.esp').trigger('init8266');
+					} else {
+						$('.esp').trigger('abort8266');
+					}
+					
+					$('#irda select[name=Mode]').irda();
+				}
+			);
+		})(jQuery);
+
+		(function ($) {
+			$.fn.irda = function () {
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						$this.change(
+							function () {
+								$this.parent().find('select[name!='+$this.attr('name')+']').find('option').remove();
+								for (var name in MOD_IRDA[$this.val()]) {
+									var select = $this.parent().find('select[name='+name+']');
+									for (var i in MOD_IRDA[$this.val()][name]) {
+										select.append('<option value="'+MOD_IRDA[$this.val()][name][i].id+'">'+MOD_IRDA[$this.val()][name][i].name+'</option>');
+									}
+								}
+							}
+						);
+						$this.val('RC5').change();
+					}
+				);
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.menu = function () {
+				$(document).click(
+					function(event) {
+						$('.contextual').hide();
+					}
+				);
+				
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						$this.click(
+							function (event) {
+								$('#tabs').show();
+								event.stopPropagation();
+								return false;
+							}
+						);
+					}
+				);
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.range = function () {
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						var timeout = null;
+						
+						$this.change(
+							function (event) {
+								if (timeout) {
+									clearTimeout(timeout);
+								}
+								
+								timeout = setTimeout(
+									function () {
+										$this.submit();
+										timeout = null;
+									},
+									200
+								);
+							}
+						);
+					}
+				);
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.formTabs = function (selector, titleSelector) {
+				var $this = $(this);
+				
+				if ($this.css('position') == 'absolute') {
+					$('#menu').show();
+					$this.addClass('contextual');
+				}
+				
+				$(selector).each(
+					function (i, e) {
+						var $e = $(e);
+						var title = $e.find(titleSelector).text();
+						var $tab = $('<div>'+title+'</div>').
+							click(
+								function (event) {
+									$(selector).hide();
+									$e.show().css('display', 'inline-block');
+									$tab.parent().children().removeClass('active');
+									$tab.addClass('active');
+									
+									if ($this.css('position') == 'absolute') {
+										$this.hide();
+									}
+									
+									event.stopPropagation();
+									return false;
+								}
+							)
+						;
+						$this.append($tab);
+						$e.data('tab', $tab);
+						
+						if ($e.hasClass('module')) {
+							$tab.hide();
+						}
+					}
+				);
+				$this.children(':first').click();
+			};
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.serializeJSON = function() {
+				var json = {};
+				
+				this.children().each(
+					function (i, e) {
+						var $e = $(e);
+						if ($e.is(':button')) {
+							return json;
+						}
+						
+						if ($e.is(':file')) {
+							json[$e.attr('name')] = 'FILE-DATA:'+(typeof e.files != 'undefined' && e.files.length > 0 ? e.files[0].size : 0);
+							return json;
+						}
+						
+						if ($e.is(':input')) {
+							var val = $e.val();
+							json[$e.attr('name')] = $e.is(':not(:checkbox)') || $e.is(':checked') ?
+								(val === null ?
+									null
+									:
+									(val.match(/^\d+$/) ?
+										parseInt(val)
+										:
+										val
+									)
+								)
+								:
+								0
+							;
+							return json;
+						}
+						
+						if ($e.attr('name') != undefined) {
+							json[$e.attr('name')] = $e.serializeJSON();
+						} else {
+							$.extend(json, $e.serializeJSON());
+						}
+					}
+				);
+				return json;
+			};
+		})(jQuery);
+		
+		(function ($) {
+			var files = null;
+			
+			$.fn.serializeFiles = function(ready) {
+				if (ready) {
+					files = {
+						readers: [],
+						
+						loaded: function () {
+							for (var i in this.readers) {
+								if (this.readers[i].readyState != FileReader.DONE) {
+									return;
+								}
+							}
+							
+							if (ready) {
+								ready(this.readers);
+							}
+						}
+					};
+				}
+				
+				this.children().each(
+					function (i, e) {
+						var $e = $(e);
+						
+						if ($e.is(':file')) {
+							if (typeof e.files[0] != 'undefined') {
+								var reader = new FileReader();
+								reader.onload = function () {
+									files.loaded();
+								}
+								
+								reader.onerror = function () {
+									files.loaded();
+								}
+								
+								files.readers[$e.attr('name')] = reader;
+								reader.readAsArrayBuffer(e.files[0]);
+							}
+							return files;
+						}
+						
+						$e.serializeFiles();
+					}
+				);
+				
+				if (ready) {
+					files.loaded();
+				}
+			};
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.unserializeJSON = function(json, reset) {
+				if (typeof reset === "undefined" || reset === null) { 
+					reset = true; 
+				}
+				
+				if (this.is('form') && reset) {
+					this.get(0).reset();
+				}
+				
+				for (var name in json) {
+					if (typeof json[name] === 'object') {
+						this.find('[name="'+name+'"]').unserializeJSON(json[name]);
+					} else {
+						var i = this.find(':input[name="'+name+'"]');
+						if (i.is(':checkbox')) {
+							if (json[name]) {
+								i.prop('checked', true);
+							} else {
+								i.prop('checked', false);
+							}
+						} else {
+							i.val(json[name]);
+						}
+					}
+				}
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.status = function() {
+				$.extend(
+					this, {
+						message : function (msg, css) {
+							return this.each(
+								function (i, e) {
+									var $this = $(e);
+									var status = $this.hasClass('status');
+									var active = $this.hasClass('active');
+									$this.removeClass();
+									
+									if (css != 'activity' && css != 'error') {
+										$this.show();
+									}
+									
+									if (msg.indexOf('Device not found') >= 0) {
+										$this.hide();
+									}
+									
+									if (status) {
+										$this.html(msg);
+										$this.addClass('status');
+									}
+									
+									if (active) {
+										$this.addClass('active');
+									}
+									
+									if (css) {
+										$this.addClass(css);
+									}
+								}
+							);
+						}
+					}
+				);
+				
+				return this;
+			};
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.connection = function() {
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						
+						var $status = $this.find('.status').add($this.data('tab')).status();
+						
+						e.message = function (msg, css) {
+							$status.message(msg, css);
+						}
+						
+						$this.bind(
+							'error8266',
+							function (event, data) {
+								$this.get(0).message(data, 'error');
+							}
+						);
+						
+						$this.bind(
+							'event8266',
+							function (event, data) {
+								$this.get(0).message('OK');
+							}
+						);
+						
+						$this.submit(
+							function (event) {
+								$this.get(0).message('OK');
+								$('.esp').trigger('init8266', true);
+								event.preventDefault();
+								return false;
+							}
+						);
+						
+						$this.find('button[type=button]').click(
+							function () {
+								$('.esp').trigger('abort8266');
+							}
+						);					
+					}
+				);
+			};
+		})(jQuery);
+		
+		
+		(function ($) {
+			$.fn.event8266 = function() {
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						
+						$this.bind(
+							'error8266',
+							function (event, data) {
+								if ($this.is(':not(.long-poll)') && $this.get(0).message) {
+									$this.get(0).message(data, 'error');
+								}
+							}
+						);
+						
+						$this.bind(
+							'event8266',
+							function (event, data) {
+								var reset = false;
+								if (typeof data.EventData === 'object') {
+									if ($this.is(':not(.long-poll)') && data.EventURL != $this.attr('action')) {
+										return;
+									}
+									reset = true;
+									data = data.EventData;
+								}
+								
+								if (typeof data.Device != 'undefined') {
+									if (data.Device == 'ESP8266' && $this.hasClass('module')) {
+										return;
+									}
+								}
+								
+								if (typeof data.Error != 'undefined') {
+									$this.get(0).message(data.Device+': '+data.Error, 'error');
+									return;
+								}
+								
+								if (typeof data.Data === 'object') {
+									$this.unserializeJSON(data.Data, reset);
+								}
+								
+								if ($this.is('.long-poll')) {
+									$this.find('input[name=Event]').val(data.Device);
+								}
+								
+								if ($this.is('.esp:not(.long-poll)')) {
+									if (typeof data.Status != 'undefined') {
+										$this.get(0).message(data.Status);
+									}
+									return;
+								}
+								
+								setTimeout(
+									function () {
+										$this.get(0).reset();
+									},
+									500
+								);
+							}
+						);
+					}
+				);
+			};
+		})(jQuery);
+			
+		(function ($) {
+			$.fn.esp8266 = function() {
+				var ssl, websocket, baseURL, timeout, user, password;
+				var Commands = $.Conveyor();
+				var socketURL;
+				
+				var longPollAction = this.filter('.long-poll').attr('action');
+				
+				if (typeof window.WebSocket == 'undefined') {
+					$('#esp input[name=websocket]').prop('checked', false);
+					$('#esp input[name=websocket]').prop('disabled', true);
+				} else {
+					$('#esp input[name=websocket]').prop('checked', true);
+				}
+				
+				function init() {
+					websocket = $('#esp input[name=websocket]').is(':checked');
+					ssl       = $('#esp input[name=ssl]').is(':checked');
+					
+					socketURL = 
+						'ws' + (ssl ? 's' : '') + '://' + 
+						$('#esp input[name=host]').val() +
+						longPollAction
+					;
+					
+					baseURL   = 
+						'http' + (ssl ? 's' : '') + '://' + 
+						$('#esp input[name=host]').val()
+					;
+					
+					user      = $('#esp input[name=user]').val();
+					password  = $('#esp input[name=password]').val();
+				}
+				
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						var $status = $this.find('.status').add($this.data('tab')).status();
+						var longPoll = $this.is('.long-poll');
+						var timeout = longPoll ? 30000 : 5000;
+						if ($this.data('timeout')) {
+							timeout = $this.data('timeout') * 1000;
+						}
+						
+						function commandError(status, error, xhr) {
+							// console.log('error(%s)', baseURL + $this.attr('action'));
+							$status.message(status+': '+error, 'error');
+							if (longPoll && status != 'abort') {
+								if (xhr.status == 0) {
+									$this.trigger('init8266');
+								} else {
+									$this.addClass('disabled');
+									$status.message('['+xhr.status+'] '+status+': '+error, 'error');
+								}
+							}
+						}
+						
+						function commandSuccess(data, status, xhr) {
+							// console.log('success(%s)', baseURL + $this.attr('action'));
+							if (typeof data.Error != 'undefined') {
+								$status.message(data.Device+': '+data.Error, 'error');
+								return;
+							}
+							
+							if (typeof data.Data === 'object') {
+								$this.unserializeJSON(data.Data);
+							}
+							
+							if (typeof data.Status != 'undefined') {
+								$status.message(data.Status);
+								if (data.Status == 'Rebooting') {
+									Commands.abort('Rebooting');
+									return;
+								}
+							} else {
+								$status.message('OK');
+							}
+							
+							if (longPoll) {
+								$('form').trigger('event8266', data);
+								$this.trigger('init8266');
+							}
+						}
+						
+						e.message = function (msg, css) {
+							$status.message(msg, css);
+						}
+						
+						$this.bind(
+							'init8266',
+							function (event, force) {
+								init();
+								
+								if (websocket && longPoll) {
+									return;
+								}
+								
+								if (typeof force != 'undefined' && force) {
+									Commands.aborted = false;
+								}
+								
+								$status.message('Refreshing...', 'activity');
+								$this.removeClass('disabled');
+								Commands.pipe({
+									retry: 2,
+									websocket: websocket,
+									longPoll: longPoll,
+									
+									socketURL: socketURL,
+									baseURL: baseURL,
+									action: $this.attr('action'),
+									
+									type: 'GET',
+									timeout: timeout,
+									user: user,
+									password: password,
+									
+									event: 'event8266',
+									
+									success: commandSuccess,
+									error: commandError
+								});
+							}
+						);
+						
+						$this.bind(
+							'abort8266',
+							function () {
+								Commands.abort();
+							}
+						);
+
+						
+						$this.find('button[type=button]').click(
+							function() {
+								// console.log('');
+								$this.trigger('init8266');
+							}
+						);
+						
+						$this.submit(
+							function (event) {
+								init();
+								$status.message('Submit...', 'activity');
+								var jsonData = $this.serializeJSON();
+								
+								$this.serializeFiles(
+									function (files) {
+										var error = false;
+										var fileData = new Blob();
+										var count = 0;
+										for (var i in files) {
+											if (files[i].error) {
+												commandError(files[i].error.name, files[i].error.message);
+												error = true;
+											} else {
+												fileData = new Blob([
+													fileData,
+													i + ':' + files[i].result.byteLength + ':',
+													files[i].result
+												]);
+												count++;
+											}
+										}
+										
+										if (count) {
+											fileData = new Blob([String.fromCharCode(0), fileData]);
+										} else {
+											fileData = null;
+										}
+										
+										if (!error) {
+											Commands.pipe({
+												retry: 2,
+												websocket: websocket,
+												longPoll: false,
+												
+												socketURL: socketURL,
+												baseURL: baseURL,
+												action: $this.attr('action'),
+												
+												type: $this.attr('method'),
+												data: jsonData,
+												files: fileData,
+												timeout: timeout,
+												user: user,
+												password: password,
+												
+												event: 'event8266',
+												
+												success: commandSuccess,
+												error: commandError
+											});
+										}
+									}
+								);
+								
+								event.preventDefault();
+								return false;
+							}
+						);
+						
+					}
+				);
+			}
+		})(jQuery);
+		
+		/*** Requests Conveyor  */
+
+		(function ($) {
+			$.Conveyor = function (settings) {
+				return new Conveyor(settings);
+			};
+			
+			function Conveyor(settings) {
+				this.settings = {};
+				this.queue  = new Array();
+				
+				$.extend(this.settings, settings);
+			}
+
+			Conveyor.prototype = {
+				aborted: false,
+				current: null,
+				
+				ajax: null,
+				
+				socket: null,
+				
+				_push: function (request) {
+					if (this.aborted) {
+						// console.log('_push(%s) ABORTED', request.url);
+						$('form').trigger('error8266', 'Not connected');
+						return;
+					}
+					
+					if (this.current) {
+						if (
+							this.current.longPoll &&
+							this.current.status != 'done' &&
+							this.current.baseURL == request.baseURL &&
+							this.current.action == request.action &&
+							request.longPoll
+						) {
+							// console.log('_push(%s) IGNORED', request.url);
+							return;
+						}
+					}
+					
+					request.status = 'waiting';
+					this.queue.push(request);
+					this.queue.sort(
+						function (a, b) {
+							return (a.longPoll - b.longPoll);
+						}
+					);
+				},
+				
+				pipe: function (request) {
+					// console.log('pipe(%s)', request.action);
+					this._push(request);
+					var conveyor = this;
+					setTimeout(
+						function () {
+							conveyor.run();
+						},
+						100
+					);
+				},
+				
+				add: function (request) {
+					// console.log('add(%s)', request.action);
+					this._push(request);
+				},
+				
+				length: function () {
+					return this.queue.length;
+				},
+				
+				_abortAjax: function() {
+					if (this.ajax) {
+						// console.log('abort(AJAX)');
+						this.ajax.abort();
+						this.ajax = null;
+					}
+					this.queue = this.queue.filter(
+						function (e) {
+							return !(e.longPoll && e.status == 'waiting');
+						}
+					);
+				},
+				
+				_abortSocket: function() {
+					if (this.socket) {
+						// console.log('abort(%s)', this.socket.url);
+						this.socket.close(1000);
+						this.socket = null;
+					}
+				},
+				
+				clearSocketRequests: function() {
+					if (this.current && this.current.websocket) {
+						this.current = null;
+					}
+					this.queue = this.queue.filter(
+						function (e) {
+							return !e.websocket;
+						}
+					);
+				},
+				
+				abort: function (message) {
+					this.aborted = true;
+					
+					this._abortAjax();
+					this._abortSocket();
+					
+					this.queue = new Array();
+					this.current = null;
+					$('form').trigger('error8266', typeof message == 'undefined' ? 'Not connected' : message);
+				},
+				
+				before: function (callback) {
+					this.beforeCallback = callback;
+					return this;
+				},
+				
+				done: function (callback) {
+					this.doneCallback = callback;
+					return this;
+				},
+				
+				run: function () {
+					if (
+						this.length() == 0 && 
+						(
+							this.current == null ||
+							this.current.status == 'done'
+						)
+					) {
+						if (this.doneCallback) {
+							this.doneCallback();
+						}
+						return;
+					}
+					
+					if (this.current) {
+						if (this.current.status != 'done') {
+							if (this.current.longPoll && this.length() != 0) {
+								this._abortAjax();
+								this.add(this.current);
+							} else {
+								return;
+							}
+						}
+					}
+					this.current = this.queue.shift();
+					
+					if (this.beforeCallback) {
+						this.beforeCallback(this.current);
+					}
+					
+					this.ajax = this._execute(this.current);
+				},
+				
+				_execute: function (request) {
+					// console.log('_execute(%s)', request.action);
+					var conveyor = this;
+					
+					if (request.websocket) {
+						this._abortAjax();
+						
+						var data = JSON.stringify({
+								URL: request.action,
+								Method: request.type,
+								Data: request.data
+						});
+						
+						if (request.files) {
+							data = new Blob([
+								data,
+								request.files
+							]);
+						}
+						
+						if (this.socket === null || this.socket.url != request.socketURL) {
+							if (this.socket) {
+								this.socket.close(1000);
+							}
+							
+							this.socket = new WebSocket(request.socketURL);
+							
+							this.socket.onopen = function () {
+								this.send(
+									JSON.stringify(
+										{
+											User: request.user,
+											Password: request.password
+										}
+									)
+								);
+								
+								this.send(data);
+								
+								setTimeout(
+									function () {
+										request.status = 'done';
+										conveyor.run();
+									},
+									100
+								);
+							}
+							
+							this.socket.onmessage = function (event) {
+								try {
+									$('form').trigger(request.event, JSON.parse(event.data));
+								} catch (e) {
+									console.log(event.data);
+								}
+							};
+							
+							this.socket.onerror = function (event) {
+								console.log("WebSocket ERROR");
+								console.log(event);
+								// $('form').trigger('error8266', event.reason);
+							};
+							
+							this.socket.onclose = function (event) {
+								if (event.code != 1000) {
+									$('form').trigger('error8266', event.code+': '+(event.reason ? event.reason : 'WebSocket error'));
+								}
+								if (this.readyState != WebSocket.OPEN) {
+									conveyor.socket = null;
+									conveyor.clearSocketRequests();
+								}
+							};
+						} else {
+							if (this.socket.readyState != WebSocket.OPEN) {
+								$('form').trigger('error8266', 'Not connected');
+								if (this.socket.readyState != WebSocket.CONNECTING) {
+									this.socket = null;
+									this.clearSocketRequests();
+								}
+								return;
+							}
+							
+							if (this.socket.bufferedAmount == 0) {
+								this.socket.send(data);
+							}
+							
+							setTimeout(
+								function () {
+									request.status = 'done';
+									conveyor.run();
+								},
+								100
+							);
+						}
+						return;
+					}
+					
+					this._abortSocket();
+					
+					request.status = 'running';
+					
+					var ajax = {
+						url: request.baseURL + request.action,
+						type: request.type,
+						timeout: request.timeout,
+						headers: {
+							Authorization: 'Basic '+btoa(request.user+':'+request.password)
+						}
+					};
+					
+					if (typeof request.data != 'undefined') {
+						ajax.data = request.files ?
+							new Blob([JSON.stringify(request.data), request.files])
+							:
+							JSON.stringify(request.data)
+						;
+						// ajax.dataType = 'json';
+						ajax.contentType = false;
+						ajax.processData = false;
+					}
+					
+					return $.ajax(ajax).
+					done(
+						function (data, status, xhr) {
+							// console.log('done(%s)', request.url);
+							request.status = 'done';
+							conveyor.ajax = null;
+							
+							if (request.success) {
+								request.success(data, status, xhr);
+							}
+							
+							conveyor.run();
+						}
+					).fail(
+						function (xhr, status, error) {
+							// console.log('fail(%s, %s, %s)', request.url, status, error);
+							if (status == 'abort') {
+								request.status = 'done';
+								return;
+							}
+							
+							if (xhr.status != 0 || status == 'timeout') {
+								request.retry = 0;
+							}
+							
+							if (request.retry > 0) {
+								request.retry--;
+								request.status = 'failed';
+							} else {
+								request.status = 'done';
+							}
+							conveyor.ajax = null;
+							
+							if (request.error) {
+								request.error(status, error, xhr);
+							}
+							
+							setTimeout(
+								function () {
+									if (request.status == 'done') {
+										conveyor.run();
+									} else {
+										conveyor.ajax = conveyor._execute(request);
+									}
+								},
+								100
+							);
+						}
+					);
+				}
+				
+			};
+		})(jQuery);
+	</script>
+</head>
+
+<body>
+	<div id="menu">&equiv;</div>
+	<div id="tabs"></div>
+	<div id="container">
+		<form id="events" class="esp event long-poll" action="/events">
+			<input type="text" name="Event" value="Event" disabled="disabled" style="text-align: center;" /> <br/>
+		</form>
+		
+		<form id="button" class="event" action="/button">
+			<input type="text" name="Button" value="Button" disabled="disabled" style="text-align: center;" /> <br/>
+		</form>
+		<br />
+		
+		<form id="esp" method="POST">
+			<fieldset>
+				<legend>ESP8266 Connection</legend>
+				<label>WebSocket</label> <input type="checkbox" name="websocket" value="1" onchange="$(this).submit();" /> <br/>
+				<label>SSL</label>       <input type="checkbox" name="ssl"       value="1" onchange="$(this).submit();" /> <br/>
+				<label>Host</label>      <input type="text"     name="host"      value="192.168.0.125" /> <br/>
+				<label>User</label>      <input type="text"     name="user"      value="olimex" /> <br/>
+				<label>Password</label>  <input type="text"     name="password"  value="olimex" /> <br/>
+				<button type="submit">Connect</button> <button type="button">Disconnect</button><br/>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="config" class="esp event" action="/config" method="POST">
+			<fieldset name="Config">
+				<legend>General Config</legend>
+				
+				<label>SDK Version</label>      <input type="text" name="SDKVersion"     value="" disabled="disabled" /> <br/>
+				<label>Access Point MAC</label> <input type="text" name="AccessPointMAC" value="" disabled="disabled" /> <br/>
+				<label>Station MAC</label>      <input type="text" name="StationMAC"     value="" disabled="disabled" /> <br/>
+				<label>User</label>             <input type="text" name="User"           value="" /> <br/>
+				<label>Password</label>         <input type="text" name="Password"       value="" /> <br/>
+				
+				<label>Mode</label>
+					<select name="Mode"> 
+						<option>Access Point</option>
+						<option>Station</option>
+						<option>Access Point and Station</option>
+					</select>
+				<br/>
+				
+				<label>Authentication</label> <input type="checkbox" name="Authentication" value="1" /> <br/>
+				<label>SSL</label>            <input type="checkbox" name="SSL"            value="1" /> <br/>
+				
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="config-ap" class="esp event" action="/config/access-point" method="POST">
+			<fieldset name="AccessPoint">
+				<legend>Configure Access Point</legend>
+				
+				<label>SSID</label>            <input type="text" name="SSID"     value=""  /> <br/>
+				<label>Password</label>        <input type="text" name="Password" value=""  /> <br/>
+				
+				<label>Mode</label>
+					<select name="Mode"> 
+						<option>Open</option>
+						<option>WEP</option>
+						<option>WPA PSK</option>
+						<option>WPA2 PSK</option>
+						<option>WPA WPA2 PSK</option>
+					</select>
+				<br/>
+				<label>Hidden</label>           <input type="checkbox" name="Hidden"         value="1" /> <br/>
+				<label>Beacon Interval</label>  <input type="text"     name="BeaconInterval" value="" /> <br/>
+				<label>Max Connections</label>
+					<select name="MaxConnections"> 
+						<option>0</option>
+						<option>1</option>
+						<option>2</option>
+						<option>3</option>
+						<option>4</option>
+					</select>
+				<br/>
+				<label>DHCP</label>             <input type="checkbox" name="DHCP"           value="1" /> <br/>
+				<fieldset name="IP">
+					<legend>IP</legend>
+					<label>Address</label>      <input type="text"     name="Address"        value="" /> <br/>
+					<label>NetMask</label>      <input type="text"     name="NetMask"        value="" /> <br/>
+					<label>Gateway</label>      <input type="text"     name="Gateway"        value="" /> <br/>
+				</fieldset>
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="config-station" class="esp event" action="/config/station" method="POST">
+			<fieldset name="Station">
+				<legend>Configure Station</legend>
+				
+				<label>SSID</label>             <input type="text"     name="SSID"        value=""  /> <br/>
+				<label>Password</label>         <input type="text"     name="Password"    value=""  /> <br/>
+				
+				<label>Autoconnect</label>      <input type="checkbox" name="AutoConnect" value="1" /> <br/>
+				<label>DHCP</label>             <input type="checkbox" name="DHCP"        value="1" /> <br/>
+				<fieldset name="IP">
+					<legend>IP</legend>
+					<label>Address</label>      <input type="text"     name="Address"     value="" /> <br/>
+					<label>NetMask</label>      <input type="text"     name="NetMask"     value="" /> <br/>
+					<label>Gateway</label>      <input type="text"     name="Gateway"     value="" /> <br/>
+				</fieldset>
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="config-iot" class="esp event" action="/config/iot" method="POST">
+			<fieldset name="IoT">
+				<legend>IoT Config</legend>
+				
+				<label>WebSocket</label>   <input type="checkbox" name="WebSocket" value="1" /> <br/>
+				<label>SSL</label>         <input type="checkbox" name="SSL"       value="1" /> <br/>
+				<label>Server</label>      <input type="text"     name="Server"    value="" /> <br/>
+				<label>Entry Point</label> <input type="text"     name="Path"      value="" /> <br/>
+				<label>User</label>        <input type="text"     name="User"      value="" /> <br/>
+				<label>Password</label>    <input type="text"     name="Password"  value="" /> <br/>
+				<label>Name</label>        <input type="text"     name="Name"      value="" /> <br/>
+				<label>Token</label>       <input type="text"     name="Token"     value="" /> <br/>
+				
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="config-ssl" class="esp event" action="/config/ssl" method="POST">
+			<fieldset name="SSL">
+				<legend>Configure SSL</legend>
+				
+				<label>Private key</label>      <input type="file"     name="PrivateKey" /> <br/>
+				<label>Certificate</label>      <input type="file"     name="Certificate" /> <br/>
+				
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="config-firmware" class="esp event" action="/config/firmware" method="POST" data-timeout="60">
+			<fieldset name="Firmware">
+				<legend>Firmware Update</legend>
+				
+				<label>Current</label>      <input type="text" name="Current" value="" disabled="disabled" /> <br/>
+				<label>Boot</label>         <input type="text" name="Boot"    value="" disabled="disabled" /> <br/>
+				<label>boot.bin</label>     <input type="file" name="boot.bin" /> <br/>
+				<label>user1.bin</label>    <input type="file" name="user1.bin" /> <br/>
+				<label>user2.bin</label>    <input type="file" name="user2.bin" /> <br/>
+				
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="relay" class="esp event" action="/relay" method="POST">
+			<fieldset>
+				<legend>Relay</legend>
+				<label>State</label><input type="checkbox" name="Relay" value="1" onchange="$(this).submit();"/> <br/>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="adc" class="esp event" action="/adc" method="POST">
+			<fieldset name="ADC">
+				<legend>Analog to Digital</legend>
+				<label>Value</label> <input type="text"  name="Value" value="" disabled="disabled"/> <br/>
+				<label></label>      <input type="range" name="Value" min="0" max="1024" step="1" disabled="disabled" /> <br/>
+				<fieldset name="Poll">
+					<legend>Poll</legend>
+					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> <br/>
+					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> <br/>
+					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> <br/>
+				</fieldset>
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="rfid" class="esp event module" action="/mod-rfid" method="POST">
+			<fieldset>
+				<legend>MOD-RFID</legend>
+				<label>Module</label>    <input type="text"     name="Module"    disabled="disabled" /> <br/>
+				<label>Frequency</label> <input type="range"    name="Frequency" min="0" max="9" step="1"/> <br/>
+				<label>Led</label>       <input type="checkbox" name="Led"       value="1" onchange="$(this).submit();" /> <br/>
+				<label>Tag</label>       <input type="text"     name="Tag"       disabled="disabled" /> <br/>
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="rgb" class="esp event module" action="/mod-rgb" method="POST">
+			<fieldset>
+				<legend>MOD-RGB</legend>
+				<label>R</label><input type="range" class="red"   name="R" min="0" max="255" step="1"/> <br/>
+				<label>G</label><input type="range" class="green" name="G" min="0" max="255" step="1"/> <br/>
+				<label>B</label><input type="range" class="blue"  name="B" min="0" max="255" step="1"/> <br/>
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="tc-mk2" class="esp event module" action="/mod-tc-mk2" method="POST">
+			<fieldset>
+				<legend>MOD-TC-MK2</legend>
+				<label>Temperature</label><input type="text" name="Temperature" value="" disabled="disabled"/> <br/>
+				<fieldset name="Poll">
+					<legend>Poll</legend>
+					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> <br/>
+					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> <br/>
+					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> <br/>
+				</fieldset>
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="irda" class="esp event module" action="/mod-irda" method="POST">
+			<fieldset>
+				<legend>MOD-IRDA+</legend>
+				<label>Mode</label>
+					<select name="Mode"> 
+						<option>RC5</option>
+						<option>SIRC</option>
+					</select>
+				<br/>
+				<label>Device</label>  <select name="Device"></select><br/>
+				<label>Command</label> <select name="Command"></select><br/>
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="io2" class="esp event module" action="/mod-io2" method="POST">
+			<fieldset>
+				<legend>MOD-IO2</legend>
+				<fieldset>
+					<legend>Relays</legend>
+					<label>Relay1</label> <input type="checkbox" name="Relay1" value="1" onchange="$(this).submit();"/> <br/>
+					<label>Relay2</label> <input type="checkbox" name="Relay2" value="1" onchange="$(this).submit();"/> <br/>
+				</fieldset>
+				
+				<fieldset>
+					<legend>Analog to Digital Input</legend>
+					<label>GPIO0</label>  <input type="text"  name="GPIO0"  value="" disabled="disabled" /> <br/>
+					<label></label>       <input type="range" name="GPIO0"  min="0" max="1024" step="1" disabled="disabled" /> <br/>
+					<label>GPIO1</label>  <input type="text"  name="GPIO1"  value="" disabled="disabled" /> <br/>
+					<label></label>       <input type="range" name="GPIO1"  min="0" max="1024" step="1" disabled="disabled" /> <br/>
+				</fieldset>
+				
+				<fieldset>
+					<legend>Digital Output</legend>
+					<label>GPIO2</label>  <input type="checkbox" name="GPIO2"  value="1" onchange="$(this).submit();" /> <br/>
+				</fieldset>
+				
+				<fieldset>
+					<legend>Digital Input</legend>
+					<label>GPIO3</label>  <input type="checkbox" name="GPIO3"  value="1" disabled="disabled" /> <br/>
+					<label>GPIO4</label>  <input type="checkbox" name="GPIO4"  value="1" disabled="disabled" /> <br/>
+				</fieldset>
+				
+				<fieldset>
+					<legend>Digital to Analog Output</legend>
+					<label>GPIO5</label>  <input type="range" name="GPIO5" min="0" max="255" step="1"/> <br/>
+					<label>GPIO6</label>  <input type="range" name="GPIO6" min="0" max="255" step="1"/> <br/>
+				</fieldset>
+				
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="led-8x8-rgb" class="esp event module" action="/mod-led-8x8-rgb" method="POST">
+			<fieldset>
+				<legend>MOD-LED8x8RGB</legend>
+				<label>Columns</label> <input type="text"     name="cols" value=""/> <br/>
+				<label>Rows</label>    <input type="text"     name="rows" value=""/> <br/>
+				
+				<label>Speed</label>   <input type="range"    name="Speed" min="0" max="100" step="1"/> <br/>
+				
+				<label>R</label>       <input type="checkbox" name="R" value="1" /> <br/>
+				<label>G</label>       <input type="checkbox" name="G" value="1" /> <br/>
+				<label>B</label>       <input type="checkbox" name="B" value="1" /> <br/>
+				
+				<label>Text</label>    <input type="text"     name="Text" value="" /> <br/>
+				
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<br />
+		
+	</div>
+</body>
+</html>
