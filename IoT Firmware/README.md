@@ -764,6 +764,18 @@ If address is not present then the default I2C address is used
 			
 		Default address: 0x23
 	
+	```JavaScript
+	// Read MOD-TC-MK2-31855 temperature sensor
+	socket.send(
+		JSON.stringify(
+		    	{
+		    		URL: "/mod-tc-mk2",
+		    		Method: "GET"
+		    	}
+		)
+	);
+	```
+	
 	Sample Response:
 		
 		{
