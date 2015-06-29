@@ -556,7 +556,8 @@ Sample POST data
 	* Relay
 		 	
 			URL : /relay
-			**JavaScript Example**
+		
+		**JavaScript Example**
 		
 ```JavaScript
 // Read relay status
