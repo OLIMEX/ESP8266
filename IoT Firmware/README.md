@@ -586,6 +586,7 @@ socket.send(
 			{
 				"Relay" : 1
 			}
+		
 		**JavaScript Example to switch relay on**
 
 ```JavaScript
@@ -605,7 +606,9 @@ socket.send(
 	* ADC - Voltage on CON3 pin 16 max 1V step 1/1024V.
 			
 			URL : /adc
-			**JavaScript examle to read ADC**
+		
+		**JavaScript examle to read ADC**
+
 ```JavaScript
 socket.send(
 	JSON.stringify(
