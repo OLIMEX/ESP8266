@@ -579,15 +579,15 @@ Sample POST data
 		**JavaScript Example**
 	
 		```JavaScript
-// Read relay status
-socket.send(
-	JSON.stringify(
-    		{
-			URL: '/relay',
-			Method: 'GET'
-		}
-	)
-);
+		// Read relay status
+		socket.send(
+			JSON.stringify(
+		    		{
+					URL: '/relay',
+					Method: 'GET'
+				}
+			)
+		);
 		```
 
 		Sample Response:
@@ -609,17 +609,17 @@ socket.send(
 		**JavaScript Example to switch relay on**
 
 		```JavaScript
-socket.send(
-	JSON.stringify(
-    		{
-			URL: '/relay',
-			Method: 'POST',
-			Data: {
-				Relay: 1
-			}
-		}
-	)
-);
+		socket.send(
+			JSON.stringify(
+		    		{
+					URL: '/relay',
+					Method: 'POST',
+					Data: {
+						Relay: 1
+					}
+				}
+			)
+		);
 		```
 
 	* ADC - Voltage on CON3 pin 16 max 1V step 1/1024V.
@@ -629,14 +629,14 @@ socket.send(
 		**JavaScript examle to read ADC**
 
 		```JavaScript
-socket.send(
-	JSON.stringify(
-    		{
-			URL: '/adc',
-			Method: 'GET'
-		}
-	)
-);
+		socket.send(
+			JSON.stringify(
+		    		{
+					URL: '/adc',
+					Method: 'GET'
+				}
+			)
+		);
 		```
 		
 		Sample Response:
@@ -737,19 +737,19 @@ socket.send(
 		**JavaScript example to light green on 10%**
 
 		```JavaScript
-socket.send(
-	JSON.stringify(
-	    	{
-	    		URL: "/mod-rgb",
-	    		Method: "POST",
-	    		Data: {
-	    			R: 0,
-	    			G: 25,
-	    			B: 0
-	    		}
-	    	}
-	)
-);
+		socket.send(
+			JSON.stringify(
+			    	{
+			    		URL: "/mod-rgb",
+			    		Method: "POST",
+			    		Data: {
+			    			R: 0,
+			    			G: 25,
+			    			B: 0
+			    		}
+			    	}
+			)
+		);
 		```
 	
 	* MOD-TC-MK2-31855
