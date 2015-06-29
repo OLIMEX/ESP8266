@@ -228,11 +228,6 @@ var socket = new WebSocket('ws://192.168.4.1/events');
 
 Read relay status via WebSockets -  send following message
 	
-	{
-		"URL"       : "/relay", 
-		"Method"    : "GET"
-	}
-
 ```JavaScript	
 socket.send(
 	JSON.stringify(
@@ -255,14 +250,6 @@ Sample Response:
 	}
 			
 Set relay status via WebSockets - send following message
-	
-	{
-		"URL"       : "/relay",
-		"Method"    : "POST",
-		"Data"      : {
-			"Relay" : 1
-		}
-	}
 
 ```JavaScript	
 socket.send(
