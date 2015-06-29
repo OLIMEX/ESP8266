@@ -89,7 +89,7 @@ You will need a seral connection established. This connection requires seral cab
 
 **JavaScript code example**
 
-```javascript
+```JavaScript
 // Connect to ESP8266-EVB events entry point
 var socket = new WebSocket('ws://192.168.4.1/events');
 
@@ -219,13 +219,31 @@ Sample Response:
 
 ### WebSockets
 
+Main WebSockets entry point URL is /events. On this entry point you will receive all events. If you want to receive only particular device events you can use its URL for example if you want to receive only MOD-TC-MK2 (temperature changes) events then you can connect to /mod-tc-mk2.
+
+```JavaScript
+// Connect to ESP8266-EVB events entry point
+var socket = new WebSocket('ws://192.168.4.1/events');
+```
+
 Read relay status via WebSockets -  send following message
 	
 	{
 		"URL"       : "/relay", 
 		"Method"    : "GET"
 	}
-		
+
+```JavaScript	
+socket.send(
+	JSON.stringify(
+		{
+			URL: '/relay',
+			Method: 'GET'
+		}
+	)
+);
+```
+
 Sample Response: 
 	
 	{
@@ -245,6 +263,20 @@ Set relay status via WebSockets - send following message
 			"Relay" : 1
 		}
 	}
+
+```JavaScript	
+socket.send(
+	JSON.stringify(
+		{
+			URL: '/relay',
+			Method: 'POST',
+			Data: {
+				Relay: 1
+			}
+		}
+	)
+);
+```
 
 Sample Response:
 	
