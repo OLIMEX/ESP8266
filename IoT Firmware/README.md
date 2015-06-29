@@ -16,6 +16,10 @@
 		- [SSL Configuration](#ssl-configuration)
 		- [Firmware Update](#firmware-update)
 	- [DEVICES REFERENCE](#devices-reference)
+		- [Native](#native)
+		- [I2C](#i2c)
+		- [SPI](#spi)
+		- [UART](#uart)
 	- [Sample HTML / JavaScript application](#sample-html--javascript-application)
 
 # ABOUT Olimex ESP8266-EVB IoT Firmware
@@ -557,434 +561,433 @@ Sample POST data
 
 ## DEVICES REFERENCE
 
-* Native
-	* Button - Long Poll, timeout 30 seconds
-			
-			URL : /button
+### Native
+* Button - Long Poll, timeout 30 seconds
 		
-		Sample Response:
-			
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data"   : {
-					"Button" : "Short Press"
-				}
-			}
+		URL : /button
 	
-	* Relay
-		 	
-			URL : /relay
+	Sample Response:
 		
-		**JavaScript Example**
+		{
+			"Device" : "ESP8266", 
+			"Status" : "OK", 
+			"Data"   : {
+				"Button" : "Short Press"
+			}
+		}
+
+* Relay
+	 	
+		URL : /relay
 	
-		```JavaScript
-		// Read relay status
-		socket.send(
-			JSON.stringify(
-		    		{
-					URL: '/relay',
-					Method: 'GET'
-				}
-			)
-		);
-		```
+	**JavaScript Example**
 
-		Sample Response:
-			
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data" : {
-					"Relay" : 0
+	```JavaScript
+	// Read relay status
+	socket.send(
+		JSON.stringify(
+	    		{
+				URL: '/relay',
+				Method: 'GET'
+			}
+		)
+	);
+	```
+
+	Sample Response:
+		
+		{
+			"Device" : "ESP8266", 
+			"Status" : "OK", 
+			"Data" : {
+				"Relay" : 0
+			}
+		}
+
+	Sample POST data
+		
+		{
+			"Relay" : 1
+		}
+
+	**JavaScript Example to switch relay on**
+
+	```JavaScript
+	socket.send(
+		JSON.stringify(
+	    		{
+				URL: '/relay',
+				Method: 'POST',
+				Data: {
+					Relay: 1
 				}
 			}
+		)
+	);
+	```
+
+* ADC - Voltage on CON3 pin 16 max 1V step 1/1024V.
+		
+		URL : /adc
 	
-		Sample POST data
-			
-			{
-				"Relay" : 1
+	**JavaScript examle to read ADC**
+
+	```JavaScript
+	socket.send(
+		JSON.stringify(
+	    		{
+				URL: '/adc',
+				Method: 'GET'
 			}
+		)
+	);
+	```
 	
-		**JavaScript Example to switch relay on**
-
-		```JavaScript
-		socket.send(
-			JSON.stringify(
-		    		{
-					URL: '/relay',
-					Method: 'POST',
-					Data: {
-						Relay: 1
-					}
-				}
-			)
-		);
-		```
-
-	* ADC - Voltage on CON3 pin 16 max 1V step 1/1024V.
-			
-			URL : /adc
+	Sample Response:
 		
-		**JavaScript examle to read ADC**
-
-		```JavaScript
-		socket.send(
-			JSON.stringify(
-		    		{
-					URL: '/adc',
-					Method: 'GET'
-				}
-			)
-		);
-		```
-		
-		Sample Response:
-			
-			{
-				"Device" : "ESP8266", 
-				"Status" : "OK", 
-				"Data" : {
-					"ADC" : {
-						"Value" : 197 , 
-						"Poll" : {
-							"Refresh"   : 10, 
-							"Each"      : 3, 
-							"Threshold" : 5
-						}
-					}
-				}
-			}
-		
-		Data fields description:
-			
-			Value : <read-only>, 
-				Min: 0
-				Max: 1024
-				
-			Poll : {
-				Refresh   : <refresh interval>,
-					check for change each <refresh interval> seconds
-					
-				Each      : <n>, 
-					raise event on each <n> interval even if the change is smaller than <threshold>
-					
-				Threshold : <threshold>
-					raise event if the change is greater than <threshold>
-			}
-		
-		Sample POST data:
-			
-			{
+		{
+			"Device" : "ESP8266", 
+			"Status" : "OK", 
+			"Data" : {
 				"ADC" : {
-					"Poll" : {
-						"Refresh"   : 15, 
-						"Each"      : 4, 
-						"Threshold" : 10
-					}
-				}
-			}
-
-* I2C
-	
-	For all I2C devices the last part of the URL is address of the device in HEX format.
-	If address is not present then the default I2C address is used
-	
-	* MOD-RGB
-			 	
-			URL : 
-				/mod-rgb
-				/mod-rgb/<address>
-				
-			Default address: 0x20
-	
-		Sample Response:
-			
-			{
-				"Device" : "MOD-RGB", 
-				"Status" : "OK", 
-				"Data"   : {
-					"R" : 0, 
-					"G" : 0, 
-					"B" : 0
-				}, 
-				"I2C_Address" : "0x20"
-			}
-	
-		Data fields description
-			
-			R : <red>, 
-				Min: 0
-				Max: 255
-				
-			G : <green>, 
-				Min: 0
-				Max: 255
-				
-			B : <blue>
-				Min: 0
-				Max: 255
-				
-			
-		Sample POST data
-			
-			{
-				"R" : 20, 
-				"G" : 0, 
-				"B" : 0
-			}
-		
-		**JavaScript example to light green on 10%**
-
-		```JavaScript
-		socket.send(
-			JSON.stringify(
-			    	{
-			    		URL: "/mod-rgb",
-			    		Method: "POST",
-			    		Data: {
-			    			R: 0,
-			    			G: 25,
-			    			B: 0
-			    		}
-			    	}
-			)
-		);
-		```
-	
-	* MOD-TC-MK2-31855
-			
-			URL : 
-				/mod-tc-mk2
-				/mod-tc-mk2/<address>
-				
-			Default address: 0x23
-		
-		Sample Response:
-			
-			{
-				"Device" : "MOD-TC-MK2", 
-				"Status" : "OK", 
-				"Data" : {
-					"Temperature" : 24.75 , 
+					"Value" : 197 , 
 					"Poll" : {
 						"Refresh"   : 10, 
 						"Each"      : 3, 
-						"Threshold" : 2
+						"Threshold" : 5
 					}
-				}, 
-				"I2C_Address" : "0x23"
+				}
 			}
+		}
 	
-		Data fields description
-			
-			Temperature : 24.75
-				temperature in degrees Celsius - step 0.25 degrees
-			
-			Poll : {
-				Refresh   : <refresh interval>,
-					check for change each <refresh interval> seconds
-					
-				Each      : <n>, 
-					raise event on each <n>-th interval even if the change is smaller than <threshold>
-					
-				Threshold : <threshold>
-					1 per each 0.25 degrees
-					raise event if the change is greater than <threshold>
-			}
+	Data fields description:
 		
-		Sample POST data
+		Value : <read-only>, 
+			Min: 0
+			Max: 1024
 			
-			{
+		Poll : {
+			Refresh   : <refresh interval>,
+				check for change each <refresh interval> seconds
+				
+			Each      : <n>, 
+				raise event on each <n> interval even if the change is smaller than <threshold>
+				
+			Threshold : <threshold>
+				raise event if the change is greater than <threshold>
+		}
+	
+	Sample POST data:
+		
+		{
+			"ADC" : {
 				"Poll" : {
-					"Refresh"   : 30, 
-					"Each"      : 2, 
+					"Refresh"   : 15, 
+					"Each"      : 4, 
+					"Threshold" : 10
+				}
+			}
+		}
+
+### I2C
+	
+For all I2C devices the last part of the URL is address of the device in HEX format.
+If address is not present then the default I2C address is used
+
+* MOD-RGB
+		 	
+		URL : 
+			/mod-rgb
+			/mod-rgb/<address>
+			
+		Default address: 0x20
+
+	Sample Response:
+		
+		{
+			"Device" : "MOD-RGB", 
+			"Status" : "OK", 
+			"Data"   : {
+				"R" : 0, 
+				"G" : 0, 
+				"B" : 0
+			}, 
+			"I2C_Address" : "0x20"
+		}
+
+	Data fields description
+		
+		R : <red>, 
+			Min: 0
+			Max: 255
+			
+		G : <green>, 
+			Min: 0
+			Max: 255
+			
+		B : <blue>
+			Min: 0
+			Max: 255
+			
+		
+	Sample POST data
+		
+		{
+			"R" : 20, 
+			"G" : 0, 
+			"B" : 0
+		}
+	
+	**JavaScript example to light green on 10%**
+
+	```JavaScript
+	socket.send(
+		JSON.stringify(
+		    	{
+		    		URL: "/mod-rgb",
+		    		Method: "POST",
+		    		Data: {
+		    			R: 0,
+		    			G: 25,
+		    			B: 0
+		    		}
+		    	}
+		)
+	);
+	```
+
+* MOD-TC-MK2-31855
+		
+		URL : 
+			/mod-tc-mk2
+			/mod-tc-mk2/<address>
+			
+		Default address: 0x23
+	
+	Sample Response:
+		
+		{
+			"Device" : "MOD-TC-MK2", 
+			"Status" : "OK", 
+			"Data" : {
+				"Temperature" : 24.75 , 
+				"Poll" : {
+					"Refresh"   : 10, 
+					"Each"      : 3, 
 					"Threshold" : 2
 				}
-			}
-	
-	* MOD-IO2
-			
-			URL : 
-				/mod-io2
-				/mod-io2/<address>
-				
-			Default address: 0x21
-			
-		Sample Response:
-			
-			{
-				"Device" : "MOD-IO2", 
-				"Status" : "OK", 
-				"Data" : {
-					"Relay1" : 0, 
-					"Relay2" : 0, 
-					"GPIO0" : 243, 
-					"GPIO1" : 95, 
-					"GPIO2" : 0, 
-					"GPIO3" : 0, 
-					"GPIO4" : 1, 
-					"GPIO5" : 0, 
-					"GPIO6" : 0
-				}, 
-				"I2C_Address" : "0x21"
-			}
+			}, 
+			"I2C_Address" : "0x23"
+		}
+
+	Data fields description
 		
-		Data fields description
-			
-			Relay1 : <relay state>, 
-			Relay2 : <relay state>, 
-			
-			GPIO0 : <read-only>, 
-				ADC Input
-				Min: 0
-				Max: 1024
-				
-			GPIO1 : <read-only>, 
-				ADC Input
-				Min: 0
-				Max: 1024
-			
-			GPIO2 : <0 | 1>, 
-				Digital Output
-				
-			GPIO3 : <read-only>, 
-				Digital Input
-				
-			GPIO4 : <read-only>, 
-				Digital Input
-			
-			GPIO5 : 0, 
-				DAC Output
-				Min: 0
-				Max: 255
-				
-			GPIO6 : 0, 
-				DAC Output
-				Min: 0
-				Max: 255
+		Temperature : 24.75
+			temperature in degrees Celsius - step 0.25 degrees
 		
-		Sample POST data
-			
-			{
-				"Relay1" : 0,
-				"Relay2" : 0,
-				"GPIO2"  : 1,
-				"GPIO5"  : 0,
-				"GPIO6"  : 100
-			}
-	
-	* MOD-IRDA+
-			
-			URL : 
-				/mod-irda
-				/mod-irda/<address>
+		Poll : {
+			Refresh   : <refresh interval>,
+				check for change each <refresh interval> seconds
 				
-			Default address: 0x24
+			Each      : <n>, 
+				raise event on each <n>-th interval even if the change is smaller than <threshold>
+				
+			Threshold : <threshold>
+				1 per each 0.25 degrees
+				raise event if the change is greater than <threshold>
+		}
 	
-		Sample Response:
-			
-			{
-				"Device" : "MOD-IRDA", 
-				"Status" : "OK", 
-				"Data"   : {
-					"Mode" : "RC5", 
-					"Device" : 0, 
-					"Command" : 0 
-				}, 
-				"I2C_Address" : "0x24"
-			}
+	Sample POST data
 		
-		Data fields description
+		{
+			"Poll" : {
+				"Refresh"   : 30, 
+				"Each"      : 2, 
+				"Threshold" : 2
+			}
+		}
+
+* MOD-IO2
+		
+		URL : 
+			/mod-io2
+			/mod-io2/<address>
 			
-			Mode : <RC5 | SIRC>
-				
-			Device : 0, 
-				Read MOD-IRDA Documentation or see Sample HTML Application
-			
-			Command : 0 
-				Read MOD-IRDA Documentation or see Sample HTML Application
+		Default address: 0x21
+		
+	Sample Response:
+		
+		{
+			"Device" : "MOD-IO2", 
+			"Status" : "OK", 
+			"Data" : {
+				"Relay1" : 0, 
+				"Relay2" : 0, 
+				"GPIO0" : 243, 
+				"GPIO1" : 95, 
+				"GPIO2" : 0, 
+				"GPIO3" : 0, 
+				"GPIO4" : 1, 
+				"GPIO5" : 0, 
+				"GPIO6" : 0
+			}, 
+			"I2C_Address" : "0x21"
+		}
 	
-		Sample POST data
+	Data fields description
+		
+		Relay1 : <relay state>, 
+		Relay2 : <relay state>, 
+		
+		GPIO0 : <read-only>, 
+			ADC Input
+			Min: 0
+			Max: 1024
 			
-			{
-				"Mode" : "SIRC", 
+		GPIO1 : <read-only>, 
+			ADC Input
+			Min: 0
+			Max: 1024
+		
+		GPIO2 : <0 | 1>, 
+			Digital Output
+			
+		GPIO3 : <read-only>, 
+			Digital Input
+			
+		GPIO4 : <read-only>, 
+			Digital Input
+		
+		GPIO5 : 0, 
+			DAC Output
+			Min: 0
+			Max: 255
+			
+		GPIO6 : 0, 
+			DAC Output
+			Min: 0
+			Max: 255
+	
+	Sample POST data
+		
+		{
+			"Relay1" : 0,
+			"Relay2" : 0,
+			"GPIO2"  : 1,
+			"GPIO5"  : 0,
+			"GPIO6"  : 100
+		}
+
+* MOD-IRDA+
+		
+		URL : 
+			/mod-irda
+			/mod-irda/<address>
+			
+		Default address: 0x24
+
+	Sample Response:
+		
+		{
+			"Device" : "MOD-IRDA", 
+			"Status" : "OK", 
+			"Data"   : {
+				"Mode" : "RC5", 
 				"Device" : 0, 
-				"Command" : 16 
-			}
+				"Command" : 0 
+			}, 
+			"I2C_Address" : "0x24"
+		}
 	
-* SPI
-	* MOD-LED8x8RGB
-			
-			URL : /mod-led-8x8-rgb
+	Data fields description
 		
-		Panels have to be connected from left to right and up from bottom.
-		Maximum number of panels - 48
+		Mode : <RC5 | SIRC>
+			
+		Device : 0, 
+			Read MOD-IRDA Documentation or see Sample HTML Application
 		
-		Sample Response:
-			
-			{
-				"Device" : "MOD-LED8x8RGB", 
-				"Status" : "OK", 
-				"Data"   : {
-					"cols"  : 1, 
-					"rows"  : 1, 
-					"Speed" : 85, 
-					"R" : 1, 
-					"G" : 1, 
-					"B" : 1, 
-					"Text" : ""
-				}
-			}
-			
-		Data fields description
-			
-			cols  : <columns>
-			rows  : <rows>
-			Speed : <speed>
-				Min: 0
-				Max: 100
-			R : <red>
-			G : <green>
-			B : <blue>
-			
-			Text : <text>
-				Maximum length - 255 chars
+		Command : 0 
+			Read MOD-IRDA Documentation or see Sample HTML Application
 
-* UART
-	* MOD-RFID125-BOX
-			
-			URL : /mod-rfid
+	Sample POST data
 		
-		Event is generated on every read tag
+		{
+			"Mode" : "SIRC", 
+			"Device" : 0, 
+			"Command" : 16 
+		}
+	
+### SPI
+* MOD-LED8x8RGB
 		
-		Sample Response:
-			
-			{
-				"Device" : "MOD-RFID", 
-				"Status" : "OK", 
-				"Data"   : {
-					"Frequency" : 0, 
-					"Led"       : 1, 
-					"Tag"       : ""
-				}
+		URL : /mod-led-8x8-rgb
+	
+	Panels have to be connected from left to right and up from bottom.
+	Maximum number of panels - 48
+	
+	Sample Response:
+		
+		{
+			"Device" : "MOD-LED8x8RGB", 
+			"Status" : "OK", 
+			"Data"   : {
+				"cols"  : 1, 
+				"rows"  : 1, 
+				"Speed" : 85, 
+				"R" : 1, 
+				"G" : 1, 
+				"B" : 1, 
+				"Text" : ""
 			}
+		}
 		
-		Data fields description
-			
-			Frequency : 0, 
-				scan frequency 
-					0   - continuous
-					1-9 - times per second
-					
-			Led : 1, 
-				Enable / Disable LEDs
+	Data fields description
+		
+		cols  : <columns>
+		rows  : <rows>
+		Speed : <speed>
+			Min: 0
+			Max: 100
+		R : <red>
+		G : <green>
+		B : <blue>
+		
+		Text : <text>
+			Maximum length - 255 chars
+
+### UART
+* MOD-RFID125-BOX
+		
+		URL : /mod-rfid
+	
+	Event is generated on every read tag
+	
+	Sample Response:
+		
+		{
+			"Device" : "MOD-RFID", 
+			"Status" : "OK", 
+			"Data"   : {
+				"Frequency" : 0, 
+				"Led"       : 1, 
+				"Tag"       : ""
+			}
+		}
+	
+	Data fields description
+		
+		Frequency : 0, 
+			scan frequency 
+				0   - continuous
+				1-9 - times per second
 				
-			Tag : <tag>
-				last read tag
+		Led : 1, 
+			Enable / Disable LEDs
+			
+		Tag : <tag>
+			last read tag
 	
-
-* EVENTS
+### EVENTS
 	
 	URL : /events
 
