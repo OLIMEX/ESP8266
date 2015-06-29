@@ -577,8 +577,8 @@ Sample POST data
 			URL : /relay
 		
 		**JavaScript Example**
-		
-```JavaScript
+	
+		```JavaScript
 // Read relay status
 socket.send(
 	JSON.stringify(
@@ -588,8 +588,8 @@ socket.send(
 		}
 	)
 );
-```
-			
+		```
+
 		Sample Response:
 			
 			{
@@ -608,7 +608,7 @@ socket.send(
 	
 		**JavaScript Example to switch relay on**
 
-```JavaScript
+		```JavaScript
 socket.send(
 	JSON.stringify(
     		{
@@ -620,7 +620,7 @@ socket.send(
 		}
 	)
 );
-```
+		```
 
 	* ADC - Voltage on CON3 pin 16 max 1V step 1/1024V.
 			
@@ -628,7 +628,7 @@ socket.send(
 		
 		**JavaScript examle to read ADC**
 
-```JavaScript
+		```JavaScript
 socket.send(
 	JSON.stringify(
     		{
@@ -637,7 +637,8 @@ socket.send(
 		}
 	)
 );
-```
+		```
+		
 		Sample Response:
 			
 			{
@@ -735,7 +736,7 @@ socket.send(
 		
 		**JavaScript example to light green on 10%**
 
-```JavaScript
+		```JavaScript
 socket.send(
 	JSON.stringify(
 	    	{
@@ -749,7 +750,7 @@ socket.send(
 	    	}
 	)
 );
-```
+		```
 	
 	* MOD-TC-MK2-31855
 			
