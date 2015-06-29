@@ -605,7 +605,7 @@ socket.send(
 			{
 				"Relay" : 1
 			}
-		
+	
 		**JavaScript Example to switch relay on**
 
 ```JavaScript
