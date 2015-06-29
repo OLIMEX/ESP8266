@@ -10,7 +10,7 @@
 			- [WebSockets](#websockets)
 	- [CONFIGURATION](#configuration)
 		- [General Configuration](#general-configuration)
-		- [Access Point Configuration](#access-point-consiguration)
+		- [Access Point Configuration](#access-point-configuration)
 		- [Station Configuration](#station-configuration)
 		- [IoT Server Configuration](#iot-server-configuration)
 		- [SSL Configuration](#ssl-configuration)
@@ -556,7 +556,20 @@ Sample POST data
 	* Relay
 		 	
 			URL : /relay
-	
+			**JavaScript Example**
+		
+```JavaScript
+// Read relay status
+socket.send(
+	JSON.stringify(
+    		{
+			URL: '/relay',
+			Method: 'GET'
+		}
+	)
+);
+```
+			
 		Sample Response:
 			
 			{
@@ -572,13 +585,36 @@ Sample POST data
 			{
 				"Relay" : 1
 			}
+		**JavaScript Example to switch relay on**
 
+```JavaScript
+socket.send(
+	JSON.stringify(
+    		{
+			URL: '/relay',
+			Method: 'POST',
+			Data: {
+				Relay: 1
+			}
+		}
+	)
+);
+```
 
-		
 	* ADC - Voltage on CON3 pin 16 max 1V step 1/1024V.
 			
 			URL : /adc
-		
+			**JavaScript examle to read ADC**
+```JavaScript
+socket.send(
+	JSON.stringify(
+    		{
+			URL: '/adc',
+			Method: 'GET'
+		}
+	)
+);
+```
 		Sample Response:
 			
 			{
@@ -673,7 +709,24 @@ Sample POST data
 				"G" : 0, 
 				"B" : 0
 			}
-	
+		
+		**JavaScript example to light green on 10%**
+
+```JavaScript
+socket.send(
+	JSON.stringify(
+	    	{
+	    		URL: "/mod-rgb",
+	    		Method: "POST",
+	    		Data: {
+	    			R: 0,
+	    			G: 25,
+	    			B: 0
+	    		}
+	    	}
+	)
+);
+```
 	
 	* MOD-TC-MK2-31855
 			
