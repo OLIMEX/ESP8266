@@ -139,7 +139,7 @@ flash: firmware/0x00000.bin firmware/0x40000.bin
 	-$(ESPTOOL) --port $(ESPPORT) write_flash 0x00000 firmware/0x00000.bin 0x40000 firmware/0x40000.bin
 
 webpages.espfs: html/ mkespfsimage/mkespfsimage
-	cd html; find | ../mkespfsimage/mkespfsimage  > ../webpages.espfs; cd ..
+	cd html; find | sudo ../mkespfsimage/mkespfsimage  > ../webpages.espfs; cd ..
 
 mkespfsimage/mkespfsimage: mkespfsimage/
 	make -C mkespfsimage
