@@ -60,17 +60,17 @@ Use computer with WIFI and scan for WIFI networks the name of ESP8266-EVB WIFI w
 Then launch browser and type http://192.168.4.1
 You will see this home page:
 
-[![Home page](https://www.olimex.com/Products/IoT/ESP8266-EVB/resources/HOME.png)
+![Home page](https://www.olimex.com/Products/IoT/ESP8266-EVB/resources/HOME.png)
 
 if you click on the RELAY button you will be re-directed to the page:
 
-[![Home page](https://www.olimex.com/Products/IoT/ESP8266-EVB/resources/RELAY.png)
+![Home page](https://www.olimex.com/Products/IoT/ESP8266-EVB/resources/RELAY.png)
 
 on this page you can change on-board RELAY to ON and OFF
 
 if you click on the BUTTON button you will be re-directed to the page:
 
-[![Home page](https://www.olimex.com/Products/IoT/ESP8266-EVB/resources/RELAY.png)
+![Home page](https://www.olimex.com/Products/IoT/ESP8266-EVB/resources/RELAY.png)
 
 where you can scan the button status.
 
