@@ -84,11 +84,25 @@ Supported Devices
 
 ## QUICK START
 
-**How to load firmware for the first time:**
+**How to load firmware for the first time**
 
 You will need a seral connection established. This connection requires seral cable with level shifter. We will use esptool. Enter bootloader mode - hold the button pressed down and power the board, then release the button. Use the following command issued from root folder:
 	
 	esptool/esptool.py --baud 576000 write_flash 0x00000 bin/boot_v1.2.bin 0x01000 bin/upgrade/user1.1024.new.bin 0x81000 bin/upgrade/user2.1024.new.bin --flash_size 16m
+
+**How to compile firmware**
+
+If you do not want to use precompiled binaries from bin/upgrade folder then you can compile firmware yourself using following commands sequence:
+
+*Compiling bin/upgrade/user1.1024.new.bin*
+	
+	make clean
+	make COMPILE=gcc SPI_SIZE=2048 BOOT=new APP=1
+
+*Compiling bin/upgrade/user2.1024.new.bin*
+	
+	make clean
+	make COMPILE=gcc SPI_SIZE=2048 BOOT=new APP=2
 
 
 **JavaScript code example**
