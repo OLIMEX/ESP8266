@@ -33,8 +33,9 @@ allows such developers to use UEXT modules manufactured by Olimex with ease.
 ## Security
 
 SSL implementation is quite restricted due to small RAM amount. 
-Successfully tested with 512 bit keys. Unfortunately after upgrading to SDK version 1.1.2 
-it stop working. Work in progress to be fixed.
+Successfully tested with 512 bit keys. Unfortunately because of large number of supported modules there is not enough free RAM. If you want to enable SSL you should reduce supported modules and modify olimex/include/user_config.h
+	
+	#define SSL_ENABLE  1
 
 Firmware operates in two different modes:
 * HTTP REST Service
