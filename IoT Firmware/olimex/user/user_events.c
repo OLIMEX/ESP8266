@@ -26,7 +26,7 @@ void ICACHE_FLASH_ATTR user_event_reboot() {
 void ICACHE_FLASH_ATTR user_event_connect() {
 #if EVENTS_DEBUG
 	debug("EVENTS: Station connected\n");
-	debug("Free heap: %d\n\n", system_get_free_heap_size());
+	memory_info();
 #endif
 	char status[WEBSERVER_MAX_VALUE];
 	user_event_raise(NULL, json_status(status, ESP8266, CONNECTED, NULL));

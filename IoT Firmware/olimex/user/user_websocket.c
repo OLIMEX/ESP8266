@@ -159,12 +159,16 @@ LOCAL void ICACHE_FLASH_ATTR websocket_send(connections_queue *request, struct e
 	}
 	
 	uint16 frame_len = header_len + data_len;
-	
+
+#if SSL_ENABLE	
 	if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
 		espconn_secure_sent(pConnection, frame, frame_len);
 	} else {
 		espconn_sent(pConnection, frame, frame_len);
 	}
+#else
+	espconn_sent(pConnection, frame, frame_len);
+#endif
 	
 	os_free(frame);
 }
@@ -234,11 +238,15 @@ LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct 
 			debug("WebSocket: State CLOSED\n");
 #endif
 			extra->state = WEBSOCKET_CLOSED;
+#if SSL_ENABLE
 			if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
 				espconn_secure_disconnect(pConnection);
 			} else {
 				espconn_disconnect(pConnection);
 			}
+#else
+			espconn_disconnect(pConnection);
+#endif
 			webserver_discon(pConnection);
 			return;
 		break;
@@ -561,11 +569,15 @@ recursion:
 		websocket_close(request, pConnection, status, msg);
 		
 		if (extra->state == WEBSOCKET_CLOSING) {
+#if SSL_ENABLE		
 			if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
 				espconn_secure_disconnect(pConnection);
 			} else {
 				espconn_disconnect(pConnection);
 			}
+#else
+			espconn_disconnect(pConnection);
+#endif
 			webserver_discon(pConnection);
 		}
 		goto clear;

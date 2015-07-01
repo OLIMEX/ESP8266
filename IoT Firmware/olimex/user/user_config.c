@@ -34,8 +34,8 @@ void ICACHE_FLASH_ATTR user_config_init() {
 	webserver_register_handler_callback("/config/iot",		    config_iot_handler);
 	webserver_register_handler_callback("/config/access-point", config_ap_handler);
 	webserver_register_handler_callback("/config/station",	    config_station_handler);
-	webserver_register_handler_callback("/config/ssl",          config_ssl_handler);
 	webserver_register_handler_callback("/config/firmware",	    config_firmware_handler);
+	webserver_register_handler_callback("/config/ssl",          config_ssl_handler);
 }
 
 void ICACHE_FLASH_ATTR wifi_set_station_connected_callback(wifi_station_connected_callback function) {
@@ -275,6 +275,7 @@ char ICACHE_FLASH_ATTR *user_config_events_token() {
 	return (char *)&user_configuration.events_token;
 }
 
+#if SSL_ENABLE
 LOCAL int ICACHE_FLASH_ATTR user_config_load_ssl(char *region_name, char *match, uint8 *decoded, int decoded_len) {
 	const char *delimiters = "\r\n";
 	char *data = NULL;
@@ -330,20 +331,21 @@ LOCAL int ICACHE_FLASH_ATTR user_config_load_ssl(char *region_name, char *match,
 }
 
 void ICACHE_FLASH_ATTR user_config_load_private_key() {
-	extern unsigned char default_private_key[1024];
+	extern unsigned char default_private_key[SSL_KEY_SIZE];
 	extern unsigned int default_private_key_len;
 	
-	default_private_key_len = user_config_load_ssl("PrivateKey", " PRIVATE KEY-----", default_private_key, 1024);
+	default_private_key_len = user_config_load_ssl("PrivateKey", " PRIVATE KEY-----", default_private_key, SSL_KEY_SIZE);
 	debug("PRIVATE KEY: Load %s [%d]\n\n", default_private_key_len > 0 ? "success" : "failure", default_private_key_len);
 }
 
 void ICACHE_FLASH_ATTR user_config_load_certificate() {
-	extern unsigned char default_certificate[1024];
+	extern unsigned char default_certificate[SSL_KEY_SIZE];
 	extern unsigned int default_certificate_len;
 	
-	default_certificate_len = user_config_load_ssl("Certificate", " CERTIFICATE-----", default_certificate, 1024);
+	default_certificate_len = user_config_load_ssl("Certificate", " CERTIFICATE-----", default_certificate, SSL_KEY_SIZE);
 	debug("CERTIFICATE: Load %s [%d]\n\n", default_certificate_len > 0 ? "success" : "failure", default_certificate_len);
 }
+#endif
 
 /* ============================================================================================= */
 
@@ -884,6 +886,7 @@ void ICACHE_FLASH_ATTR config_stream_chunk(
 	}
 }
 
+#if SSL_ENABLE
 void ICACHE_FLASH_ATTR config_stream_end_ssl(bool success) {
 	char status[WEBSERVER_MAX_VALUE];
 	
@@ -894,6 +897,7 @@ void ICACHE_FLASH_ATTR config_stream_end_ssl(bool success) {
 	}
 	user_event_raise(webserver_chunk_url(), status);
 }
+#endif
 
 void ICACHE_FLASH_ATTR config_ssl_handler(
 	struct espconn *pConnection, 
@@ -905,6 +909,7 @@ void ICACHE_FLASH_ATTR config_ssl_handler(
 	char *response,
 	uint16 response_len
 ) {
+#if SSL_ENABLE
 	if (method == POST && content_len != 0) {
 		webserver_set_status(0);
 		webserver_register_chunk_callback(config_stream_chunk, url);
@@ -916,6 +921,9 @@ void ICACHE_FLASH_ATTR config_ssl_handler(
 	} else {
 		json_data(response, ESP8266, OK_STR, "", NULL);
 	}
+#else
+	json_error(response, ESP8266, "SSL is not enabled", NULL);
+#endif
 }
 
 char ICACHE_FLASH_ATTR *config_boot_details() {

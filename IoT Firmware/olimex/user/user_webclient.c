@@ -296,9 +296,11 @@ LOCAL void ICACHE_FLASH_ATTR webclient_sent(void *arg) {
 #endif
 	
 	webclient_disconnect_timer = setTimeout(
+#if SSL_ENABLE	
 		connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl ?
 			(os_timer_func_t *)espconn_secure_disconnect
 			:
+#endif
 			(os_timer_func_t *)espconn_disconnect
 		, 
 		arg,
@@ -344,9 +346,11 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 #endif
 	
 	setTimeout(
+#if SSL_ENABLE	
 		connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl ?
 			(os_timer_func_t *)espconn_secure_disconnect
 			:
+#endif
 			(os_timer_func_t *)espconn_disconnect
 		, 
 		arg,
@@ -415,11 +419,16 @@ LOCAL void ICACHE_FLASH_ATTR webclient_connect(void *arg) {
 			debug("WEBCLIENT REQUEST: \nLength: %d\n%s\n", os_strlen(request_data), request_data);
 #endif
 #endif
+
+#if SSL_ENABLE
 			if (connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl) {
 				espconn_secure_sent(connection, request_data, os_strlen(request_data));
 			} else {
 				espconn_sent(connection, request_data, os_strlen(request_data));
 			}
+#else
+			espconn_sent(connection, request_data, os_strlen(request_data));
+#endif
 			
 			os_free(request_data);
 		}
@@ -462,11 +471,15 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 	);
 #endif
 	
+#if SSL_ENABLE
 	if (connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl) {
 		espconn_secure_connect(connection);
 	} else {
 		espconn_connect(connection);
 	}
+#else
+	espconn_connect(connection);
+#endif
 }
 
 void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {

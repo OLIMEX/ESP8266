@@ -3,6 +3,11 @@
 
 	#define USE_OPTIMIZE_PRINTF
 	
+	#define SSL_ENABLE                        0
+	#if SSL_ENABLE
+		#define SSL_KEY_SIZE               1024
+	#endif
+	
 	#define USER_CONFIG_RECONNECT_AFTER    3000
 	#define USER_CONFIG_REBOOT_AFTER       5000
 	
@@ -60,9 +65,11 @@
 	void user_config_init();
 	void user_config_load();
 	bool user_config_store();
-	
+
+#if SSL_ENABLE	
 	void user_config_load_private_key();
 	void user_config_load_certificate();
+#endif
 	
 	char *config_firmware_bin();
 	
@@ -122,7 +129,7 @@
 		char *response,
 		uint16 response_len
 	);
-	
+
 	void config_ssl_handler(
 		struct espconn *pConnection, 
 		request_method method, 

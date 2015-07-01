@@ -49,11 +49,15 @@ void ICACHE_FLASH_ATTR long_poll_register(struct espconn *pConnection, char *pUR
 void ICACHE_FLASH_ATTR long_poll_close_all() {
 	connections_queue *request;
 	STAILQ_FOREACH(request, &(http_long_polls.head), entries) {
+#if SSL_ENABLE
 		if (request->pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
 			espconn_secure_disconnect(request->pConnection);
 		} else {
 			espconn_disconnect(request->pConnection);
 		}
+#else
+		espconn_disconnect(request->pConnection);
+#endif
 	}
 }
 

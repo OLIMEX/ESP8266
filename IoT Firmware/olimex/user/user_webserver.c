@@ -637,12 +637,16 @@ void ICACHE_FLASH_ATTR webserver_send_response(struct espconn *pConnection, char
 	debug("WEBSERVER RESPONSE: \nLength: %d\n%s\n", length, pBuf);
 #endif
 #endif
-	
+
+#if SSL_ENABLE	
 	if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
 		espconn_secure_sent(pConnection, pBuf, length);
 	} else {
 		espconn_sent(pConnection, pBuf, length);
 	}
+#else
+	espconn_sent(pConnection, pBuf, length);
+#endif
 	
 	os_free(pBuf);
 	pBuf = NULL;
@@ -985,6 +989,7 @@ LOCAL void ICACHE_FLASH_ATTR webserver_request(void *arg, char *pData, unsigned 
 	
 	STAILQ_INIT(&http_headers);
 	
+#if SSL_ENABLE
 	if (user_config_ssl() && pConnection->proto.tcp->local_port != WEBSERVER_SSL_PORT) {
 		LOCAL char redirect[WEBSERVER_MAX_VALUE];
 		os_memset(redirect, '\0', sizeof(redirect));
@@ -998,6 +1003,7 @@ LOCAL void ICACHE_FLASH_ATTR webserver_request(void *arg, char *pData, unsigned 
 		webserver_send_response(pConnection, NULL);
 		return;
 	}
+#endif
 	
 	method = webserver_method(pData, length);
 	switch (method) {
@@ -1293,6 +1299,7 @@ void ICACHE_FLASH_ATTR webserver_init_http() {
 	debug("WEBSERVER: Maximum allowed HTTP connections [%d]\n", espconn_tcp_get_max_con_allow(&connection));
 }
 
+#if SSL_ENABLE
 void ICACHE_FLASH_ATTR webserver_init_https() {
 	LOCAL struct espconn connection;
 	LOCAL esp_tcp tcp;
@@ -1310,6 +1317,7 @@ void ICACHE_FLASH_ATTR webserver_init_https() {
 	debug("WEBSERVER: Client SSL buffer size [%d]\n", espconn_secure_get_size(ESPCONN_CLIENT));
 	debug("WEBSERVER: Server SSL buffer size [%d]\n", espconn_secure_get_size(ESPCONN_SERVER));
 }
+#endif
 
 /******************************************************************************
  * FunctionName : webserver_init
@@ -1320,7 +1328,9 @@ void ICACHE_FLASH_ATTR webserver_init() {
 	webserver_register_handler_callback("/", default_handler);
 	
 	webserver_init_http();
+#if SSL_ENABLE
 	webserver_init_https();
+#endif
 	
 	websocket_init();
 	

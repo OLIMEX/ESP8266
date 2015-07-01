@@ -12,13 +12,21 @@
 #include "osapi.h"
 #include "user_interface.h"
 
-#include "ssl/private_key.h"
-#include "ssl/cert.h"
-
 #include "stdout.h"
 #include "user_timer.h"
 
 #include "user_config.h"
+
+#if SSL_ENABLE
+	#include "ssl/private_key.h"
+	#include "ssl/cert.h"
+#else
+	unsigned char *default_certificate = NULL;
+	unsigned int   default_certificate_len = 0;
+	unsigned char *default_private_key = NULL;
+	unsigned int   default_private_key_len = 0;
+#endif
+
 #include "user_button.h"
 #include "user_relay.h"
 #include "user_adc.h"
@@ -54,8 +62,8 @@ void ICACHE_FLASH_ATTR user_init_done() {
  * Returns	    : none
  *******************************************************************************/
 void ICACHE_FLASH_ATTR user_init(void) {
-	// stdout_init();
-	rfid_init(RFID_ANY);
+	stdout_init();
+	//rfid_init(RFID_ANY);
 	
 	system_init_done_cb(user_init_done);
 	
@@ -65,8 +73,10 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	
 	user_config_init();
 	user_config_load();
+#if SSL_ENABLE
 	user_config_load_private_key();
 	user_config_load_certificate();
+#endif
 	
 	user_events_init();
 	

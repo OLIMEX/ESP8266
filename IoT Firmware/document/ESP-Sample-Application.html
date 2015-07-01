@@ -566,7 +566,10 @@
 										$this.show();
 									}
 									
-									if (msg.indexOf('Device not found') >= 0) {
+									if (
+										msg.indexOf('SSL is not enabled') >= 0 ||
+										msg.indexOf('Device not found') >= 0
+									) {
 										$this.hide();
 									}
 									
