@@ -95,12 +95,12 @@ You will need a seral connection established. This connection requires seral cab
 
 If you do not want to use precompiled binaries from bin/upgrade folder then you can compile firmware yourself using following commands sequence:
 
-*Compiling bin/upgrade/user1.1024.new.bin*
+*Compiling bin/upgrade/user1.2048.new.3.bin*
 	
 	make clean
 	make COMPILE=gcc SPI_SIZE_MAP=3 BOOT=new APP=1
 
-*Compiling bin/upgrade/user2.1024.new.bin*
+*Compiling bin/upgrade/user2.2048.new.3.bin*
 	
 	make clean
 	make COMPILE=gcc SPI_SIZE_MAP=3 BOOT=new APP=2
