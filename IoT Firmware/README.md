@@ -89,7 +89,7 @@ Supported Devices
 
 You will need a seral connection established. This connection requires seral cable with level shifter. We will use esptool. Enter bootloader mode - hold the button pressed down and power the board, then release the button. Use the following command issued from root folder:
 	
-	esptool/esptool.py --baud 576000 write_flash 0x00000 bin/boot_v1.2.bin 0x01000 bin/upgrade/user1.1024.new.bin 0x81000 bin/upgrade/user2.1024.new.bin --flash_size 16m
+	esptool/esptool.py --baud 576000 write_flash 0x00000 bin/boot_v1.2.bin 0x01000 bin/upgrade/user1.2048.new.3.bin 0x81000 bin/upgrade/user2.2048.new.3.bin --flash_size 16m
 
 **How to compile firmware**
 
@@ -98,12 +98,12 @@ If you do not want to use precompiled binaries from bin/upgrade folder then you 
 *Compiling bin/upgrade/user1.1024.new.bin*
 	
 	make clean
-	make COMPILE=gcc SPI_SIZE=2048 BOOT=new APP=1
+	make COMPILE=gcc SPI_SIZE_MAP=3 BOOT=new APP=1
 
 *Compiling bin/upgrade/user2.1024.new.bin*
 	
 	make clean
-	make COMPILE=gcc SPI_SIZE=2048 BOOT=new APP=2
+	make COMPILE=gcc SPI_SIZE_MAP=3 BOOT=new APP=2
 
 
 **JavaScript code example**
