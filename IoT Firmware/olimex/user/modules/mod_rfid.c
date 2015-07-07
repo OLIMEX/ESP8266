@@ -3,6 +3,8 @@
 #include "mem.h"
 #include "stdout.h"
 
+#include "user_devices.h"
+
 #include "driver/uart.h"
 #include "mod_rfid.h"
 
@@ -41,9 +43,11 @@ LOCAL void ICACHE_FLASH_ATTR rfid_line() {
 		}
 	} else if (rfid_buff[0] > '@') {
 		if (os_strcmp(rfid_buff, "MOD-RFID125-BOX") == 0) {
+			device_set_uart(UART_RFID);
 			rfid_mod = MOD_RFID125;
 		}
 		if (os_strcmp(rfid_buff, "MOD-RFID1356-BOX") == 0) {
+			device_set_uart(UART_RFID);
 			rfid_mod = MOD_RFID1356;
 		}
 #if RFID_DEBUG
@@ -112,16 +116,16 @@ void ICACHE_FLASH_ATTR rfid_check(rfid_module module) {
 		return;
 	}
 	
-	if (module == RFID_ANY) {
-		rfid_init(MOD_RFID1356);
-	} else {
-		stdout_init();
-		debug("\n\nRFID: No readers found\n\n");
-	}
+	debug("\n\nRFID: No readers found\n\n");
 }
 
-void ICACHE_FLASH_ATTR rfid_init(rfid_module module) {
-	// stdout_wifi_debug();
+void ICACHE_FLASH_ATTR rfid_init() {
+	if (device_get_uart() != UART_NONE) {
+		return;
+	}
+	
+	rfid_module module = MOD_RFID125;
+	
 	stdout_disable();
 	uart_char_in_set(rfid_char_in);
 	
@@ -133,7 +137,6 @@ void ICACHE_FLASH_ATTR rfid_init(rfid_module module) {
 		uart_init(BIT_RATE_57600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
 	}
 	
-	setTimeout(rfid_info, NULL, 100);
-	setTimeout(rfid_check, module, 500);
+	setTimeout(rfid_info, NULL, 50);
+	setTimeout(rfid_check, module, 400);
 }
-

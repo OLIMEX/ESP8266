@@ -15,5 +15,7 @@
 		char *response,
 		uint16 response_len
 	);
-
+	
+	void mod_rfid_init();
+	
 #endif

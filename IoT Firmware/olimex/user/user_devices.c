@@ -10,6 +10,16 @@
 
 STAILQ_HEAD(device_descriptions, _device_description_) device_descriptions = STAILQ_HEAD_INITIALIZER(device_descriptions);
 
+LOCAL device_uart uart_device = UART_NONE;
+
+device_uart ICACHE_FLASH_ATTR device_get_uart() {
+	return uart_device;
+}
+
+void ICACHE_FLASH_ATTR device_set_uart(device_uart device) {
+	uart_device = device;
+}
+
 LOCAL const char ICACHE_FLASH_ATTR *device_type_str(device_type type) {
 	switch (type) {
 		case NATIVE: return "NATIVE";
@@ -46,7 +56,26 @@ char ICACHE_FLASH_ATTR *device_find_url(device_type type, uint8 id) {
 	return NULL;
 }
 
-void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url) {
+LOCAL void ICACHE_FLASH_ATTR devices_init_done() {
+	if (device_get_uart() == UART_NONE) {
+		stdout_init();
+	}
+}
+
+void ICACHE_FLASH_ATTR devices_init() {
+	device_description *description;
+	uint16 timeout = 10;
+	
+	STAILQ_FOREACH(description, &device_descriptions, entries) {
+		if (description->init != NULL) {
+			setTimeout(description->init, NULL, timeout);
+			timeout += 500;
+		}
+	}
+	setTimeout(devices_init_done, NULL, timeout);
+}
+
+void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url, void_func init) {
 	device_description *description = device_find(url);
 	
 	if (description != NULL) {
@@ -59,6 +88,7 @@ void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url) {
 	description->type = type;
 	description->url  = url;
 	description->id   = id;
+	description->init = init;
 	
 	STAILQ_INSERT_TAIL(&device_descriptions, description, entries);
 }

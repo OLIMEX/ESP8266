@@ -68,5 +68,5 @@ unsigned char default_certificate[] = {
 unsigned int default_certificate_len = 291;
 */
 
-unsigned char default_certificate[1024];
+unsigned char default_certificate[SSL_KEY_SIZE];
 unsigned int default_certificate_len = 0;

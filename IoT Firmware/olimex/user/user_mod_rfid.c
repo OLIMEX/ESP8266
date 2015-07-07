@@ -41,7 +41,7 @@ void ICACHE_FLASH_ATTR mod_rfid_tag(char *tag) {
 void ICACHE_FLASH_ATTR mod_rfid_init() {
 	rfid_set_tag_callback(mod_rfid_tag);
 	webserver_register_handler_callback(RFID_URL, rfid_handler);
-	device_register(UART, 0, RFID_URL);
+	device_register(UART, 0, RFID_URL, rfid_init);
 }
 
 void ICACHE_FLASH_ATTR rfid_handler(
@@ -55,7 +55,7 @@ void ICACHE_FLASH_ATTR rfid_handler(
 	uint16 response_len
 ) {
 	if (rfid_get_mod() == RFID_NONE) {
-		json_error(response, MOD_RFID, "Device not found", NULL);
+		json_error(response, MOD_RFID, DEVICE_NOT_FOUND, NULL);
 		return;
 	}
 	

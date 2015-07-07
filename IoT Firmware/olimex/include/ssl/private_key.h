@@ -64,5 +64,5 @@ unsigned char default_private_key[] = {
 unsigned int default_private_key_len = 318;
 */
 
-unsigned char default_private_key[1024];
+unsigned char default_private_key[SSL_KEY_SIZE];
 unsigned int default_private_key_len = 0;

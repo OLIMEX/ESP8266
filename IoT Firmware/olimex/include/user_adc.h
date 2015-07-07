@@ -4,7 +4,8 @@
 	#include "user_webserver.h"
 	
 	#define ADC_URL                       "/adc"
-	#define ADC_REFRESH_DEFAULT           10000
+	
+	#define ADC_REFRESH_DEFAULT           0
 	#define ADC_EACH_DEFAULT              3
 	#define ADC_THRESHOLD_DEFAULT         5
 	

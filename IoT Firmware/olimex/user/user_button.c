@@ -14,9 +14,6 @@
 #include "user_button.h"
 #include "user_devices.h"
 
-#include "modules/mod_finger.h"
-#include "modules/mod_rfid.h"
-
 void ICACHE_FLASH_ATTR memory_info() {
 	system_print_meminfo();
 	debug("Free heap: %d\n", system_get_free_heap_size());
@@ -79,7 +76,7 @@ void ICACHE_FLASH_ATTR user_button_init() {
 	key_init(&param);
 	
 	webserver_register_handler_callback(BUTTON_URL, button_handler);
-	device_register(NATIVE, 0, BUTTON_URL);
+	device_register(NATIVE, 0, BUTTON_URL, NULL);
 }
 
 void ICACHE_FLASH_ATTR button_handler(

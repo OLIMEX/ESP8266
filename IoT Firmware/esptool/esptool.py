@@ -25,6 +25,7 @@ import time
 import argparse
 import os
 import subprocess
+import tempfile
 
 class ESPROM:
 
@@ -128,24 +129,32 @@ class ESPROM:
     def connect(self):
         print 'Connecting...'
 
-        # RTS = CH_PD (i.e reset)
-        # DTR = GPIO0
-        self._port.setRTS(True)
-        self._port.setDTR(True)
-        self._port.setRTS(False)
-        time.sleep(0.1)
-        self._port.setDTR(False)
+        for _ in xrange(4):
+            # issue reset-to-bootloader:
+            # RTS = either CH_PD or nRESET (both active low = chip in reset)
+            # DTR = GPIO0 (active low = boot to flasher)
+            self._port.setDTR(False)
+            self._port.setRTS(True)
+            time.sleep(0.05)
+            self._port.setDTR(True)
+            self._port.setRTS(False)
+            time.sleep(0.05)
+            self._port.setDTR(False)
 
-        self._port.timeout = 0.5
-        for i in xrange(10):
-            try:
-                self._port.flushInput()
-                self._port.flushOutput()
-                self.sync()
-                self._port.timeout = 5
-                return
-            except:
-                time.sleep(0.1)
+            self._port.timeout = 0.3 # worst-case latency timer should be 255ms (probably <20ms)
+            for _ in xrange(4):
+                try:
+                    self._port.flushInput()
+                    self._port.flushOutput()
+                    self.sync()
+                    self._port.timeout = 5
+                    return
+                except:
+                    time.sleep(0.05)
+            # this is a workaround for the CH340 serial driver on current versions of Linux,
+            # which seems to sometimes set the serial port up with wrong parameters
+            self._port.close()
+            self._port.open()
         raise Exception('Failed to connect')
 
     """ Read memory address in target """
@@ -350,11 +359,13 @@ class ELFFile:
         tool_objcopy = "xtensa-lx106-elf-objcopy"
         if os.getenv('XTENSA_CORE')=='lx106':
             tool_objcopy = "xt-objcopy"
-        subprocess.check_call([tool_objcopy, "--only-section", section, "-Obinary", self.name, ".tmp.section"])
-        f = open(".tmp.section", "rb")
-        data = f.read()
-        f.close()
-        os.remove(".tmp.section")
+        tmpsection = tempfile.mktemp(suffix=".section")
+        try:
+            subprocess.check_call([tool_objcopy, "--only-section", section, "-Obinary", self.name, tmpsection])
+            with open(tmpsection, "rb") as f:
+                data = f.read()
+        finally:
+            os.remove(tmpsection)
         return data
 
 
@@ -412,7 +423,7 @@ if __name__ == '__main__':
     parser_write_flash.add_argument('--flash_mode', '-fm', help = 'SPI Flash mode',
             choices = ['qio', 'qout', 'dio', 'dout'], default = 'qio')
     parser_write_flash.add_argument('--flash_size', '-fs', help = 'SPI Flash size in Mbit',
-            choices = ['4m', '2m', '8m', '16m', '32m'], default = '4m')
+            choices = ['4m', '2m', '8m', '16m', '32m', '16m-c1', '32m-c1', '32m-c2'], default = '4m')
 
     parser_run = subparsers.add_parser(
             'run',
@@ -441,7 +452,7 @@ if __name__ == '__main__':
     parser_elf2image.add_argument('--flash_mode', '-fm', help = 'SPI Flash mode',
             choices = ['qio', 'qout', 'dio', 'dout'], default = 'qio')
     parser_elf2image.add_argument('--flash_size', '-fs', help = 'SPI Flash size in Mbit',
-            choices = ['4m', '2m', '8m', '16m', '32m'], default = '4m')
+            choices = ['4m', '2m', '8m', '16m', '32m', '16m-c1', '32m-c1', '32m-c2'], default = '4m')
 
     parser_read_mac = subparsers.add_parser(
             'read_mac',
@@ -511,7 +522,7 @@ if __name__ == '__main__':
         assert len(args.addr_filename) % 2 == 0
 
         flash_mode = {'qio':0, 'qout':1, 'dio':2, 'dout': 3}[args.flash_mode]
-        flash_size_freq = {'4m':0x00, '2m':0x10, '8m':0x20, '16m':0x30, '32m':0x40}[args.flash_size]
+        flash_size_freq = {'4m':0x00, '2m':0x10, '8m':0x20, '16m':0x30, '32m':0x40, '16m-c1': 0x50, '32m-c1':0x60, '32m-c2':0x70}[args.flash_size]
         flash_size_freq += {'40m':0, '26m':1, '20m':2, '80m': 0xf}[args.flash_freq]
         flash_info = struct.pack('BB', flash_mode, flash_size_freq)
 
@@ -578,7 +589,7 @@ if __name__ == '__main__':
             image.add_segment(e.get_symbol_addr(start), data)
 
         image.flash_mode = {'qio':0, 'qout':1, 'dio':2, 'dout': 3}[args.flash_mode]
-        image.flash_size_freq = {'4m':0x00, '2m':0x10, '8m':0x20, '16m':0x30, '32m':0x40}[args.flash_size]
+        image.flash_size_freq = {'4m':0x00, '2m':0x10, '8m':0x20, '16m':0x30, '32m':0x40, '16m-c1': 0x50, '32m-c1':0x60, '32m-c2':0x70}[args.flash_size]
         image.flash_size_freq += {'40m':0, '26m':1, '20m':2, '80m': 0xf}[args.flash_freq]
 
         image.save(args.output + "0x00000.bin")

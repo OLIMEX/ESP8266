@@ -208,6 +208,10 @@
 			color: white;
 		}
 		
+		#finger-delete {
+			display: none;
+		}
+		
 		@media only screen and (max-device-width:640px) {
 			body {
 				margin:0;
@@ -304,13 +308,14 @@
 						$('.esp').trigger('abort8266');
 					}
 					
-					$('#irda select[name=Mode]').irda();
+					$('#irda select[name=Mode]').irdaMode();
+					$('#finger select[name=Mode]').fingerMode();
 				}
 			);
 		})(jQuery);
 
 		(function ($) {
-			$.fn.irda = function () {
+			$.fn.irdaMode = function () {
 				return this.each(
 					function (i, e) {
 						var $this = $(e);
@@ -326,6 +331,36 @@
 							}
 						);
 						$this.val('RC5').change();
+					}
+				);
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.fingerMode = function () {
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						$this.closest('form').submit(
+							function () {
+								$('#finger-delete').hide();
+							}
+						);
+						
+						$this.change(
+							function () {
+								var value = $this.val();
+								if (value != 'Delete') {
+									if (value != 'Empty DB' || confirm('Are you sure?')) {
+										$this.parent().submit();
+									} else {
+										$this.val('Read');
+									}
+									return;
+								}
+								$('#finger-delete').show();
+							}
+						);
 					}
 				);
 			}
@@ -1443,6 +1478,30 @@
 				<label>Frequency</label> <input type="range"    name="Frequency" min="0" max="9" step="1"/> <br/>
 				<label>Led</label>       <input type="checkbox" name="Led"       value="1" onchange="$(this).submit();" /> <br/>
 				<label>Tag</label>       <input type="text"     name="Tag"       disabled="disabled" /> <br/>
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="finger" class="esp event module" action="/mod-finger" method="POST">
+			<fieldset>
+				<legend>MOD-FINGER</legend>
+				<label>Address</label>        <input type="text"     name="Address"       disabled="disabled" /> <br/>
+				<label>DB Size</label>        <input type="text"     name="DBSize"        disabled="disabled" /> <br/>
+				<label>DB Stored</label>      <input type="text"     name="DBStored"      disabled="disabled" /> <br/>
+				<label>First Free</label>     <input type="text"     name="FirstFree"     disabled="disabled" /> <br/>
+				<label>Security Level</label> <input type="range"    name="SecurityLevel" min="1" max="5" step="1" /> <br/>
+				<label>Mode</label>
+					<select name="Mode"> 
+						<option>Read</option>
+						<option>New</option>
+						<option>Delete</option>
+						<option>Empty DB</option>
+					</select>
+					<div id="finger-delete"><label>Delete ID</label>      <input type="text"     name="DeleteID" /></div>
+				<br/>
+
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
 			</fieldset>

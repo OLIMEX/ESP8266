@@ -67,7 +67,12 @@ void ICACHE_FLASH_ATTR user_adc_timer_init() {
 	if (adc_refresh_timer != NULL) {
 		clearInterval(adc_refresh_timer);
 	}
-	adc_refresh_timer = setInterval(adc_update, NULL, adc_refresh);
+	
+	if (adc_refresh == 0) {
+		adc_refresh_timer = NULL;
+	} else {
+		adc_refresh_timer = setInterval(adc_update, NULL, adc_refresh);
+	}
 }
 
 void ICACHE_FLASH_ATTR adc_handler(
@@ -112,6 +117,6 @@ void ICACHE_FLASH_ATTR adc_handler(
 
 void ICACHE_FLASH_ATTR user_adc_init() {
 	webserver_register_handler_callback(ADC_URL, adc_handler);
-	device_register(NATIVE, 0, ADC_URL);
+	device_register(NATIVE, 0, ADC_URL, NULL);
 	user_adc_timer_init();
 }

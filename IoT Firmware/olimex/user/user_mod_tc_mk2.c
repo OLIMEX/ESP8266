@@ -91,7 +91,12 @@ LOCAL void ICACHE_FLASH_ATTR mod_tc_mk2_timer_init() {
 	if (tc_refresh_timer != NULL) {
 		clearInterval(tc_refresh_timer);
 	}
-	tc_refresh_timer = setInterval((os_timer_func_t *)tc_foreach, mod_tc_mk2_event, tc_refresh);
+	
+	if (tc_refresh == 0) {
+		tc_refresh_timer = NULL;
+	} else {
+		tc_refresh_timer = setInterval((os_timer_func_t *)tc_foreach, mod_tc_mk2_event, tc_refresh);
+	}
 }
 
 void ICACHE_FLASH_ATTR mod_tc_mk2_handler(
@@ -152,6 +157,9 @@ void ICACHE_FLASH_ATTR mod_tc_mk2_init() {
 		webserver_register_handler_callback(MOD_TC_MK2_URLs[i], mod_tc_mk2_handler);
 	}
 	
-	device_register(I2C, MOD_TC_MK2_ID, MOD_TC_MK2_URL);
-	mod_tc_mk2_timer_init();
+	device_register(I2C, MOD_TC_MK2_ID, MOD_TC_MK2_URL, NULL);
+	
+	if (status == I2C_OK) {
+		mod_tc_mk2_timer_init();
+	}
 }

@@ -12,7 +12,7 @@
 #     a generated lib/image xxx.a ()
 #
 ifndef PDIR
-GEN_LIBS = libmodrgb.a
+GEN_LIBS = libmod.a
 endif
 
 

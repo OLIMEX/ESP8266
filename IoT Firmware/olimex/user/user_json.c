@@ -14,6 +14,10 @@ const char MOD_LED8x8RGB[]     = "MOD-LED8x8RGB";
 const char MOD_RFID[]          = "MOD-RFID";
 const char MOD_RGB[]           = "MOD-RGB";
 const char MOD_TC_MK2[]        = "MOD-TC-MK2";
+const char MOD_FINGER[]        = "MOD-FINGER";
+
+const char DEVICE_NOT_FOUND[]  = "Device not found";
+const char TIMEOUT[]           = "Timeout";
 
 const char OK_STR[]            = "OK";
 const char REBOOTING[]         = "Rebooting";

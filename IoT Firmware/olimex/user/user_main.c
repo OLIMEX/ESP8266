@@ -38,8 +38,8 @@
 #include "user_i2c_scan.h"
 #include "user_wifi_scan.h"
 
-#include "modules/mod_rfid.h"
 #include "user_mod_rfid.h"
+#include "user_mod_finger.h"
 
 #include "user_mod_rgb.h"
 #include "user_mod_tc_mk2.h"
@@ -62,10 +62,12 @@ void ICACHE_FLASH_ATTR user_init_done() {
  * Returns	    : none
  *******************************************************************************/
 void ICACHE_FLASH_ATTR user_init(void) {
-	stdout_init();
-	//rfid_init(RFID_ANY);
-	
 	system_init_done_cb(user_init_done);
+	
+	// UART Devices
+	mod_rfid_init();
+	mod_finger_init();
+	devices_init();
 	
 	debug("\n\nSDK version: %s\n", system_get_sdk_version());
 	debug("Firmware: %s\n", config_firmware_bin());
@@ -88,9 +90,6 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	user_button_init();
 	user_relay_init();
 	user_adc_init();
-	
-	// UART Devices
-	mod_rfid_init();
 	
 	// I2C Devices
 	i2c_master_gpio_init();

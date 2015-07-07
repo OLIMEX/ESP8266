@@ -23,9 +23,25 @@ LOCAL uint8  i = 0;
 	
 	buff[i++] = c;
 	
-	if (c == '\0' || i == WIFI_DEBUG_BUFFER_LEN-1) {
+	if (c == '\0') {
 		i = 0;
 		websocket_debug_message(buff);
+	} else if (i == WIFI_DEBUG_BUFFER_LEN-1) {
+		uint8 j = i-1;
+		while (j > 0 && buff[j] != '\n') {
+			j--;
+		}
+		
+		i = 0;
+		if (j == 0) {
+			websocket_debug_message(buff);
+		} else {
+			buff[j++] = '\0';
+			websocket_debug_message(buff);
+			while (j < WIFI_DEBUG_BUFFER_LEN-1) {
+				buff[i++] = buff[j++];
+			}
+		}
 	} else {
 		t = setTimeout(wifi_debug_flush, NULL, 200);
 	}

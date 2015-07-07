@@ -1002,6 +1002,8 @@ void ICACHE_FLASH_ATTR config_firmware_handler(
 	uint16 response_len
 ) {
 	if (method == POST && content_len != 0) {
+		clearAllTimers();
+		
 		flash_region_protect(config_firmware_bin(), true);
 		flash_region_protect(config_firmware_upgrade_bin(), false);
 		system_upgrade_flag_set(UPGRADE_FLAG_START);

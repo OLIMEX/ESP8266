@@ -20,6 +20,16 @@ void ICACHE_FLASH_ATTR clearTimeout(timer *t) {
 
 void ICACHE_FLASH_ATTR clearInterval(timer *t) __attribute__((alias("clearTimeout")));
 
+void ICACHE_FLASH_ATTR clearAllTimers() {
+	timer *t;
+	
+	STAILQ_FOREACH(t, &timers, entries) {
+		os_timer_disarm(&(t->timer));
+		STAILQ_REMOVE(&timers, t, _timer_, entries);
+		os_free(t);
+	}
+}
+
 LOCAL void ICACHE_FLASH_ATTR timer_handler(void *param) {
 	timer *t = param;
 	(*t->func)(t->param);

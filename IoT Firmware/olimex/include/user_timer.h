@@ -18,5 +18,7 @@
 	void clearTimeout (timer *t);
 	void clearInterval(timer *t);
 	
+	void clearAllTimers();
+	
 	uint32 timersCount();
 #endif
