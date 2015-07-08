@@ -8,6 +8,9 @@
 #include "user_i2c_scan.h"
 #include "user_devices.h"
 
+#include "user_mod_rfid.h"
+#include "user_mod_finger.h"
+
 STAILQ_HEAD(device_descriptions, _device_description_) device_descriptions = STAILQ_HEAD_INITIALIZER(device_descriptions);
 
 LOCAL device_uart uart_device = UART_NONE;
@@ -101,6 +104,7 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 		char device[WEBSERVER_MAX_VALUE];
 		char i2c_str[WEBSERVER_MAX_VALUE];
 		
+		bool found = false;
 		i2c_str[0] = '\0';
 		if (description->type == I2C) {
 			i2c_device *d;
@@ -108,6 +112,7 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 			addresses[0] = '\0';
 			STAILQ_FOREACH(d, i2c, entries) {
 				if (d->id == description->id) {
+					found = true;
 					char address[10];
 					os_sprintf(address, "%s\"0x%02x\"", addresses[0] == '\0' ? "" : ", ", d->address);
 					os_strcat(
@@ -118,17 +123,26 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 			}
 			
 			os_sprintf(i2c_str, ", \"ID\" : \"0x%02x\", \"Addresses\" : [%s]", description->id, addresses);
+		} else if (description->type == UART) {
+			found = 
+				(description->url == RFID_URL   && uart_device == UART_RFID) ||
+				(description->url == FINGER_URL && uart_device == UART_FINGER)
+			;
+		} else {
+			found = true;
 		}
 		
 		os_sprintf(
 			device, 
 			"%s{"
 			"\"Type\" : \"%s\", "
-			"\"URL\" : \"%s\" "
+			"\"URL\" : \"%s\", "
+			"\"Found\" : %d"
 			"%s}", 
 			devices[0] == '\0' ? "" : ", ",
 			device_type_str(description->type),
 			description->url,
+			found,
 			i2c_str
 		);
 		os_strcat(devices, device);

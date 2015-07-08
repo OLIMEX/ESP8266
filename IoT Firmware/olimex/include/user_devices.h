@@ -23,7 +23,6 @@
 		char *url;
 		
 		uint8 id;
-		bool found;
 		
 		void_func init;
 		
