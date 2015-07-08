@@ -266,7 +266,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_disconnect(void *arg) {
 	struct espconn *connection = arg;
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	
-#if WEBCLIENT_DEBUG
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
 		"WEBCLIENT: Disconnected [%d.%d.%d.%d:%d] [%s]\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
@@ -362,14 +362,12 @@ LOCAL void ICACHE_FLASH_ATTR webclient_connect(void *arg) {
 	struct espconn *connection = arg;
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	
-#if WEBCLIENT_DEBUG
-#if WEBCLIENT_VERBOSE_OUTPUT	
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
-		"WEBCLIENT: Connected [%d.%d.%d.%d:%d]...\n", 
+		"WEBCLIENT: Connected [%d.%d.%d.%d:%d]\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
 		connection->proto.tcp->local_port
 	);
-#endif
 #endif
 	
 	espconn_regist_sentcb(connection, webclient_sent);

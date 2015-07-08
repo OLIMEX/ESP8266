@@ -2,8 +2,10 @@
 	#define __USER_CONFIG_H__
 
 	#define USE_OPTIMIZE_PRINTF
+
+	#define CONNECTIONS_DEBUG              1
 	
-	#define SSL_ENABLE                        0
+	#define SSL_ENABLE                     0
 	#if SSL_ENABLE
 		#define SSL_KEY_SIZE               1024
 	#endif

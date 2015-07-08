@@ -252,7 +252,7 @@ char ICACHE_FLASH_ATTR *user_config_events_user() {
 }
 
 char ICACHE_FLASH_ATTR *user_config_events_password() {
-	return (char *)&user_configuration.events_user;
+	return (char *)&user_configuration.events_password;
 }
 
 bool ICACHE_FLASH_ATTR user_config_events_ssl() {

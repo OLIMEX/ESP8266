@@ -509,6 +509,7 @@ void ICACHE_FLASH_ATTR webserver_connections_info() {
 	http_connection_queue *queue;
 	
 	uint8 total = 0;
+	bool  no_connections = true;
 	
 	debug("WebServer Connections Info\n", total);
 	STAILQ_FOREACH(queue, &http_queues, entries) {
@@ -518,6 +519,11 @@ void ICACHE_FLASH_ATTR webserver_connections_info() {
 			total++;
 		}
 		debug("   %s [%d]\n", queue->collection->name, total);
+		no_connections = false;
+	}
+	
+	if (no_connections) {
+		debug("   No connections found\n");
 	}
 }
 
@@ -1218,7 +1224,7 @@ LOCAL ICACHE_FLASH_ATTR void webserver_recon(void *arg, sint8 err) {
 
 #if WEBSERVER_DEBUG
 	debug(
-		"WEBSERVER: Reconnect %d.%d.%d.%d:%d err [%d] [%s] [%s]\n", 
+		"WEBSERVER: Reconnect [%d.%d.%d.%d:%d] %d [%s] [%s]\n", 
 		IP2STR(pConnection->proto.tcp->remote_ip),
 		pConnection->proto.tcp->remote_port, 
 		err,
@@ -1246,11 +1252,12 @@ LOCAL ICACHE_FLASH_ATTR void webserver_recon(void *arg, sint8 err) {
 void ICACHE_FLASH_ATTR webserver_discon(void *arg) {
 	struct espconn *pConnection = arg;
 	
-#if WEBSERVER_DEBUG
+#if CONNECTIONS_DEBUG || WEBSERVER_DEBUG
 	debug(
-		"WEBSERVER: %d.%d.%d.%d:%d disconnect\n",
+		"WEBSERVER: Disconnected [%d.%d.%d.%d:%d] [%s]\n",
 		IP2STR(pConnection->proto.tcp->remote_ip),
-		pConnection->proto.tcp->remote_port
+		pConnection->proto.tcp->remote_port,
+		connection_state_str(pConnection->state)
 	);
 #endif
 	
@@ -1273,9 +1280,9 @@ LOCAL void ICACHE_FLASH_ATTR webserver_connect(void *arg) {
 	espconn_regist_reconcb(pConnection, webserver_recon);
 	espconn_regist_disconcb(pConnection, webserver_discon);
 	
-#if WEBSERVER_DEBUG
+#if CONNECTIONS_DEBUG || WEBSERVER_DEBUG
 	debug(
-		"WEBSERVER: %d.%d.%d.%d:%d connect\n", 
+		"WEBSERVER: Connected [%d.%d.%d.%d:%d]\n", 
 		IP2STR(pConnection->proto.tcp->remote_ip),
 		pConnection->proto.tcp->remote_port
 	);

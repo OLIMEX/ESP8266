@@ -247,7 +247,7 @@ LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct 
 #else
 			espconn_disconnect(pConnection);
 #endif
-			webserver_discon(pConnection);
+			if (extra->type == WEBSOCKET_CLIENT) webserver_discon(pConnection);
 			return;
 		break;
 		
@@ -569,16 +569,7 @@ recursion:
 		websocket_close(request, pConnection, status, msg);
 		
 		if (extra->state == WEBSOCKET_CLOSING) {
-#if SSL_ENABLE		
-			if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
-				espconn_secure_disconnect(pConnection);
-			} else {
-				espconn_disconnect(pConnection);
-			}
-#else
-			espconn_disconnect(pConnection);
-#endif
-			webserver_discon(pConnection);
+			websocket_close(request, pConnection, status, msg);
 		}
 		goto clear;
 	}
