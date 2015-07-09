@@ -1,0 +1,12 @@
+{
+  "name": "olimex-iot-demo",
+  "version": "1.0.1",
+  "description": "WebSocket ESP8266 Olimex IoT Demo",
+  "dependencies": {
+    "express": "~4.13.1",
+    "body-parser": "~1.13.2",
+    "websocket": "~1.0.19",
+    "node-tweet-stream": "~1.8.2"
+  },
+  "private": false
+}
