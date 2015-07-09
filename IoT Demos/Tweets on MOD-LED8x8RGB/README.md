@@ -21,5 +21,5 @@ These are obtained from https://apps.twitter.com
 	
 To start the demo use following command
 	
-	[sudo] node index.js
+	[sudo] node node_modules\olimex-iot-demo\index.js
 	
