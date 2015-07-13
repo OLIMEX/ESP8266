@@ -181,7 +181,7 @@ uint8 ICACHE_FLASH_ATTR led_8x8_rgb_column(char *c, uint16 x) {
 	uint16 cc = x % (FONT_COLUMNS + 1);
 	
 	c += ci;
-	if (*c < 0x20 && *c > 0x7F) {
+	if (*c < 0x20 || *c > 0x7F) {
 		// invalid char
 		return 0;
 	}
@@ -219,6 +219,10 @@ bool ICACHE_FLASH_ATTR led_8x8_rgb_print(uint16 x, uint16 y, uint8 r, uint8 g, u
 }
 
 LOCAL bool ICACHE_FLASH_ATTR led_8x8_rgb_shift_left_mod(uint8 row, uint8 col, uint8 *r, uint8 *g, uint8 *b) {
+	if (led_8x8_rgb_buffer == NULL) {
+		return false;
+	}
+	
 	uint8 nR, nG, nB;
 	
 	uint8 m   = col + row * led_8x8_rgb_cols; // Linear module
@@ -256,6 +260,8 @@ LOCAL bool ICACHE_FLASH_ATTR led_8x8_rgb_shift_left_mod(uint8 row, uint8 col, ui
 	*r = nR;
 	*g = nG;
 	*b = nB;
+	
+	return true;
 }
 
 bool ICACHE_FLASH_ATTR led_8x8_rgb_shift_left() {
@@ -302,7 +308,7 @@ LOCAL void ICACHE_FLASH_ATTR _led_8x8_rgb_scroll_() {
 	led_8x8_rgb_show();
 	scroll_i++;
 	
-	if (scroll_i == scroll_size + scroll_x) {
+	if (scroll_i >= scroll_size + scroll_x) {
 		scroll_in_progress = false;
 		scroll_x = 0;
 		scroll_y = 0;
