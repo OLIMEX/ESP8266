@@ -22,4 +22,8 @@ In some versions of the SDK there seems to be a problem with some type definitio
 
 ## Get esptool
 
-Some projects use ```esptool```, which is something completely different as ```esptool.py``` and which is not installed by ```esp-open-sdk```. You can get ```esptool``` here: https://github.com/tommie/esptool-ck
+Some projects use ```esptool```, which is something completely different as ```esptool.py``` and which is not installed by ```esp-open-sdk```. You can get ```esptool``` here: 
+* https://github.com/tommie/esptool-ck 
+
+or here: 
+* https://github.com/themadinventor/esptool
