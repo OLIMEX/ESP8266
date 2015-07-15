@@ -48,6 +48,10 @@ LOCAL uint32 ICACHE_FLASH_ATTR timer_init(os_timer_func_t func, void *param, uin
 	t->func   = func;
 	t->param  = param;
 	
+	if (timer_last_handle == 0) {
+		timer_last_handle = 1;
+	}
+	
 	os_timer_disarm(&(t->timer));
 	if (repeat) {
 		os_timer_setfn(&(t->timer), func, param);
