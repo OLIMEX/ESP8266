@@ -5,6 +5,8 @@
 	#include "queue.h"
 	
 	typedef struct _timer_ {
+		uint32           handle;
+		
 		os_timer_t       timer;
 		os_timer_func_t *func;
 		void            *param;
@@ -12,11 +14,11 @@
 		STAILQ_ENTRY(_timer_) entries;
 	} timer;
 	
-	timer *setTimeout (os_timer_func_t func, void *param, uint32 interval);
-	timer *setInterval(os_timer_func_t func, void *param, uint32 interval);
+	uint32 setTimeout (os_timer_func_t func, void *param, uint32 interval);
+	uint32 setInterval(os_timer_func_t func, void *param, uint32 interval);
 	
-	void clearTimeout (timer *t);
-	void clearInterval(timer *t);
+	void clearTimeout (uint32 handle);
+	void clearInterval(uint32 handle);
 	
 	void clearAllTimers();
 	

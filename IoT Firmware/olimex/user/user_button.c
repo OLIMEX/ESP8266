@@ -17,7 +17,7 @@
 void ICACHE_FLASH_ATTR memory_info() {
 	system_print_meminfo();
 	debug("Free heap: %d\n", system_get_free_heap_size());
-	debug("Active timers: %d\n", timersCount());
+	timers_info();
 	webserver_connections_info();
 }
 

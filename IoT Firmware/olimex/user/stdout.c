@@ -12,7 +12,7 @@ LOCAL void ICACHE_FLASH_ATTR wifi_debug_flush();
 
 LOCAL void ICACHE_FLASH_ATTR wifi_write_char(char c) {
 LOCAL char  *buff = NULL;
-LOCAL timer *t = NULL;
+LOCAL uint32 t = 0;
 LOCAL uint8  i = 0;
 	
 	clearTimeout(t);

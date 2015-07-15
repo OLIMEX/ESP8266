@@ -38,7 +38,7 @@
 		webclient_state state;
 		
 		uint8 retry;
-		timer *retry_timer;
+		uint32 retry_timer;
 		
 		STAILQ_ENTRY(_webclient_request_) entries;
 	} webclient_request;

@@ -290,7 +290,7 @@ LOCAL uint16 scroll_size = 0;
 LOCAL uint8  scroll_delay = 0;
 LOCAL led_8x8_rgb_done_callback scroll_done = NULL;
 
-LOCAL void ICACHE_FLASH_ATTR _led_8x8_rgb_scroll_() {
+void ICACHE_FLASH_ATTR _led_8x8_rgb_scroll_() {
 	uint8 col, j;
 	
 	led_8x8_rgb_shift_left();

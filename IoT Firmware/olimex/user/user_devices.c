@@ -62,6 +62,8 @@ char ICACHE_FLASH_ATTR *device_find_url(device_type type, uint8 id) {
 LOCAL void ICACHE_FLASH_ATTR devices_init_done() {
 	if (device_get_uart() == UART_NONE) {
 		stdout_init();
+	} else {
+		stdout_wifi_debug();
 	}
 }
 

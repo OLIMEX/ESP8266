@@ -11,7 +11,7 @@
 #include "user_config.h"
 #include "user_events.h"
 
-LOCAL timer *webclient_disconnect_timer = NULL;
+LOCAL uint32 webclient_disconnect_timer = 0;
 
 STAILQ_HEAD(webclient_requests, _webclient_request_) webclient_requests = STAILQ_HEAD_INITIALIZER(webclient_requests);
 
@@ -180,7 +180,7 @@ LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_new_request(
 	request->ssl = ssl;
 	request->state = HTTP;
 	request->retry = 0;
-	request->retry_timer = NULL;
+	request->retry_timer = 0;
 	
 	webclient_new_element(&request->user, user);
 	webclient_new_element(&request->password, password);
@@ -481,7 +481,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 }
 
 void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {
-	if (request->retry_timer != NULL) {
+	if (request->retry_timer != 0) {
 		clearTimeout(request->retry_timer);
 	}
 	

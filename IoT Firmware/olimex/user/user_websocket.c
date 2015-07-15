@@ -15,7 +15,7 @@
 #include "user_websocket.h"
 #include "user_webserver.h"
 
-LOCAL timer *websocket_timeout_timer = NULL;
+LOCAL uint32 websocket_timeout_timer = 0;
 
 named_connection_queue websockets = {
 	.head = STAILQ_HEAD_INITIALIZER(websockets.head),
@@ -711,7 +711,6 @@ void ICACHE_FLASH_ATTR websocket_close_all(char *reason, struct espconn *pConnec
 *******************************************************************************/
 LOCAL void ICACHE_FLASH_ATTR websocket_timeout(void *arg) {
 	connections_queue *request;
-	websocket_timeout_timer = NULL;
 	
 	STAILQ_FOREACH(request, &(websockets.head), entries) {
 		websocket_extra *extra = request->extra;
@@ -733,7 +732,6 @@ LOCAL void ICACHE_FLASH_ATTR websocket_keep_alive(void *arg) {
 	http_chunk_callback webserver_chunk = webserver_chunk_get();
 	if (webserver_chunk) {
 		clearTimeout(websocket_timeout_timer);
-		websocket_timeout_timer = NULL;
 		return;
 	}
 	

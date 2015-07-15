@@ -32,7 +32,7 @@ LOCAL finger_callback finger_command_done    = NULL;
 LOCAL finger_callback finger_command_timeout = NULL;
 LOCAL finger_callback finger_user_callback   = NULL;
 
-LOCAL timer *finger_timeout = NULL;
+LOCAL uint32 finger_timeout = 0;
 
 const char ICACHE_FLASH_ATTR *finger_error_str(uint8 status) {
 	switch (status) {
@@ -101,7 +101,7 @@ LOCAL uint16 ICACHE_FLASH_ATTR finger_check_sum(finger_packet *packet) {
 }
 
 LOCAL void ICACHE_FLASH_ATTR finger_send(finger_packet *packet) {
-	if (finger_timeout != NULL) {
+	if (finger_timeout != 0) {
 		setTimeout((os_timer_func_t *)finger_send, packet, 100);
 		return;
 	}
@@ -164,6 +164,7 @@ LOCAL void ICACHE_FLASH_ATTR finger_receive(finger_packet *packet) {
 	device_set_uart(UART_FINGER);
 	
 #if FINGER_DEBUG
+	debug("FINGER: Response 0x%02x\n", packet->data[0]);
 #if FINGER_VERBOSE_OUTPUT
 	debug("\nFINGER: Received packet\n");
 	debug("Address: 0x%08x\n", packet->address);
@@ -191,7 +192,7 @@ LOCAL void ICACHE_FLASH_ATTR finger_receive(finger_packet *packet) {
 	}
 	
 	clearTimeout(finger_timeout);
-	finger_timeout = NULL;
+	finger_timeout = 0;
 }
 
 LOCAL void ICACHE_FLASH_ATTR finger_char_in(char c) {
@@ -269,6 +270,10 @@ LOCAL uint16 count = 0;
 
 LOCAL void ICACHE_FLASH_ATTR finger_execute(uint32 address, uint8 command, uint8 *data, uint16 len, finger_callback command_done) {
 	finger_packet_init(&finger_send_packet, address, FINGER_COMMAND, len+3);
+	
+#if FINGER_DEBUG
+	debug("FINGER: Command 0x%02x\n", command);
+#endif
 	
 	finger_send_packet->data[0] = command;
 	if (data != NULL && len != 0) {

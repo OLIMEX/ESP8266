@@ -1,7 +1,7 @@
 #ifndef __MOD_FINGER_H__
 	#define __MOD_FINGER_H__
 	
-	#define FINGER_DEBUG           1
+	#define FINGER_DEBUG           0
 	#define FINGER_VERBOSE_OUTPUT  0
 
 	#define FINGER_TIMEOUT         1000

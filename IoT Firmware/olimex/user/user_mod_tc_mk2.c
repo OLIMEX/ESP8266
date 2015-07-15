@@ -17,7 +17,7 @@ LOCAL uint32 tc_refresh   = MOD_TC_MK2_REFRESH_DEFAULT;
 LOCAL uint8  tc_each      = MOD_TC_MK2_EACH_DEFAULT;
 LOCAL uint32 tc_threshold = MOD_TC_MK2_THRESHOLD_DEFAULT;
 
-LOCAL timer *tc_refresh_timer = NULL;
+LOCAL uint32 tc_refresh_timer = 0;
 
 char* const MOD_TC_MK2_URLs[] = {
 	MOD_TC_MK2_URL, 
@@ -88,12 +88,12 @@ LOCAL void ICACHE_FLASH_ATTR mod_tc_mk2_event(i2c_config *config) {
 }
 
 LOCAL void ICACHE_FLASH_ATTR mod_tc_mk2_timer_init() {
-	if (tc_refresh_timer != NULL) {
+	if (tc_refresh_timer != 0) {
 		clearInterval(tc_refresh_timer);
 	}
 	
 	if (tc_refresh == 0) {
-		tc_refresh_timer = NULL;
+		tc_refresh_timer = 0;
 	} else {
 		tc_refresh_timer = setInterval((os_timer_func_t *)tc_foreach, mod_tc_mk2_event, tc_refresh);
 	}

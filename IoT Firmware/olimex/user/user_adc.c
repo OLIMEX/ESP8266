@@ -17,7 +17,7 @@ LOCAL uint32 adc_refresh   = ADC_REFRESH_DEFAULT;
 LOCAL uint8  adc_each      = ADC_EACH_DEFAULT;
 LOCAL uint32 adc_threshold = ADC_THRESHOLD_DEFAULT;
 
-LOCAL timer *adc_refresh_timer = NULL;
+LOCAL uint32 adc_refresh_timer = 0;
 
 LOCAL void ICACHE_FLASH_ATTR adc_read(char *response, bool poll) {
 	char data[WEBSERVER_MAX_VALUE];
@@ -64,12 +64,12 @@ void ICACHE_FLASH_ATTR adc_update() {
 }
 
 void ICACHE_FLASH_ATTR user_adc_timer_init() {
-	if (adc_refresh_timer != NULL) {
+	if (adc_refresh_timer != 0) {
 		clearInterval(adc_refresh_timer);
 	}
 	
 	if (adc_refresh == 0) {
-		adc_refresh_timer = NULL;
+		adc_refresh_timer = 0;
 	} else {
 		adc_refresh_timer = setInterval(adc_update, NULL, adc_refresh);
 	}
