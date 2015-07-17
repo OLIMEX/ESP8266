@@ -10,6 +10,7 @@
 	bool  str_match(char *pattern, char * string);
 	char *strncpy_null(char *dest, char *src, uint16 n);
 	void *strstr_end(char *haystack, char *needle);
+	char *itob(uint32 i, char *b, uint8 l);
 	
 	const char *wifi_auth_mode_str(AUTH_MODE mode);
 	const char *wifi_op_mode_str(uint8 mode);

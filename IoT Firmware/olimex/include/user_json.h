@@ -23,6 +23,7 @@
 	extern const char MOD_RGB[];
 	extern const char MOD_TC_MK2[];
 	extern const char MOD_FINGER[];
+	extern const char MOD_EMTR[];
 	
 	extern const char DEVICE_NOT_FOUND[];
 	extern const char TIMEOUT[];

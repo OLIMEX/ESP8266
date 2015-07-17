@@ -67,6 +67,7 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	// UART Devices
 	mod_rfid_init();
 	mod_finger_init();
+	mod_emtr_init();
 	devices_init();
 	
 	debug("\n\nSDK version: %s\n", system_get_sdk_version());

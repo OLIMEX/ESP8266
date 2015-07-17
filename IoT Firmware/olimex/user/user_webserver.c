@@ -12,8 +12,6 @@
 #include "user_json.h"
 #include "user_config.h"
 #include "user_events.h"
-#include "user_i2c_scan.h"
-#include "user_devices.h"
 #include "user_webserver.h"
 
 #include "user_long_poll.h"
@@ -67,13 +65,19 @@ void ICACHE_FLASH_ATTR webserver_register_handler_callback(char *url, http_handl
 	STAILQ_INSERT_TAIL(&http_handler_callbacks, callback, entries);
 }
 
-void ICACHE_FLASH_ATTR default_handler_done(i2c_devices_queue *i2c) {
-	char response[WEBSERVER_MAX_RESPONSE_LEN * 2];
-	char data[WEBSERVER_MAX_RESPONSE_LEN * 2];
+void ICACHE_FLASH_ATTR default_handler(
+	struct espconn *pConnection, 
+	request_method method, 
+	char *url, 
+	char *data, 
+	uint16 data_len, 
+	uint32 content_len, 
+	char *response,
+	uint16 response_len
+) {
+	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
 	
 	char urls[WEBSERVER_MAX_RESPONSE_LEN] = "";
-	char devices[WEBSERVER_MAX_RESPONSE_LEN] = "";
-	
 	char current[WEBSERVER_MAX_VALUE] = "";
 	
 	http_callback *callback;
@@ -85,30 +89,12 @@ void ICACHE_FLASH_ATTR default_handler_done(i2c_devices_queue *i2c) {
 	json_data(
 		response, ESP8266, OK_STR, 
 		json_sprintf(
-			data,
-			"\"URLs\" : [%s], "
-			"\"Devices\" : [%s]",
-			urls,
-			devices_scan_result(i2c, devices)
+			data_str,
+			"\"URLs\" : [%s]",
+			urls
 		),
 		NULL
 	);
-	
-	user_event_raise("/", response);
-}
-
-void ICACHE_FLASH_ATTR default_handler(
-	struct espconn *pConnection, 
-	request_method method, 
-	char *url, 
-	char *data, 
-	uint16 data_len, 
-	uint32 content_len, 
-	char *response,
-	uint16 response_len
-) {
-	webserver_set_status(0);
-	i2c_scan_start(default_handler_done);
 }
 
 uint16 ICACHE_FLASH_ATTR webserver_get_status() {

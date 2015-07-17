@@ -66,6 +66,23 @@ void ICACHE_FLASH_ATTR *strstr_end(char *haystack, char *needle) {
 }
 
 /******************************************************************************
+ * FunctionName : itob
+ * Description  : convert up to 32 bit integer to string
+ * Parameters   : integer to convert
+ *                string
+ *                string len
+ * Returns      : pointer to the end of the first occurrence
+*******************************************************************************/
+char ICACHE_FLASH_ATTR *itob(uint32 i, char *b, uint8 l) {
+	uint8 j=0;
+	for (j=0; j < l; j++) {
+		b[l-j-1] = (((i>>j) & 1) != 0 ? '1' : '0');
+	}
+	
+	return b;
+}
+
+/******************************************************************************
  * FunctionName : ip4_addr_parse
  * Description  : parse IP v4 string address in HEX representation to uint32
  * Parameters   : addr

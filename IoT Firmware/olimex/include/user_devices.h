@@ -12,8 +12,9 @@
 	
 	typedef enum {
 		UART_NONE   = 0,
-		UART_RFID   = 1,
-		UART_FINGER = 2
+		UART_RFID,
+		UART_FINGER,
+		UART_EMTR
 	} device_uart;
 	
 	typedef void (*void_func)();

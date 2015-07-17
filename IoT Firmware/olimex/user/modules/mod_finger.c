@@ -27,7 +27,6 @@ LOCAL finger_sys_params finger_params = {
 	.first_free_id  = -1
 };
 
-LOCAL bool finger_present = false;
 LOCAL finger_callback finger_command_done    = NULL;
 LOCAL finger_callback finger_command_timeout = NULL;
 LOCAL finger_callback finger_user_callback   = NULL;
@@ -124,8 +123,8 @@ LOCAL void ICACHE_FLASH_ATTR finger_send(finger_packet *packet) {
 	finger_command_done = packet->callback;
 	
 	// Start
-	uart_write_byte(0xEF);
-	uart_write_byte(0x01);
+	uart_write_byte(FINGER_START_FRAME_01);
+	uart_write_byte(FINGER_START_FRAME_02);
 	
 	// Address
 	uint8 i;
@@ -160,7 +159,6 @@ LOCAL void ICACHE_FLASH_ATTR finger_receive(finger_packet *packet) {
 		return;
 	}
 	
-	finger_present = true;
 	device_set_uart(UART_FINGER);
 	
 #if FINGER_DEBUG
@@ -201,7 +199,7 @@ LOCAL uint16 count = 0;
 	
 	if (state == FINGER_STATE_IDLE || state == FINGER_STATE_ERROR) {
 		finger_packet_init(&finger_receive_packet, 0, 0, 0);
-		if (c == 0xEF) {
+		if (c == FINGER_START_FRAME_01) {
 			state = FINGER_STATE_START;
 		} else {
 			state = FINGER_STATE_ERROR;
@@ -210,7 +208,7 @@ LOCAL uint16 count = 0;
 	}
 	
 	if (state == FINGER_STATE_START) {
-		if (c == 0x01) {
+		if (c == FINGER_START_FRAME_02) {
 			state = FINGER_STATE_ADDRESS;
 			count = 0;
 			finger_receive_packet->address = 0;
@@ -287,10 +285,6 @@ LOCAL void ICACHE_FLASH_ATTR finger_execute(uint32 address, uint8 command, uint8
 	finger_send_packet->callback = command_done;
 	
 	finger_send(finger_send_packet);
-}
-
-bool ICACHE_FLASH_ATTR finger_found() {
-	return finger_present;
 }
 
 uint32 ICACHE_FLASH_ATTR finger_address() {

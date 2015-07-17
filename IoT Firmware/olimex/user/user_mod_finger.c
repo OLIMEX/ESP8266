@@ -68,8 +68,8 @@ LOCAL void ICACHE_FLASH_ATTR finger_frech_params() {
 LOCAL void ICACHE_FLASH_ATTR finger_read(finger_packet *packet);
 
 LOCAL void ICACHE_FLASH_ATTR finger_start_read() {
-LOCAL void  *finger_read_timer = NULL;
-	if (!finger_found()) {
+LOCAL uint32 finger_read_timer = 0;
+	if (device_get_uart() != UART_FINGER) {
 #if FINGER_DEBUG
 		debug("FINGER: %s\n", DEVICE_NOT_FOUND);
 #endif
@@ -78,7 +78,7 @@ LOCAL void  *finger_read_timer = NULL;
 
 	finger_current_buff = 0;
 	clearTimeout(finger_read_timer);
-	finger_read_timer = (void *)setTimeout(finger_gen_img, finger_read, FINGER_TIMEOUT);
+	finger_read_timer = setTimeout(finger_gen_img, finger_read, FINGER_TIMEOUT);
 }
 
 LOCAL void ICACHE_FLASH_ATTR finger_timeout(finger_packet *packet) {
@@ -223,7 +223,7 @@ void ICACHE_FLASH_ATTR finger_handler(
 	char *response,
 	uint16 response_len
 ) {
-	if (!finger_found()) {
+	if (device_get_uart() != UART_FINGER) {
 		json_error(response, MOD_FINGER, DEVICE_NOT_FOUND, NULL);
 		return;
 	}
@@ -305,5 +305,5 @@ void ICACHE_FLASH_ATTR mod_finger_init() {
 	webserver_register_handler_callback(FINGER_URL, finger_handler);
 	device_register(UART, 0, FINGER_URL, finger_init);
 	
-	setTimeout(finger_start_read, NULL, 1000);
+	setTimeout(finger_start_read, NULL, 2000);
 }

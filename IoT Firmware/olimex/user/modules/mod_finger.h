@@ -5,6 +5,9 @@
 	#define FINGER_VERBOSE_OUTPUT  0
 
 	#define FINGER_TIMEOUT         1000
+
+	#define FINGER_START_FRAME_01  0xEF
+	#define FINGER_START_FRAME_02  0x01
 	
 	#include "user_devices.h"
 	
@@ -81,7 +84,6 @@
 	
 	const char *finger_error_str(uint8 status);
 	
-	bool finger_found();
 	uint32 finger_address();
 	uint16 finger_db_size();
 	uint16 finger_db_stored();
