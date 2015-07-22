@@ -123,11 +123,29 @@
 		fieldset {
 			display: block;
 			border: solid 1px black;
+			margin-bottom: 10px;
 		}
 		
 		label {
 			display: inline-block;
 			width: 120px;
+		}
+		
+		.bits {
+			display: inline-block; 
+			width: 100px; 
+			white-space: normal; 
+			vertical-align: top;
+		}
+		
+		.bits * {
+			display: inline-block; 
+			width: 20px !important; 
+			white-space: normal; 
+			margin: 0;
+			font-size: 10px;
+			text-align: center;
+			line-height: 12px;
 		}
 		
 		input[type=range] {
@@ -210,6 +228,22 @@
 		
 		#finger-delete {
 			display: none;
+		}
+		
+		.emtr-mode.config {
+			display: none;
+		}
+		
+		.emtr-mode.config input[type=text] {
+			width: 100px;
+		}
+		
+		.emtr-mode.config label {
+			width: 170px;
+		}
+		
+		.emtr-mode.config fieldset label {
+			width: 155px;
 		}
 		
 		@media only screen and (max-device-width:640px) {
@@ -302,14 +336,16 @@
 					$('.esp').esp8266();
 					$('.event').event8266();
 					
+					$('#irda select[name=Mode]').irdaMode();
+					$('#finger select[name=Mode]').fingerMode();
+					$('#emtr select[name=Mode]').emtrMode();
+					$('.bits').bits();
+					
 					if (false) {
 						$('.esp').trigger('init8266');
 					} else {
 						$('.esp').trigger('abort8266');
 					}
-					
-					$('#irda select[name=Mode]').irdaMode();
-					$('#finger select[name=Mode]').fingerMode();
 				}
 			);
 		})(jQuery);
@@ -361,6 +397,70 @@
 								$('#finger-delete').show();
 							}
 						);
+					}
+				);
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.emtrMode = function () {
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						
+						$this.bind(
+							'refresh',
+							function () {
+								var value = $this.val().toLowerCase();
+								$this.closest('form').find('div.emtr-mode').hide();
+								$this.closest('form').find('div.emtr-mode.'+value).show();
+								$('.bits').bits();
+							}
+						);
+						
+						$this.change(
+							function () {
+								$this.trigger('refresh');
+								$this.submit();
+							}
+						);
+						
+						$this.trigger('refresh');
+					}
+				);
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.bits = function () {
+				return this.find(':checkbox').each(
+					function (i, e) {
+						var $this = $(e);
+						var name = $this.attr('name');
+						var match = name.match(/(\w+)\[(\d+)\]/);
+						if (match) {
+							var $target = $this.closest('form').find('input[name='+match[1]+']')
+							var mask = 1 << match[2];
+							
+							$target.bind(
+								'refresh',
+								function () {
+									$this.prop('checked', ($target.val() & mask) != 0);
+								}
+							);
+							
+							$this.change(
+								function() {
+									if ($this.is(':checked')) {
+										$target.val($target.val() | mask);
+									} else {
+										$target.val($target.val() & (~mask));
+									}
+								}
+							);
+							
+							$target.trigger('refresh');
+						}
 					}
 				);
 			}
@@ -465,7 +565,11 @@
 				this.children().each(
 					function (i, e) {
 						var $e = $(e);
-						if ($e.is(':button')) {
+						if (
+							$e.is(':button') || 
+							$e.is(':disabled') || 
+							($e.is(':checkbox') && $e.parents('.bits').length > 0)
+						) {
 							return json;
 						}
 						
@@ -579,6 +683,7 @@
 							}
 						} else {
 							i.val(json[name]);
+							i.trigger('refresh');
 						}
 					}
 				}
@@ -1512,16 +1617,322 @@
 			<fieldset>
 				<legend>MOD-EMTR</legend>
 				<label>Address</label>            <input type="text" name="Address"           disabled="disabled" /> <br/>
-				<label>Current RMS</label>        <input type="text" name="CurrentRMS"        disabled="disabled" /> <br/>
-				<label>Voltage RMS</label>        <input type="text" name="VoltageRMS"        disabled="disabled" /> <br/>
-				<label>Active Power</label>       <input type="text" name="ActivePower"       disabled="disabled" /> <br/>
-				<label>Reactive Power</label>     <input type="text" name="ReactivePower"     disabled="disabled" /> <br/>
-				<label>Apparent Power</label>     <input type="text" name="ApparentPower"     disabled="disabled" /> <br/>
-				<label>Power Factor</label>       <input type="text" name="PowerFactor"       disabled="disabled" /> <br/>
-				<label>Line Frequency</label>     <input type="text" name="LineFrequency"     disabled="disabled" /> <br/>
-				<label>Thermistor Voltage</label> <input type="text" name="ThermistorVoltage" disabled="disabled" /> <br/>
-				<label>Event Flag</label>         <input type="text" name="EventFlag"         disabled="disabled" /> <br/>
-				<label>System Status</label>      <input type="text" name="SystemStatus"      disabled="disabled" /> <br/>
+				
+				<label>Mode</label>
+					<select name="Mode"> 
+						<option>Read</option>
+						<option>Config</option>
+					</select>
+				<br/>
+				
+				<div class="emtr-mode read">
+					<label>Current RMS</label>        <input type="text" name="CurrentRMS"        disabled="disabled" /> <br/>
+					<label>Voltage RMS</label>        <input type="text" name="VoltageRMS"        disabled="disabled" /> <br/>
+					<label>Active Power</label>       <input type="text" name="ActivePower"       disabled="disabled" /> <br/>
+					<label>Reactive Power</label>     <input type="text" name="ReactivePower"     disabled="disabled" /> <br/>
+					<label>Apparent Power</label>     <input type="text" name="ApparentPower"     disabled="disabled" /> <br/>
+					<label>Power Factor</label>       <input type="text" name="PowerFactor"       disabled="disabled" /> <br/>
+					<label>Line Frequency</label>     <input type="text" name="LineFrequency"     disabled="disabled" /> <br/>
+					<label>Thermistor Voltage</label> <input type="text" name="ThermistorVoltage" disabled="disabled" /> <br/>
+					<label>System Status</label>      <input type="text" name="SystemStatus"      disabled="disabled" /> <br/>
+					<label>Event Flag</label>
+						<input type="hidden" name="EventFlag" disabled="disabled" /> 
+						<div class="bits">
+							<div title="Over Current">
+								<label>OC</label>
+								<input type="checkbox" name="EventFlag[15]" disabled="disabled" />
+							</div>
+							<div title="Over Voltage">
+								<label>OV</label>
+								<input type="checkbox" name="EventFlag[14]" disabled="disabled" />
+							</div>
+							<div title="Over Power">
+								<label>OP</label>
+								<input type="checkbox" name="EventFlag[13]" disabled="disabled" />
+							</div>
+							<div title="Under Voltage">
+								<label>UV</label>
+								<input type="checkbox" name="EventFlag[12]" disabled="disabled" />
+							</div>
+							<div title="Over Frequency">
+								<label>OF</label>
+								<input type="checkbox" name="EventFlag[11]" disabled="disabled" />
+							</div>
+							<div title="Under Frequency">
+								<label>UF</label>
+								<input type="checkbox" name="EventFlag[10]" disabled="disabled" />
+							</div>
+							<div title="Over Temperature">
+								<label>OT</label>
+								<input type="checkbox" name="EventFlag[9]" disabled="disabled" />
+							</div>
+							<div title="Under Temperature">
+								<label>UT</label>
+								<input type="checkbox" name="EventFlag[8]" disabled="disabled" />
+							</div>
+							<div title="Voltage Sag">
+								<label>VSA</label>
+								<input type="checkbox" name="EventFlag[7]" disabled="disabled" />
+							</div>
+							<div title="Voltage Surge">
+								<label>VSU</label>
+								<input type="checkbox" name="EventFlag[6]" disabled="disabled" />
+							</div>
+						</div>
+					<br/>
+				</div>
+				
+				<div class="emtr-mode config">
+					<fieldset>
+						<legend>Calibration</legend>
+						<label>Current</label>               <input type="text" name="CalibrationCurrent"       disabled="disabled"/> <br/>
+						<label>Voltage</label>               <input type="text" name="CalibrationVoltage"       disabled="disabled"/> <br/>
+						<label>Active Power</label>          <input type="text" name="CalibrationActivePower"   disabled="disabled"/> <br/>
+						<label>Reactive Power</label>        <input type="text" name="CalibrationReactivePower" disabled="disabled"/> <br/>
+						<label>Accumulation Interval</label> <input type="text" name="AccumulationInterval"     disabled="disabled"/> <br/>
+					</fieldset>
+					
+					<label>Over Current Limit</label>      <input type="text" name="OverCurrentLimit" /> <br/>
+					<label>Over Power Limit</label>        <input type="text" name="OverPowerLimit" /> <br/>
+					<label>Over Frequency Limit</label>    <input type="text" name="OverFrequencyLimit" /> <br/>
+					<label>Under Frequency Limit</label>   <input type="text" name="UnderFrequencyLimit" /> <br/>
+					<label>Over Temperature Limit</label>  <input type="text" name="OverTemperatureLimit" /> <br/>
+					<label>Under Temperature Limit</label> <input type="text" name="UnderTemperatureLimit" /> <br/>
+					<label>Voltage Sag Limit</label>       <input type="text" name="VoltageSagLimit" /> <br/>
+					<label>Voltage Surge Limit</label>     <input type="text" name="VoltageSurgeLimit" /> <br/>
+					<label>Over Current Hold</label>       <input type="text" name="OverCurrentHold" /> <br/>
+					<label>Over Power Hold</label>         <input type="text" name="OverPowerHold" /> <br/>
+					<label>Over Frequency Hold</label>     <input type="text" name="OverFrequencyHold" /> <br/>
+					<label>Under Frequency Hold</label>    <input type="text" name="UnderFrequencyHold" /> <br/>
+					<label>Over Temperature Hold</label>   <input type="text" name="OverTemperatureHold" /> <br/>
+					<label>Under Temperature Hold</label>  <input type="text" name="UnderTemperatureHold" /> <br/>
+					<label>Event Enable</label>            
+						<input type="hidden" name="EventEnable" /> 
+						<div class="bits">
+							<div title="Over Current">
+								<label>OC</label>
+								<input type="checkbox" name="EventEnable[15]" value="1" />
+							</div>
+							<div title="Over Voltage">
+								<label>OV</label>
+								<input type="checkbox" name="EventEnable[14]" value="1" />
+							</div>
+							<div title="Over Power">
+								<label>OP</label>
+								<input type="checkbox" name="EventEnable[13]" value="1" />
+							</div>
+							<div title="Under Voltage">
+								<label>UV</label>
+								<input type="checkbox" name="EventEnable[12]" value="1" />
+							</div>
+							<div title="Over Frequency">
+								<label>OF</label>
+								<input type="checkbox" name="EventEnable[11]" value="1" />
+							</div>
+							<div title="Under Frequency">
+								<label>UF</label>
+								<input type="checkbox" name="EventEnable[10]" value="1" />
+							</div>
+							<div title="Over Temperature">
+								<label>OT</label>
+								<input type="checkbox" name="EventEnable[9]" value="1" />
+							</div>
+							<div title="Under Temperature">
+								<label>UT</label>
+								<input type="checkbox" name="EventEnable[8]" value="1" />
+							</div>
+							<div title="Voltage Sag">
+								<label>VSA</label>
+								<input type="checkbox" name="EventEnable[7]" value="1" />
+							</div>
+							<div title="Voltage Surge">
+								<label>VSU</label>
+								<input type="checkbox" name="EventEnable[6]" value="1" />
+							</div>
+						</div>
+					<br/>
+					<label>Event Mask Critical</label>
+						<input type="hidden" name="EventMaskCritical" /> 
+						<div class="bits">
+							<div title="Over Current">
+								<label>OC</label>
+								<input type="checkbox" name="EventMaskCritical[15]" value="1" />
+							</div>
+							<div title="Over Voltage">
+								<label>OV</label>
+								<input type="checkbox" name="EventMaskCritical[14]" value="1" />
+							</div>
+							<div title="Over Power">
+								<label>OP</label>
+								<input type="checkbox" name="EventMaskCritical[13]" value="1" />
+							</div>
+							<div title="Under Voltage">
+								<label>UV</label>
+								<input type="checkbox" name="EventMaskCritical[12]" value="1" />
+							</div>
+							<div title="Over Frequency">
+								<label>OF</label>
+								<input type="checkbox" name="EventMaskCritical[11]" value="1" />
+							</div>
+							<div title="Under Frequency">
+								<label>UF</label>
+								<input type="checkbox" name="EventMaskCritical[10]" value="1" />
+							</div>
+							<div title="Over Temperature">
+								<label>OT</label>
+								<input type="checkbox" name="EventMaskCritical[9]" value="1" />
+							</div>
+							<div title="Under Temperature">
+								<label>UT</label>
+								<input type="checkbox" name="EventMaskCritical[8]" value="1" />
+							</div>
+							<div title="Voltage Sag">
+								<label>VSA</label>
+								<input type="checkbox" name="EventMaskCritical[7]" value="1" />
+							</div>
+							<div title="Voltage Surge">
+								<label>VSU</label>
+								<input type="checkbox" name="EventMaskCritical[6]" value="1" />
+							</div>
+						</div>
+					<br/>
+					<label>Event Mask Standard</label>
+						<input type="hidden" name="EventMaskStandard" /> 
+						<div class="bits">
+							<div title="Over Current">
+								<label>OC</label>
+								<input type="checkbox" name="EventMaskStandard[15]" value="1" />
+							</div>
+							<div title="Over Voltage">
+								<label>OV</label>
+								<input type="checkbox" name="EventMaskStandard[14]" value="1" />
+							</div>
+							<div title="Over Power">
+								<label>OP</label>
+								<input type="checkbox" name="EventMaskStandard[13]" value="1" />
+							</div>
+							<div title="Under Voltage">
+								<label>UV</label>
+								<input type="checkbox" name="EventMaskStandard[12]" value="1" />
+							</div>
+							<div title="Over Frequency">
+								<label>OF</label>
+								<input type="checkbox" name="EventMaskStandard[11]" value="1" />
+							</div>
+							<div title="Under Frequency">
+								<label>UF</label>
+								<input type="checkbox" name="EventMaskStandard[10]" value="1" />
+							</div>
+							<div title="Over Temperature">
+								<label>OT</label>
+								<input type="checkbox" name="EventMaskStandard[9]" value="1" />
+							</div>
+							<div title="Under Temperature">
+								<label>UT</label>
+								<input type="checkbox" name="EventMaskStandard[8]" value="1" />
+							</div>
+							<div title="Voltage Sag">
+								<label>VSA</label>
+								<input type="checkbox" name="EventMaskStandard[7]" value="1" />
+							</div>
+							<div title="Voltage Surge">
+								<label>VSU</label>
+								<input type="checkbox" name="EventMaskStandard[6]" value="1" />
+							</div>
+						</div>
+					<br/>
+					<label>Event Test</label>
+						<input type="hidden" name="EventTest" /> 
+						<div class="bits">
+							<div title="Over Current">
+								<label>OC</label>
+								<input type="checkbox" name="EventTest[15]" value="1" />
+							</div>
+							<div title="Over Voltage">
+								<label>OV</label>
+								<input type="checkbox" name="EventTest[14]" value="1" />
+							</div>
+							<div title="Over Power">
+								<label>OP</label>
+								<input type="checkbox" name="EventTest[13]" value="1" />
+							</div>
+							<div title="Under Voltage">
+								<label>UV</label>
+								<input type="checkbox" name="EventTest[12]" value="1" />
+							</div>
+							<div title="Over Frequency">
+								<label>OF</label>
+								<input type="checkbox" name="EventTest[11]" value="1" />
+							</div>
+							<div title="Under Frequency">
+								<label>UF</label>
+								<input type="checkbox" name="EventTest[10]" value="1" />
+							</div>
+							<div title="Over Temperature">
+								<label>OT</label>
+								<input type="checkbox" name="EventTest[9]" value="1" />
+							</div>
+							<div title="Under Temperature">
+								<label>UT</label>
+								<input type="checkbox" name="EventTest[8]" value="1" />
+							</div>
+							<div title="Voltage Sag">
+								<label>VSA</label>
+								<input type="checkbox" name="EventTest[7]" value="1" />
+							</div>
+							<div title="Voltage Surge">
+								<label>VSU</label>
+								<input type="checkbox" name="EventTest[6]" value="1" />
+							</div>
+						</div>
+					<br/>
+					<label>Event Clear</label>
+						<input type="hidden" name="EventClear" /> 
+						<div class="bits">
+							<div title="Over Current">
+								<label>OC</label>
+								<input type="checkbox" name="EventClear[15]" value="1" />
+							</div>
+							<div title="Over Voltage">
+								<label>OV</label>
+								<input type="checkbox" name="EventClear[14]" value="1" />
+							</div>
+							<div title="Over Power">
+								<label>OP</label>
+								<input type="checkbox" name="EventClear[13]" value="1" />
+							</div>
+							<div title="Under Voltage">
+								<label>UV</label>
+								<input type="checkbox" name="EventClear[12]" value="1" />
+							</div>
+							<div title="Over Frequency">
+								<label>OF</label>
+								<input type="checkbox" name="EventClear[11]" value="1" />
+							</div>
+							<div title="Under Frequency">
+								<label>UF</label>
+								<input type="checkbox" name="EventClear[10]" value="1" />
+							</div>
+							<div title="Over Temperature">
+								<label>OT</label>
+								<input type="checkbox" name="EventClear[9]" value="1" />
+							</div>
+							<div title="Under Temperature">
+								<label>UT</label>
+								<input type="checkbox" name="EventClear[8]" value="1" />
+							</div>
+							<div title="Voltage Sag">
+								<label>VSA</label>
+								<input type="checkbox" name="EventClear[7]" value="1" />
+							</div>
+							<div title="Voltage Surge">
+								<label>VSU</label>
+								<input type="checkbox" name="EventClear[6]" value="1" />
+							</div>
+						</div>
+					<br/>
+				</div>
+				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
 			</fieldset>

@@ -875,6 +875,7 @@ void ICACHE_FLASH_ATTR config_stream_chunk(
 	}
 	
 	if (success) {
+		clearAllTimers();
 		success = flash_stream_data(data, data_len, true);
 	}
 	

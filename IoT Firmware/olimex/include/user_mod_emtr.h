@@ -5,6 +5,11 @@
 	
 	#define EMTR_URL       "/mod-emtr"
 	
+	typedef enum {
+		EMTR_READ = 1,
+		EMTR_CONFIG
+	} emtr_mode;
+	
 	void emtr_handler(
 		struct espconn *pConnection, 
 		request_method method, 
