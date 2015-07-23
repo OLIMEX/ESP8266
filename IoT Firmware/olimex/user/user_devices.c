@@ -10,6 +10,7 @@
 
 #include "user_mod_rfid.h"
 #include "user_mod_finger.h"
+#include "user_mod_emtr.h"
 
 STAILQ_HEAD(device_descriptions, _device_description_) device_descriptions = STAILQ_HEAD_INITIALIZER(device_descriptions);
 
@@ -128,7 +129,8 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 		} else if (description->type == UART) {
 			found = 
 				(description->url == RFID_URL   && uart_device == UART_RFID) ||
-				(description->url == FINGER_URL && uart_device == UART_FINGER)
+				(description->url == FINGER_URL && uart_device == UART_FINGER) ||
+				(description->url == EMTR_URL   && uart_device == UART_EMTR)
 			;
 		} else {
 			found = true;
