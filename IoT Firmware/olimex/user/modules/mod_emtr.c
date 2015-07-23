@@ -481,3 +481,14 @@ void ICACHE_FLASH_ATTR emtr_init() {
 	// Get address
 	setTimeout((os_timer_func_t *)emtr_get_address, emtr_address_receive, 100);
 }
+
+void ICACHE_FLASH_ATTR emtr_down() {
+	if (device_get_uart() != UART_EMTR) {
+		return;
+	}
+	// Start
+	uart_write_byte(EMTR_START_FRAME);
+	
+	// Len
+	uart_write_byte(60);
+}

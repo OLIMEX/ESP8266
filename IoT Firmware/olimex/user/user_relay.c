@@ -15,7 +15,7 @@ LOCAL uint8 state = 0;
 void ICACHE_FLASH_ATTR user_relay_init() {
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
 	webserver_register_handler_callback(RELAY_URL, relay_handler);
-	device_register(NATIVE, 0, RELAY_URL, NULL);
+	device_register(NATIVE, 0, RELAY_URL, NULL, NULL);
 }
 
 void ICACHE_FLASH_ATTR relay_handler(

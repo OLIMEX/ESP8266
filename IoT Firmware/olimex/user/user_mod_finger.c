@@ -303,7 +303,7 @@ void ICACHE_FLASH_ATTR finger_handler(
 void ICACHE_FLASH_ATTR mod_finger_init() {
 	finger_set_timeout_callback(finger_timeout);
 	webserver_register_handler_callback(FINGER_URL, finger_handler);
-	device_register(UART, 0, FINGER_URL, finger_init);
+	device_register(UART, 0, FINGER_URL, finger_init, NULL);
 	
 	setTimeout(finger_start_read, NULL, 2000);
 }

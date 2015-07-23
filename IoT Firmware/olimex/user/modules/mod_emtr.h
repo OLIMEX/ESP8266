@@ -125,4 +125,5 @@
 	void   emtr_clear_event(uint16 event, emtr_callback command_done);
 	
 	void   emtr_init();
+	void   emtr_down();
 #endif

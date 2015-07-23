@@ -75,13 +75,25 @@ void ICACHE_FLASH_ATTR devices_init() {
 	STAILQ_FOREACH(description, &device_descriptions, entries) {
 		if (description->init != NULL) {
 			setTimeout(description->init, NULL, timeout);
-			timeout += 500;
+			timeout += DEVICES_TIMEOUT;
 		}
 	}
 	setTimeout(devices_init_done, NULL, timeout);
 }
 
-void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url, void_func init) {
+void ICACHE_FLASH_ATTR devices_down() {
+	device_description *description;
+	uint16 timeout = 10;
+	
+	STAILQ_FOREACH(description, &device_descriptions, entries) {
+		if (description->down != NULL) {
+			setTimeout(description->down, NULL, timeout);
+			timeout += DEVICES_TIMEOUT;
+		}
+	}
+}
+
+void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url, void_func init, void_func down) {
 	device_description *description = device_find(url);
 	
 	if (description != NULL) {
@@ -95,6 +107,7 @@ void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url, vo
 	description->url  = url;
 	description->id   = id;
 	description->init = init;
+	description->down = down;
 	
 	STAILQ_INSERT_TAIL(&device_descriptions, description, entries);
 }
@@ -158,7 +171,6 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 void ICACHE_FLASH_ATTR devices_i2c_done(i2c_devices_queue *i2c) {
 	char response[WEBSERVER_MAX_RESPONSE_LEN];
 	char devices[WEBSERVER_MAX_RESPONSE_LEN];
-	
 	
 	os_sprintf(
 		response,

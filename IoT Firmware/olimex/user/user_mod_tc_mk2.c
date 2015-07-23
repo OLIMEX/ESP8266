@@ -157,7 +157,7 @@ void ICACHE_FLASH_ATTR mod_tc_mk2_init() {
 		webserver_register_handler_callback(MOD_TC_MK2_URLs[i], mod_tc_mk2_handler);
 	}
 	
-	device_register(I2C, MOD_TC_MK2_ID, MOD_TC_MK2_URL, NULL);
+	device_register(I2C, MOD_TC_MK2_ID, MOD_TC_MK2_URL, NULL, NULL);
 	
 	if (status == I2C_OK) {
 		mod_tc_mk2_timer_init();

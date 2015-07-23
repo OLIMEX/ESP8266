@@ -24,7 +24,7 @@ void ICACHE_FLASH_ATTR mod_rgb_init() {
 	for (i=0; i<MOD_RGB_URLs_COUNT; i++) {
 		webserver_register_handler_callback(MOD_RGB_URLs[i], mod_rgb_handler);
 	}
-	device_register(I2C, MOD_RGB_ID, MOD_RGB_URL, NULL);
+	device_register(I2C, MOD_RGB_ID, MOD_RGB_URL, NULL, NULL);
 }
 
 void ICACHE_FLASH_ATTR mod_rgb_handler(

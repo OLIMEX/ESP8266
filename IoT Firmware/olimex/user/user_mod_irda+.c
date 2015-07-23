@@ -29,7 +29,7 @@ void ICACHE_FLASH_ATTR mod_irda_init() {
 		webserver_register_handler_callback(MOD_IRDA_URLs[i], mod_irda_handler);
 	}
 	
-	device_register(I2C, MOD_IRDA_ID, MOD_IRDA_URL, NULL);
+	device_register(I2C, MOD_IRDA_ID, MOD_IRDA_URL, NULL, NULL);
 }
 
 void ICACHE_FLASH_ATTR mod_irda_handler(

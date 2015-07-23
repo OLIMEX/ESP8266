@@ -41,7 +41,7 @@ void ICACHE_FLASH_ATTR mod_rfid_tag(char *tag) {
 void ICACHE_FLASH_ATTR mod_rfid_init() {
 	rfid_set_tag_callback(mod_rfid_tag);
 	webserver_register_handler_callback(RFID_URL, rfid_handler);
-	device_register(UART, 0, RFID_URL, rfid_init);
+	device_register(UART, 0, RFID_URL, rfid_init, NULL);
 }
 
 void ICACHE_FLASH_ATTR rfid_handler(

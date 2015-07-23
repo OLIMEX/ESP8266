@@ -16,6 +16,7 @@
 #include "user_flash.h"
 #include "user_config.h"
 #include "user_events.h"
+#include "user_devices.h"
 
 LOCAL user_config user_configuration;
 
@@ -977,6 +978,7 @@ void ICACHE_FLASH_ATTR config_stream_end_firmware(bool success) {
 	char status[WEBSERVER_MAX_VALUE];
 	
 	if (success) {
+		devices_down();
 		setTimeout(config_upgrade_reboot, NULL, USER_CONFIG_REBOOT_AFTER);
 		
 		config_firmware_json(status, DONE, config_firmware_upgrade_bin());

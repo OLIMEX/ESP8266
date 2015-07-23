@@ -76,7 +76,7 @@ void ICACHE_FLASH_ATTR user_button_init() {
 	key_init(&param);
 	
 	webserver_register_handler_callback(BUTTON_URL, button_handler);
-	device_register(NATIVE, 0, BUTTON_URL, NULL);
+	device_register(NATIVE, 0, BUTTON_URL, NULL, NULL);
 }
 
 void ICACHE_FLASH_ATTR button_handler(

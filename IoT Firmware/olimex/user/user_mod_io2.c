@@ -29,7 +29,7 @@ void ICACHE_FLASH_ATTR mod_io2_init() {
 		webserver_register_handler_callback(MOD_IO2_URLs[i], mod_io2_handler);
 	}
 	
-	device_register(I2C, MOD_IO2_ID, MOD_IO2_URL, NULL);
+	device_register(I2C, MOD_IO2_ID, MOD_IO2_URL, NULL, NULL);
 }
 
 void ICACHE_FLASH_ATTR mod_io2_handler(
