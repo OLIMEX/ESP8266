@@ -14,14 +14,34 @@
 #include "user_mod_emtr.h"
 #include "modules/mod_emtr.h"
 
-LOCAL emtr_event_registers *emtr_registers = NULL;
+LOCAL struct {
+	emtr_calibration_registers *calibration;
+	emtr_event_registers       *event;
+} emtr_registers = {NULL, NULL};
+
 LOCAL emtr_mode emtr_current_mode = EMTR_READ;
 
 LOCAL const char ICACHE_FLASH_ATTR *emtr_mode_str(uint8 mode) {
 	switch (mode) {
-		case EMTR_READ    : return "Read";
-		case EMTR_CONFIG  : return "Config";
+		case EMTR_READ         : return "Read";
+		case EMTR_EVENTS       : return "Events";
+		case EMTR_CALIBRATION  : return "Calibration";
 	}
+}
+
+LOCAL void ICACHE_FLASH_ATTR emtr_calibration_done(emtr_packet *packet) {
+	if (device_get_uart() != UART_EMTR) {
+#if EMTR_DEBUG
+		debug("EMTR: %s\n", DEVICE_NOT_FOUND);
+#endif
+		return;
+	}
+	
+	if (emtr_registers.calibration == NULL) {
+		emtr_registers.calibration = (emtr_calibration_registers *)os_zalloc(sizeof(emtr_calibration_registers));
+	}
+	
+	emtr_parse_calibration(packet, emtr_registers.calibration);
 }
 
 LOCAL void ICACHE_FLASH_ATTR emtr_event_done(emtr_packet *packet) {
@@ -32,11 +52,11 @@ LOCAL void ICACHE_FLASH_ATTR emtr_event_done(emtr_packet *packet) {
 		return;
 	}
 	
-	if (emtr_registers == NULL) {
-		emtr_registers = (emtr_event_registers *)os_zalloc(sizeof(emtr_event_registers));
+	if (emtr_registers.event == NULL) {
+		emtr_registers.event = (emtr_event_registers *)os_zalloc(sizeof(emtr_event_registers));
 	}
 	
-	emtr_parse_event(packet, emtr_registers);
+	emtr_parse_event(packet, emtr_registers.event);
 }
 
 LOCAL void emtr_start_read();
@@ -108,6 +128,16 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 	}
 }
 
+LOCAL void ICACHE_FLASH_ATTR emtr_calibration_read() {
+	if (device_get_uart() != UART_EMTR) {
+#if EMTR_DEBUG
+		debug("EMTR: %s\n", DEVICE_NOT_FOUND);
+#endif
+		return;
+	}
+	setTimeout(emtr_get_calibration, emtr_calibration_done, 100);
+}
+
 LOCAL void ICACHE_FLASH_ATTR emtr_events_read() {
 	if (device_get_uart() != UART_EMTR) {
 #if EMTR_DEBUG
@@ -151,8 +181,12 @@ void ICACHE_FLASH_ATTR emtr_handler(
 		return;
 	}
 	
-	if (emtr_registers == NULL) {
-		emtr_registers = (emtr_event_registers *)os_zalloc(sizeof(emtr_event_registers));
+	if (emtr_registers.calibration == NULL) {
+		emtr_registers.calibration = (emtr_calibration_registers *)os_zalloc(sizeof(emtr_calibration_registers));
+	}
+	
+	if (emtr_registers.event == NULL) {
+		emtr_registers.event = (emtr_event_registers *)os_zalloc(sizeof(emtr_event_registers));
 	}
 		
 	struct jsonparse_state parser;
@@ -169,162 +203,209 @@ void ICACHE_FLASH_ATTR emtr_handler(
 					jsonparse_next(&parser);
 					if (jsonparse_strcmp_value(&parser, "Read") == 0) {
 						emtr_current_mode = EMTR_READ;
-					} else if (jsonparse_strcmp_value(&parser, "Config") == 0) {
-						emtr_current_mode = EMTR_CONFIG;
+					} else if (jsonparse_strcmp_value(&parser, "Events") == 0) {
+						emtr_current_mode = EMTR_EVENTS;
+					} else if (jsonparse_strcmp_value(&parser, "Calibration") == 0) {
+						emtr_current_mode = EMTR_CALIBRATION;
 					}
 				}
 				
-				if (mode == EMTR_CONFIG) {
+				if (mode == EMTR_EVENTS) {
 					if (jsonparse_strcmp_value(&parser, "OverCurrentLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->over_current_limit = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->over_current_limit = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "OverPowerLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->over_power_limit = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->over_power_limit = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "OverFrequencyLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->over_frequency_limit = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->over_frequency_limit = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "UnderFrequencyLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->under_frequency_limit = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->under_frequency_limit = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "OverTemperatureLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->over_temperature_limit = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->over_temperature_limit = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "UnderTemperatureLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->under_temperature_limit = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->under_temperature_limit = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "VoltageSagLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->voltage_sag_limit = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->voltage_sag_limit = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "VoltageSurgeLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->voltage_surge_limit = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->voltage_surge_limit = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "OverCurrentHold") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->over_current_hold = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->over_current_hold = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "OverPowerHold") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->over_power_hold = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->over_power_hold = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "OverFrequencyHold") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->over_frequency_hold = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->over_frequency_hold = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "UnderFrequencyHold") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->under_frequency_hold = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->under_frequency_hold = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "OverTemperatureHold") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->over_temperature_hold = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->over_temperature_hold = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "UnderTemperatureHold") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->under_temperature_hold = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->under_temperature_hold = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "EventEnable") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->event_enable = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->event_enable = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "EventMaskCritical") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->event_mask_critical = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->event_mask_critical = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "EventMaskStandard") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->event_mask_standard = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->event_mask_standard = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "EventTest") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->event_test = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->event_test = jsonparse_get_value_as_int(&parser);
 					} else if (jsonparse_strcmp_value(&parser, "EventClear") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
-						emtr_registers->event_clear = jsonparse_get_value_as_int(&parser);
+						emtr_registers.event->event_clear = jsonparse_get_value_as_int(&parser);
 					}
 				}
 			}
 		}
 		
-		emtr_set_event(emtr_registers, NULL);
+		emtr_set_event(emtr_registers.event, NULL);
 	}
 	
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
-	json_data(
-		response, MOD_EMTR, OK_STR,
-		json_sprintf(
-			data_str,
-			"\"Address\" : \"0x%04X\", "
-			"\"Mode\" : \"%s\", "
-			
-			"\"CalibrationCurrent\" : %d, "
-			"\"CalibrationVoltage\" : %d, "
-			"\"CalibrationActivePower\" : %d, "
-			"\"CalibrationReactivePower\" : %d, "
-			"\"AccumulationInterval\" : %d, "
-			
-			"\"OverCurrentLimit\" : %d, "
-			"\"OverPowerLimit\" : %d, "
-			"\"OverFrequencyLimit\" : %d, "
-			"\"UnderFrequencyLimit\" : %d, "
-			"\"OverTemperatureLimit\" : %d, "
-			"\"UnderTemperatureLimit\" : %d, "
-			"\"VoltageSagLimit\" : %d, "
-			"\"VoltageSurgeLimit\" : %d, "
-			"\"OverCurrentHold\" : %d, "
-			"\"OverPowerHold\" : %d, "
-			"\"OverFrequencyHold\" : %d, "
-			"\"UnderFrequencyHold\" : %d, "
-			"\"OverTemperatureHold\" : %d, "
-			"\"UnderTemperatureHold\" : %d, "
-			"\"EventEnable\" : %d, "
-			"\"EventMaskCritical\" : %d, "
-			"\"EventMaskStandard\" : %d, "
-			"\"EventTest\" : %d, "
-			"\"EventClear\" : %d",
-			emtr_address(),
-			emtr_mode_str(emtr_current_mode),
-			
-			emtr_registers->calibration_current,
-			emtr_registers->calibration_voltage,
-			emtr_registers->calibration_active_power,
-			emtr_registers->calibration_reactive_power,
-			emtr_registers->accumulation_interval,
-			
-			emtr_registers->over_current_limit,
-			emtr_registers->over_power_limit,
-			emtr_registers->over_frequency_limit,
-			emtr_registers->under_frequency_limit,
-			emtr_registers->over_temperature_limit,
-			emtr_registers->under_temperature_limit,
-			emtr_registers->voltage_sag_limit,
-			emtr_registers->voltage_surge_limit,
-			emtr_registers->over_current_hold,
-			emtr_registers->over_power_hold,
-			emtr_registers->over_frequency_hold,
-			emtr_registers->under_frequency_hold,
-			emtr_registers->over_temperature_hold,
-			emtr_registers->under_temperature_hold,
-			emtr_registers->event_enable,
-			emtr_registers->event_mask_critical,
-			emtr_registers->event_mask_standard,
-			emtr_registers->event_test,
-			emtr_registers->event_clear
-		),
-		NULL
-	);
+	if (emtr_current_mode == EMTR_CALIBRATION) {
+		json_data(
+			response, MOD_EMTR, OK_STR,
+			json_sprintf(
+				data_str,
+				"\"Address\" : \"0x%04X\", "
+				"\"Mode\" : \"%s\", "
+				
+				"\"GainCurrentRMS\" : %d, "
+				"\"GainVoltageRMS\" : %d, "
+				"\"GainActivePower\" : %d, "
+				"\"GainReactivePower\" : %d, "
+				"\"OffsetCurrentRMS\" : %d, "
+				"\"OffsetActivePower\" : %d, "
+				"\"OffsetReactivePower\" : %d, "
+				"\"DCOffsetCurrent\" : %d, "
+				"\"PhaseCompensation\" : %d, "
+				"\"ApparentPowerDivisor\" : %d, "
+				"\"SystemConfiguration\" : \"0x%08X\", "
+				"\"DIOConfiguration\" : \"0x%04X\", "
+				"\"Range\" : \"0x%08X\", "
+				
+				"\"CalibrationCurrent\" : %d, "
+				"\"CalibrationVoltage\" : %d, "
+				"\"CalibrationActivePower\" : %d, "
+				"\"CalibrationReactivePower\" : %d, "
+				"\"AccumulationInterval\" : %d",
+				emtr_address(),
+				emtr_mode_str(emtr_current_mode),
+				
+				emtr_registers.calibration->gain_current_rms,
+				emtr_registers.calibration->gain_voltage_rms,
+				emtr_registers.calibration->gain_active_power,
+				emtr_registers.calibration->gain_reactive_power,
+				emtr_registers.calibration->offset_current_rms,
+				emtr_registers.calibration->offset_active_power,
+				emtr_registers.calibration->offset_reactive_power,
+				emtr_registers.calibration->dc_offset_current,
+				emtr_registers.calibration->phase_compensation,
+				emtr_registers.calibration->apparent_power_divisor,
+				emtr_registers.calibration->system_configuration,
+				emtr_registers.calibration->dio_configuration,
+				emtr_registers.calibration->range,
+				
+				emtr_registers.calibration->calibration_current,
+				emtr_registers.calibration->calibration_voltage,
+				emtr_registers.calibration->calibration_active_power,
+				emtr_registers.calibration->calibration_reactive_power,
+				emtr_registers.calibration->accumulation_interval
+			),
+			NULL
+		);
+		setTimeout(emtr_calibration_read, NULL, 1500);
+	}
 	
-	setTimeout(emtr_events_read, NULL, 1500);
+	if (emtr_current_mode == EMTR_EVENTS) {
+		json_data(
+			response, MOD_EMTR, OK_STR,
+			json_sprintf(
+				data_str,
+				"\"Address\" : \"0x%04X\", "
+				"\"Mode\" : \"%s\", "
+				
+				"\"OverCurrentLimit\" : %d, "
+				"\"OverPowerLimit\" : %d, "
+				"\"OverFrequencyLimit\" : %d, "
+				"\"UnderFrequencyLimit\" : %d, "
+				"\"OverTemperatureLimit\" : %d, "
+				"\"UnderTemperatureLimit\" : %d, "
+				"\"VoltageSagLimit\" : %d, "
+				"\"VoltageSurgeLimit\" : %d, "
+				"\"OverCurrentHold\" : %d, "
+				"\"OverPowerHold\" : %d, "
+				"\"OverFrequencyHold\" : %d, "
+				"\"UnderFrequencyHold\" : %d, "
+				"\"OverTemperatureHold\" : %d, "
+				"\"UnderTemperatureHold\" : %d, "
+				"\"EventEnable\" : %d, "
+				"\"EventMaskCritical\" : %d, "
+				"\"EventMaskStandard\" : %d, "
+				"\"EventTest\" : %d, "
+				"\"EventClear\" : %d",
+				emtr_address(),
+				emtr_mode_str(emtr_current_mode),
+				
+				emtr_registers.event->over_current_limit,
+				emtr_registers.event->over_power_limit,
+				emtr_registers.event->over_frequency_limit,
+				emtr_registers.event->under_frequency_limit,
+				emtr_registers.event->over_temperature_limit,
+				emtr_registers.event->under_temperature_limit,
+				emtr_registers.event->voltage_sag_limit,
+				emtr_registers.event->voltage_surge_limit,
+				emtr_registers.event->over_current_hold,
+				emtr_registers.event->over_power_hold,
+				emtr_registers.event->over_frequency_hold,
+				emtr_registers.event->under_frequency_hold,
+				emtr_registers.event->over_temperature_hold,
+				emtr_registers.event->under_temperature_hold,
+				emtr_registers.event->event_enable,
+				emtr_registers.event->event_mask_critical,
+				emtr_registers.event->event_mask_standard,
+				emtr_registers.event->event_test,
+				emtr_registers.event->event_clear
+			),
+			NULL
+		);
+		setTimeout(emtr_events_read, NULL, 1500);
+	}
+
 	emtr_start_read();
 }
 
@@ -333,6 +414,7 @@ void ICACHE_FLASH_ATTR mod_emtr_init() {
 	webserver_register_handler_callback(EMTR_URL, emtr_handler);
 	device_register(UART, 0, EMTR_URL, emtr_init);
 	
-	setTimeout(emtr_events_read, NULL, 1500);
-	setTimeout(emtr_start_read, NULL, 2000);
+	setTimeout(emtr_calibration_read, NULL, 1500);
+	setTimeout(emtr_events_read, NULL, 2000);
+	setTimeout(emtr_start_read, NULL, 2500);
 }

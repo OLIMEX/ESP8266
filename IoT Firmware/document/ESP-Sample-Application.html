@@ -230,20 +230,18 @@
 			display: none;
 		}
 		
-		.emtr-mode.config {
+		.emtr-mode {
 			display: none;
 		}
 		
-		.emtr-mode.config input[type=text] {
+		.emtr-mode.events input[type=text],
+		.emtr-mode.calibration input[type=text] {
 			width: 100px;
 		}
 		
-		.emtr-mode.config label {
+		.emtr-mode.events label,
+		.emtr-mode.calibration label {
 			width: 170px;
-		}
-		
-		.emtr-mode.config fieldset label {
-			width: 155px;
 		}
 		
 		@media only screen and (max-device-width:640px) {
@@ -1406,7 +1404,7 @@
 				<legend>ESP8266 Connection</legend>
 				<label>WebSocket</label> <input type="checkbox" name="websocket" value="1" onchange="$(this).submit();" /> <br/>
 				<label>SSL</label>       <input type="checkbox" name="ssl"       value="1" onchange="$(this).submit();" /> <br/>
-				<label>Host</label>      <input type="text"     name="host"      value="192.168.4.1" /> <br/>
+				<label>Host</label>      <input type="text"     name="host"      value="192.168.0.125" /> <br/>
 				<label>User</label>      <input type="text"     name="user"      value="olimex" /> <br/>
 				<label>Password</label>  <input type="text"     name="password"  value="olimex" /> <br/>
 				<button type="submit">Connect</button> <button type="button">Disconnect</button><br/>
@@ -1621,7 +1619,8 @@
 				<label>Mode</label>
 					<select name="Mode"> 
 						<option>Read</option>
-						<option>Config</option>
+						<option>Events</option>
+						<option>Calibration</option>
 					</select>
 				<br/>
 				
@@ -1682,16 +1681,7 @@
 					<br/>
 				</div>
 				
-				<div class="emtr-mode config">
-					<fieldset>
-						<legend>Calibration</legend>
-						<label>Current</label>               <input type="text" name="CalibrationCurrent"       disabled="disabled"/> <br/>
-						<label>Voltage</label>               <input type="text" name="CalibrationVoltage"       disabled="disabled"/> <br/>
-						<label>Active Power</label>          <input type="text" name="CalibrationActivePower"   disabled="disabled"/> <br/>
-						<label>Reactive Power</label>        <input type="text" name="CalibrationReactivePower" disabled="disabled"/> <br/>
-						<label>Accumulation Interval</label> <input type="text" name="AccumulationInterval"     disabled="disabled"/> <br/>
-					</fieldset>
-					
+				<div class="emtr-mode events">
 					<label>Over Current Limit</label>      <input type="text" name="OverCurrentLimit" /> <br/>
 					<label>Over Power Limit</label>        <input type="text" name="OverPowerLimit" /> <br/>
 					<label>Over Frequency Limit</label>    <input type="text" name="OverFrequencyLimit" /> <br/>
@@ -1931,6 +1921,28 @@
 							</div>
 						</div>
 					<br/>
+				</div>
+				
+				<div class="emtr-mode calibration">
+					<label>Gain Current RMS</label>        <input type="text" name="GainCurrentRMS"         disabled="disabled"/> <br/>
+					<label>Gain Voltage RMS</label>        <input type="text" name="GainVoltageRMS"         disabled="disabled"/> <br/>
+					<label>Gain Active Power</label>       <input type="text" name="GainActivePower"        disabled="disabled"/> <br/>
+					<label>Gain Reactive Power</label>     <input type="text" name="GainReactivePower"      disabled="disabled"/> <br/>
+					<label>Offset Current RMS</label>      <input type="text" name="OffsetCurrentRMS"       disabled="disabled"/> <br/>
+					<label>Offset Active Power</label>     <input type="text" name="OffsetActivePower"      disabled="disabled"/> <br/>
+					<label>Offset Reactive Power</label>   <input type="text" name="OffsetReactivePower"    disabled="disabled"/> <br/>
+					<label>DC Offset Current</label>       <input type="text" name="DCOffsetCurrent"        disabled="disabled"/> <br/>
+					<label>Phase Compensation</label>      <input type="text" name="PhaseCompensation"      disabled="disabled"/> <br/>
+					<label>Apparent Power Divisor</label>  <input type="text" name="ApparentPowerDivisor"   disabled="disabled"/> <br/>
+					<label>System Configuration</label>    <input type="text" name="SystemConfiguration"    disabled="disabled"/> <br/>
+					<label>DIO Configuration</label>       <input type="text" name="DIOConfiguration"       disabled="disabled"/> <br/>
+					<label>Range</label>                   <input type="text" name="Range"                  disabled="disabled"/> <br/>
+					
+					<label>Calibration Current</label>        <input type="text" name="CalibrationCurrent"       disabled="disabled"/> <br/>
+					<label>Calibration Voltage</label>        <input type="text" name="CalibrationVoltage"       disabled="disabled"/> <br/>
+					<label>Calibration Active Power</label>   <input type="text" name="CalibrationActivePower"   disabled="disabled"/> <br/>
+					<label>Calibration Reactive Power</label> <input type="text" name="CalibrationReactivePower" disabled="disabled"/> <br/>
+					<label>Accumulation Interval</label>      <input type="text" name="AccumulationInterval"     disabled="disabled"/> <br/>
 				</div>
 				
 				<button type="submit">Submit</button>

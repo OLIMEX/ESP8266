@@ -7,7 +7,8 @@
 	
 	typedef enum {
 		EMTR_READ = 1,
-		EMTR_CONFIG
+		EMTR_EVENTS,
+		EMTR_CALIBRATION
 	} emtr_mode;
 	
 	void emtr_handler(

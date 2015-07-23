@@ -48,15 +48,34 @@
 		uint16 event_flag;
 		uint16 system_status;
 	} emtr_output_registers;
-	#define EMTR_OUT_LEN 28
+	#define EMTR_OUT_BASE 0x0004
+	#define EMTR_OUT_LEN  28
 	
 	typedef struct {
+		uint16 gain_current_rms;
+		uint16 gain_voltage_rms;
+		uint16 gain_active_power;
+		uint16 gain_reactive_power;
+		sint32 offset_current_rms;
+		sint32 offset_active_power;
+		sint32 offset_reactive_power;
+		sint16 dc_offset_current;
+		sint16 phase_compensation;
+		uint16 apparent_power_divisor;
+		uint32 system_configuration;
+		uint16 dio_configuration;
+		uint32 range;
+		
 		uint32 calibration_current;
 		uint16 calibration_voltage;
 		uint32 calibration_active_power;
 		uint32 calibration_reactive_power;
 		uint16 accumulation_interval;
-		uint16 reserved_00;
+	} emtr_calibration_registers;
+	#define EMTR_CALIBRATION_BASE 0x0028
+	#define EMTR_CALIBRATION_LEN  52
+	
+	typedef struct {
 		uint32 over_current_limit;
 		uint16 reserved_01;
 		uint32 over_power_limit;
@@ -83,7 +102,8 @@
 		uint16 event_test;
 		uint16 event_clear;
 	} emtr_event_registers;
-	#define EMTR_EVENTS_LEN 72
+	#define EMTR_EVENTS_BASE  0x005E
+	#define EMTR_EVENTS_LEN   54
 	
 	typedef void (*emtr_callback)(emtr_packet *packet);
 	
@@ -93,6 +113,9 @@
 	void   emtr_set_timeout_callback(emtr_callback command_timeout);
 	void   emtr_clear_timeout(emtr_packet *packet);
 
+	void   emtr_parse_calibration(emtr_packet *packet, emtr_calibration_registers *registers);
+	void   emtr_get_calibration(emtr_callback command_done);
+	
 	void   emtr_parse_event(emtr_packet *packet, emtr_event_registers *registers);
 	void   emtr_get_event(emtr_callback command_done);
 	

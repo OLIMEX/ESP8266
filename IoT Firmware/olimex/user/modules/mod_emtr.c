@@ -262,10 +262,59 @@ void ICACHE_FLASH_ATTR emtr_get_output(emtr_callback command_done) {
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 8);
 	
 	emtr_send_packet->data[0] = 0x41; // Set adress pointer
-	emtr_send_packet->data[1] = 0x00; // address
-	emtr_send_packet->data[2] = 0x04; // address
+	emtr_send_packet->data[1] = (EMTR_OUT_BASE >> 8) & 0xFF; // address
+	emtr_send_packet->data[2] = (EMTR_OUT_BASE >> 0) & 0xFF; // address
 	emtr_send_packet->data[3] = 0x4E; // Read N bytes
 	emtr_send_packet->data[4] = EMTR_OUT_LEN;
+	
+	emtr_send_packet->ask_only = false;
+	emtr_send_packet->callback = command_done;
+	
+	emtr_send(emtr_send_packet);
+}
+
+void ICACHE_FLASH_ATTR emtr_parse_calibration(emtr_packet *packet, emtr_calibration_registers *registers) {
+#if EMTR_DEBUG
+	debug("emtr_parse_calibration()\n");
+#endif
+	
+	if (packet->len != EMTR_CALIBRATION_LEN+3) {
+		os_memset(registers, 0, sizeof(emtr_calibration_registers));
+		return;
+	}
+	
+	registers->gain_current_rms           = emtr_extract_int(packet->data,  0, 2);
+	registers->gain_voltage_rms           = emtr_extract_int(packet->data,  2, 2);
+	registers->gain_active_power          = emtr_extract_int(packet->data,  4, 2);
+	registers->gain_reactive_power        = emtr_extract_int(packet->data,  6, 2);
+	registers->offset_current_rms         = emtr_extract_int(packet->data,  8, 4);
+	registers->offset_active_power        = emtr_extract_int(packet->data, 12, 4);
+	registers->offset_reactive_power      = emtr_extract_int(packet->data, 16, 4);
+	registers->dc_offset_current          = emtr_extract_int(packet->data, 20, 2);
+	registers->phase_compensation         = emtr_extract_int(packet->data, 22, 2);
+	registers->apparent_power_divisor     = emtr_extract_int(packet->data, 24, 2);
+	registers->system_configuration       = emtr_extract_int(packet->data, 26, 4);
+	registers->dio_configuration          = emtr_extract_int(packet->data, 30, 2);
+	registers->range                      = emtr_extract_int(packet->data, 32, 4);
+
+	registers->calibration_current        = emtr_extract_int(packet->data, 36, 4);
+	registers->calibration_voltage        = emtr_extract_int(packet->data, 40, 2);
+	registers->calibration_active_power   = emtr_extract_int(packet->data, 42, 4);
+	registers->calibration_reactive_power = emtr_extract_int(packet->data, 46, 4);
+	registers->accumulation_interval      = emtr_extract_int(packet->data, 50, 2);
+}
+
+void ICACHE_FLASH_ATTR emtr_get_calibration(emtr_callback command_done) {
+#if EMTR_DEBUG
+	debug("emtr_get_calibration()\n");
+#endif
+	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 8);
+	
+	emtr_send_packet->data[0] = 0x41; // Set adress pointer
+	emtr_send_packet->data[1] = (EMTR_CALIBRATION_BASE >> 8) & 0xFF; // address
+	emtr_send_packet->data[2] = (EMTR_CALIBRATION_BASE >> 0) & 0xFF; // address
+	emtr_send_packet->data[3] = 0x4E; // Read N bytes
+	emtr_send_packet->data[4] = EMTR_CALIBRATION_LEN;
 	
 	emtr_send_packet->ask_only = false;
 	emtr_send_packet->callback = command_done;
@@ -283,38 +332,31 @@ void ICACHE_FLASH_ATTR emtr_parse_event(emtr_packet *packet, emtr_event_register
 		return;
 	}
 	
-	registers->calibration_current        = emtr_extract_int(packet->data,  0, 4);
-	registers->calibration_voltage        = emtr_extract_int(packet->data,  4, 2);
-	registers->calibration_active_power   = emtr_extract_int(packet->data,  6, 4);
-	registers->calibration_reactive_power = emtr_extract_int(packet->data, 10, 4);
-	registers->accumulation_interval      = emtr_extract_int(packet->data, 14, 2);
-	registers->reserved_00                = emtr_extract_int(packet->data, 16, 2);
-	
-	registers->over_current_limit         = emtr_extract_int(packet->data, 18, 4);
-	registers->reserved_01                = emtr_extract_int(packet->data, 22, 2);
-	registers->over_power_limit           = emtr_extract_int(packet->data, 24, 4);
-	registers->reserved_02                = emtr_extract_int(packet->data, 28, 2);
-	registers->over_frequency_limit       = emtr_extract_int(packet->data, 30, 2);
-	registers->under_frequency_limit      = emtr_extract_int(packet->data, 32, 2);
-	registers->over_temperature_limit     = emtr_extract_int(packet->data, 34, 2);
-	registers->under_temperature_limit    = emtr_extract_int(packet->data, 36, 2);
-	registers->voltage_sag_limit          = emtr_extract_int(packet->data, 38, 2);
-	registers->voltage_surge_limit        = emtr_extract_int(packet->data, 40, 2);
-	registers->over_current_hold          = emtr_extract_int(packet->data, 42, 2);
-	registers->reserved_03                = emtr_extract_int(packet->data, 44, 2);
-	registers->over_power_hold            = emtr_extract_int(packet->data, 46, 2);
-	registers->reserved_04                = emtr_extract_int(packet->data, 48, 2);
-	registers->over_frequency_hold        = emtr_extract_int(packet->data, 50, 2);
-	registers->under_frequency_hold       = emtr_extract_int(packet->data, 52, 2);
-	registers->over_temperature_hold      = emtr_extract_int(packet->data, 54, 2);
-	registers->under_temperature_hold     = emtr_extract_int(packet->data, 56, 2);
-	registers->reserved_05                = emtr_extract_int(packet->data, 58, 2);
-	registers->reserved_06                = emtr_extract_int(packet->data, 60, 2);
-	registers->event_enable               = emtr_extract_int(packet->data, 62, 2);
-	registers->event_mask_critical        = emtr_extract_int(packet->data, 64, 2);
-	registers->event_mask_standard        = emtr_extract_int(packet->data, 66, 2);
-	registers->event_test                 = emtr_extract_int(packet->data, 68, 2);
-	registers->event_clear                = emtr_extract_int(packet->data, 70, 2);
+	registers->over_current_limit         = emtr_extract_int(packet->data,  0, 4);
+	registers->reserved_01                = emtr_extract_int(packet->data,  4, 2);
+	registers->over_power_limit           = emtr_extract_int(packet->data,  6, 4);
+	registers->reserved_02                = emtr_extract_int(packet->data, 10, 2);
+	registers->over_frequency_limit       = emtr_extract_int(packet->data, 12, 2);
+	registers->under_frequency_limit      = emtr_extract_int(packet->data, 14, 2);
+	registers->over_temperature_limit     = emtr_extract_int(packet->data, 16, 2);
+	registers->under_temperature_limit    = emtr_extract_int(packet->data, 18, 2);
+	registers->voltage_sag_limit          = emtr_extract_int(packet->data, 20, 2);
+	registers->voltage_surge_limit        = emtr_extract_int(packet->data, 22, 2);
+	registers->over_current_hold          = emtr_extract_int(packet->data, 24, 2);
+	registers->reserved_03                = emtr_extract_int(packet->data, 26, 2);
+	registers->over_power_hold            = emtr_extract_int(packet->data, 28, 2);
+	registers->reserved_04                = emtr_extract_int(packet->data, 30, 2);
+	registers->over_frequency_hold        = emtr_extract_int(packet->data, 32, 2);
+	registers->under_frequency_hold       = emtr_extract_int(packet->data, 34, 2);
+	registers->over_temperature_hold      = emtr_extract_int(packet->data, 36, 2);
+	registers->under_temperature_hold     = emtr_extract_int(packet->data, 38, 2);
+	registers->reserved_05                = emtr_extract_int(packet->data, 40, 2);
+	registers->reserved_06                = emtr_extract_int(packet->data, 42, 2);
+	registers->event_enable               = emtr_extract_int(packet->data, 44, 2);
+	registers->event_mask_critical        = emtr_extract_int(packet->data, 46, 2);
+	registers->event_mask_standard        = emtr_extract_int(packet->data, 48, 2);
+	registers->event_test                 = emtr_extract_int(packet->data, 50, 2);
+	registers->event_clear                = emtr_extract_int(packet->data, 52, 2);
 }
 
 void ICACHE_FLASH_ATTR emtr_get_event(emtr_callback command_done) {
@@ -324,8 +366,8 @@ void ICACHE_FLASH_ATTR emtr_get_event(emtr_callback command_done) {
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 8);
 	
 	emtr_send_packet->data[0] = 0x41; // Set adress pointer
-	emtr_send_packet->data[1] = 0x00; // address
-	emtr_send_packet->data[2] = 0x4C; // address
+	emtr_send_packet->data[1] = (EMTR_EVENTS_BASE >> 8) & 0xFF; // address
+	emtr_send_packet->data[2] = (EMTR_EVENTS_BASE >> 0) & 0xFF; // address
 	emtr_send_packet->data[3] = 0x4E; // Read N bytes
 	emtr_send_packet->data[4] = EMTR_EVENTS_LEN;
 	
@@ -342,43 +384,36 @@ void ICACHE_FLASH_ATTR emtr_set_event(emtr_event_registers *registers, emtr_call
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 2+5+EMTR_EVENTS_LEN+2+1);
 	
 	emtr_send_packet->data[0] = 0x41; // Set adress pointer
-	emtr_send_packet->data[1] = 0x00; // address
-	emtr_send_packet->data[2] = 0x4C; // address
+	emtr_send_packet->data[1] = (EMTR_EVENTS_BASE >> 8) & 0xFF; // address
+	emtr_send_packet->data[2] = (EMTR_EVENTS_BASE >> 0) & 0xFF; // address
 	emtr_send_packet->data[3] = 0x4D; // Write N bytes
 	emtr_send_packet->data[4] = EMTR_EVENTS_LEN;
 	
-	emtr_set_int(registers->calibration_current,        emtr_send_packet->data,  0+5, 4);
-	emtr_set_int(registers->calibration_voltage,        emtr_send_packet->data,  4+5, 2);
-	emtr_set_int(registers->calibration_active_power,   emtr_send_packet->data,  6+5, 4);
-	emtr_set_int(registers->calibration_reactive_power, emtr_send_packet->data, 10+5, 4);
-	emtr_set_int(registers->accumulation_interval,      emtr_send_packet->data, 14+5, 2);
-	emtr_set_int(registers->reserved_00,                emtr_send_packet->data, 16+5, 2);
-	
-	emtr_set_int(registers->over_current_limit,         emtr_send_packet->data, 18+5, 4);
-	emtr_set_int(registers->reserved_01,                emtr_send_packet->data, 22+5, 2);
-	emtr_set_int(registers->over_power_limit,           emtr_send_packet->data, 24+5, 4);
-	emtr_set_int(registers->reserved_02,                emtr_send_packet->data, 28+5, 2);
-	emtr_set_int(registers->over_frequency_limit,       emtr_send_packet->data, 30+5, 2);
-	emtr_set_int(registers->under_frequency_limit,      emtr_send_packet->data, 32+5, 2);
-	emtr_set_int(registers->over_temperature_limit,     emtr_send_packet->data, 34+5, 2);
-	emtr_set_int(registers->under_temperature_limit,    emtr_send_packet->data, 36+5, 2);
-	emtr_set_int(registers->voltage_sag_limit,          emtr_send_packet->data, 38+5, 2);
-	emtr_set_int(registers->voltage_surge_limit,        emtr_send_packet->data, 40+5, 2);
-	emtr_set_int(registers->over_current_hold,          emtr_send_packet->data, 42+5, 2);
-	emtr_set_int(registers->reserved_03,                emtr_send_packet->data, 44+5, 2);
-	emtr_set_int(registers->over_power_hold,            emtr_send_packet->data, 46+5, 2);
-	emtr_set_int(registers->reserved_04,                emtr_send_packet->data, 48+5, 2);
-	emtr_set_int(registers->over_frequency_hold,        emtr_send_packet->data, 50+5, 2);
-	emtr_set_int(registers->under_frequency_hold,       emtr_send_packet->data, 52+5, 2);
-	emtr_set_int(registers->over_temperature_hold,      emtr_send_packet->data, 54+5, 2);
-	emtr_set_int(registers->under_temperature_hold,     emtr_send_packet->data, 56+5, 2);
-	emtr_set_int(registers->reserved_05,                emtr_send_packet->data, 58+5, 2);
-	emtr_set_int(registers->reserved_06,                emtr_send_packet->data, 60+5, 2);
-	emtr_set_int(registers->event_enable,               emtr_send_packet->data, 62+5, 2);
-	emtr_set_int(registers->event_mask_critical,        emtr_send_packet->data, 64+5, 2);
-	emtr_set_int(registers->event_mask_standard,        emtr_send_packet->data, 66+5, 2);
-	emtr_set_int(registers->event_test,                 emtr_send_packet->data, 68+5, 2);
-	emtr_set_int(registers->event_clear,                emtr_send_packet->data, 70+5, 2);
+	emtr_set_int(registers->over_current_limit,         emtr_send_packet->data,  0+5, 4);
+	emtr_set_int(registers->reserved_01,                emtr_send_packet->data,  4+5, 2);
+	emtr_set_int(registers->over_power_limit,           emtr_send_packet->data,  6+5, 4);
+	emtr_set_int(registers->reserved_02,                emtr_send_packet->data, 10+5, 2);
+	emtr_set_int(registers->over_frequency_limit,       emtr_send_packet->data, 12+5, 2);
+	emtr_set_int(registers->under_frequency_limit,      emtr_send_packet->data, 14+5, 2);
+	emtr_set_int(registers->over_temperature_limit,     emtr_send_packet->data, 16+5, 2);
+	emtr_set_int(registers->under_temperature_limit,    emtr_send_packet->data, 18+5, 2);
+	emtr_set_int(registers->voltage_sag_limit,          emtr_send_packet->data, 20+5, 2);
+	emtr_set_int(registers->voltage_surge_limit,        emtr_send_packet->data, 22+5, 2);
+	emtr_set_int(registers->over_current_hold,          emtr_send_packet->data, 24+5, 2);
+	emtr_set_int(registers->reserved_03,                emtr_send_packet->data, 26+5, 2);
+	emtr_set_int(registers->over_power_hold,            emtr_send_packet->data, 28+5, 2);
+	emtr_set_int(registers->reserved_04,                emtr_send_packet->data, 30+5, 2);
+	emtr_set_int(registers->over_frequency_hold,        emtr_send_packet->data, 32+5, 2);
+	emtr_set_int(registers->under_frequency_hold,       emtr_send_packet->data, 34+5, 2);
+	emtr_set_int(registers->over_temperature_hold,      emtr_send_packet->data, 36+5, 2);
+	emtr_set_int(registers->under_temperature_hold,     emtr_send_packet->data, 38+5, 2);
+	emtr_set_int(registers->reserved_05,                emtr_send_packet->data, 40+5, 2);
+	emtr_set_int(registers->reserved_06,                emtr_send_packet->data, 42+5, 2);
+	emtr_set_int(registers->event_enable,               emtr_send_packet->data, 44+5, 2);
+	emtr_set_int(registers->event_mask_critical,        emtr_send_packet->data, 46+5, 2);
+	emtr_set_int(registers->event_mask_standard,        emtr_send_packet->data, 48+5, 2);
+	emtr_set_int(registers->event_test,                 emtr_send_packet->data, 50+5, 2);
+	emtr_set_int(registers->event_clear,                emtr_send_packet->data, 52+5, 2);
 	
 	emtr_send_packet->data[EMTR_EVENTS_LEN+5] = 0x53;           // Save registers to flash
 	emtr_send_packet->data[EMTR_EVENTS_LEN+6] = emtr_address(); // Device address
