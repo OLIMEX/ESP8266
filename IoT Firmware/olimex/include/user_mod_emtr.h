@@ -6,8 +6,8 @@
 	#define EMTR_URL       "/mod-emtr"
 	
 	typedef enum {
-		EMTR_READ = 1,
-		EMTR_EVENTS,
+		EMTR_LOG = 1,
+		EMTR_CONFIGURE,
 		EMTR_CALIBRATION
 	} emtr_mode;
 	

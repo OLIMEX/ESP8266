@@ -230,16 +230,21 @@
 			display: none;
 		}
 		
+		#emtr input[name=ReadInterval][type=text]{
+			text-align: center
+		}
+		
 		.emtr-mode {
 			display: none;
 		}
 		
-		.emtr-mode.events input[type=text],
+		.emtr-mode.configure input[type=text],
+		.emtr-mode.configure input[type=range],
 		.emtr-mode.calibration input[type=text] {
 			width: 100px;
 		}
 		
-		.emtr-mode.events label,
+		.emtr-mode.configure label,
 		.emtr-mode.calibration label {
 			width: 170px;
 		}
@@ -405,13 +410,15 @@
 				return this.each(
 					function (i, e) {
 						var $this = $(e);
+						var $form = $this.closest('form');
 						
 						$this.bind(
 							'refresh',
 							function () {
 								var value = $this.val().toLowerCase();
-								$this.closest('form').find('div.emtr-mode').hide();
-								$this.closest('form').find('div.emtr-mode.'+value).show();
+								$form.find('input[name=Counter]').attr('disabled', value == 'log');
+								$form.find('div.emtr-mode').hide();
+								$form.find('div.emtr-mode.'+value).show();
 								$('.bits').bits();
 							}
 						);
@@ -493,15 +500,20 @@
 					function (i, e) {
 						var $this = $(e);
 						var timeout = null;
+						var value;
 						
 						$this.change(
 							function (event) {
+								value = $this.val();
+								$this.data('refresh', false);
 								if (timeout) {
 									clearTimeout(timeout);
 								}
 								
 								timeout = setTimeout(
 									function () {
+										$this.val(value);
+										$this.data('refresh', true);
 										$this.submit();
 										timeout = null;
 									},
@@ -565,7 +577,7 @@
 						var $e = $(e);
 						if (
 							$e.is(':button') || 
-							$e.is(':disabled') || 
+							$e.is(':disabled') ||
 							($e.is(':checkbox') && $e.parents('.bits').length > 0)
 						) {
 							return json;
@@ -680,6 +692,9 @@
 								i.prop('checked', false);
 							}
 						} else {
+							if (i.data('refresh') === false) {
+								continue;
+							}
 							i.val(json[name]);
 							i.trigger('refresh');
 						}
@@ -1618,13 +1633,19 @@
 				
 				<label>Mode</label>
 					<select name="Mode"> 
-						<option>Read</option>
-						<option>Events</option>
+						<option>Log</option>
+						<option>Configure</option>
 						<option>Calibration</option>
 					</select>
 				<br/>
 				
-				<div class="emtr-mode read">
+				<label>Counter</label>       <input type="text"  name="Counter"      disabled="disabled" /> <br/>
+				<label>Read Interval</label> <input type="range" name="ReadInterval" min="10" max="1000" step="10" /> <br/>
+				<label></label>              <input type="text"  name="ReadInterval" disabled="disabled" /> <br/>
+				
+				<div class="emtr-mode log">
+					<label>Interval</label>           <input type="text" name="Interval"          disabled="disabled" /> <br/>
+					
 					<label>Current RMS</label>        <input type="text" name="CurrentRMS"        disabled="disabled" /> <br/>
 					<label>Voltage RMS</label>        <input type="text" name="VoltageRMS"        disabled="disabled" /> <br/>
 					<label>Active Power</label>       <input type="text" name="ActivePower"       disabled="disabled" /> <br/>
@@ -1681,7 +1702,7 @@
 					<br/>
 				</div>
 				
-				<div class="emtr-mode events">
+				<div class="emtr-mode configure">
 					<label>Over Current Limit</label>      <input type="text" name="OverCurrentLimit" /> <br/>
 					<label>Over Power Limit</label>        <input type="text" name="OverPowerLimit" /> <br/>
 					<label>Over Frequency Limit</label>    <input type="text" name="OverFrequencyLimit" /> <br/>

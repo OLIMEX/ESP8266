@@ -5,6 +5,7 @@
 
 #include "json/jsonparse.h"
 
+#include "user_misc.h"
 #include "user_json.h"
 #include "user_events.h"
 #include "user_webserver.h"
@@ -19,12 +20,13 @@ LOCAL struct {
 	emtr_event_registers       *event;
 } emtr_registers = {NULL, NULL};
 
-LOCAL emtr_mode emtr_current_mode = EMTR_READ;
+LOCAL emtr_mode emtr_current_mode = EMTR_LOG;
+LOCAL uint32    emtr_read_interval = 420;
 
 LOCAL const char ICACHE_FLASH_ATTR *emtr_mode_str(uint8 mode) {
 	switch (mode) {
-		case EMTR_READ         : return "Read";
-		case EMTR_EVENTS       : return "Events";
+		case EMTR_LOG          : return "Log";
+		case EMTR_CONFIGURE    : return "Configure";
 		case EMTR_CALIBRATION  : return "Calibration";
 	}
 }
@@ -72,8 +74,19 @@ LOCAL void ICACHE_FLASH_ATTR emtr_timeout(emtr_packet *packet) {
 
 LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 	LOCAL emtr_output_registers *registers = NULL;
-
-	if (emtr_current_mode != EMTR_READ) {
+	LOCAL uint32 time = 0;
+	LOCAL uint32 interval = 0;
+	LOCAL uint32 now = 0;
+	
+	now = system_get_time();
+	interval = (time != 0) ? 
+		(now - time) / 1000
+		: 
+		0
+	;
+	time = now;
+	
+	if (emtr_current_mode != EMTR_LOG) {
 		return;
 	}
 	
@@ -85,8 +98,6 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 	
 	char event_str[20];
 	os_memset(event_str, 0, sizeof(event_str));
-	char status_str[20];
-	os_memset(status_str, 0, sizeof(status_str));
 	
 	char response[WEBSERVER_MAX_RESPONSE_LEN];
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
@@ -95,6 +106,10 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 		json_sprintf(
 			data_str,
 			"\"Address\" : \"0x%04X\", "
+			"\"Counter\" : %d, "
+			"\"ReadInterval\" : %d, "
+			"\"Interval\" : %d, "
+			
 			"\"CurrentRMS\" : %d, "
 			"\"VoltageRMS\" : %d, "
 			"\"ActivePower\" : %d, "
@@ -104,8 +119,12 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 			"\"LineFrequency\" : %d, "
 			"\"ThermistorVoltage\" : %d, "
 			"\"EventFlag\" : %d, "
-			"\"SystemStatus\" : \"0b%s\"",
+			"\"SystemStatus\" : \"0x%04X\"",
 			emtr_address(),
+			emtr_counter(),
+			emtr_read_interval,
+			interval,
+			
 			registers->current_rms,
 			registers->voltage_rms,
 			registers->active_power,
@@ -115,10 +134,12 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 			registers->line_frequency,
 			registers->thermistor_voltage,
 			registers->event_flag,
-			itob(registers->system_status, status_str, 16)
+			registers->system_status
 		),
 		NULL
 	);
+	
+	emtr_counter_add(registers->apparent_power * interval / 1000);
 	
 	user_event_raise(EMTR_URL, response);
 	emtr_start_read();
@@ -157,12 +178,12 @@ LOCAL uint32  emtr_read_timer = 0;
 		return;
 	}
 	
-	if (emtr_current_mode != EMTR_READ) {
+	if (emtr_current_mode != EMTR_LOG) {
 		return;
 	}
 	
 	clearTimeout(emtr_read_timer);
-	emtr_read_timer = setTimeout(emtr_get_output, emtr_read_done, 10);
+	emtr_read_timer = setTimeout(emtr_get_output, emtr_read_done, emtr_read_interval);
 }
 
 
@@ -201,16 +222,24 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				if (jsonparse_strcmp_value(&parser, "Mode") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					if (jsonparse_strcmp_value(&parser, "Read") == 0) {
-						emtr_current_mode = EMTR_READ;
-					} else if (jsonparse_strcmp_value(&parser, "Events") == 0) {
-						emtr_current_mode = EMTR_EVENTS;
+					if (jsonparse_strcmp_value(&parser, "Log") == 0) {
+						emtr_current_mode = EMTR_LOG;
+					} else if (jsonparse_strcmp_value(&parser, "Configure") == 0) {
+						emtr_current_mode = EMTR_CONFIGURE;
 					} else if (jsonparse_strcmp_value(&parser, "Calibration") == 0) {
 						emtr_current_mode = EMTR_CALIBRATION;
 					}
+				} else if (jsonparse_strcmp_value(&parser, "ReadInterval") == 0) {
+					jsonparse_next(&parser);
+					jsonparse_next(&parser);
+					emtr_read_interval = jsonparse_get_value_as_int(&parser);
+				} else if (jsonparse_strcmp_value(&parser, "Counter") == 0) {
+					jsonparse_next(&parser);
+					jsonparse_next(&parser);
+					emtr_set_counter(jsonparse_get_value_as_int(&parser), NULL);
 				}
 				
-				if (mode == EMTR_EVENTS) {
+				if (mode == EMTR_CONFIGURE) {
 					if (jsonparse_strcmp_value(&parser, "OverCurrentLimit") == 0) {
 						jsonparse_next(&parser);
 						jsonparse_next(&parser);
@@ -303,6 +332,8 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				data_str,
 				"\"Address\" : \"0x%04X\", "
 				"\"Mode\" : \"%s\", "
+				"\"Counter\" : %d, "
+				"\"ReadInterval\" : %d, "
 				
 				"\"GainCurrentRMS\" : %d, "
 				"\"GainVoltageRMS\" : %d, "
@@ -325,6 +356,8 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				"\"AccumulationInterval\" : %d",
 				emtr_address(),
 				emtr_mode_str(emtr_current_mode),
+				emtr_counter(),
+				emtr_read_interval,
 				
 				emtr_registers.calibration->gain_current_rms,
 				emtr_registers.calibration->gain_voltage_rms,
@@ -351,13 +384,15 @@ void ICACHE_FLASH_ATTR emtr_handler(
 		setTimeout(emtr_calibration_read, NULL, 1500);
 	}
 	
-	if (emtr_current_mode == EMTR_EVENTS) {
+	if (emtr_current_mode == EMTR_CONFIGURE) {
 		json_data(
 			response, MOD_EMTR, OK_STR,
 			json_sprintf(
 				data_str,
 				"\"Address\" : \"0x%04X\", "
 				"\"Mode\" : \"%s\", "
+				"\"Counter\" : %d, "
+				"\"ReadInterval\" : %d, "
 				
 				"\"OverCurrentLimit\" : %d, "
 				"\"OverPowerLimit\" : %d, "
@@ -380,6 +415,8 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				"\"EventClear\" : %d",
 				emtr_address(),
 				emtr_mode_str(emtr_current_mode),
+				emtr_counter(),
+				emtr_read_interval,
 				
 				emtr_registers.event->over_current_limit,
 				emtr_registers.event->over_power_limit,

@@ -3,6 +3,7 @@
 #include "mem.h"
 #include "stdout.h"
 
+#include "user_misc.h"
 #include "user_devices.h"
 #include "user_json.h"
 
@@ -21,7 +22,8 @@ LOCAL emtr_callback emtr_user_callback   = NULL;
 LOCAL uint32 emtr_timeout = 0;
 
 LOCAL emtr_sys_params emtr_params = {
-	.address = 0
+	.address = 0,
+	.counter = 0
 };
 
 void ICACHE_FLASH_ATTR emtr_clear_timeout(emtr_packet *packet) {
@@ -220,10 +222,10 @@ LOCAL void ICACHE_FLASH_ATTR emtr_send(emtr_packet *packet) {
 	emtr_timeout = setTimeout((os_timer_func_t *)emtr_command_timeout, packet, EMTR_TIMEOUT);
 }
 
-LOCAL uint32 emtr_extract_int(uint8 *data, uint8 offset, uint8 size) {
+LOCAL _uint64_ emtr_extract_int(uint8 *data, uint8 offset, uint8 size) {
 	uint8 i;
-	uint32 pow = 1;
-	uint32 result = 0;
+	_uint64_ pow = 1;
+	_uint64_ result = 0;
 	for (i=0; i<size; i++) {
 		result = result + data[offset+i]*pow;
 		pow = pow * 256;
@@ -231,7 +233,7 @@ LOCAL uint32 emtr_extract_int(uint8 *data, uint8 offset, uint8 size) {
 	return result;
 }
 
-LOCAL emtr_set_int(uint32 value, uint8 *data, uint8 offset, uint8 size) {
+LOCAL emtr_set_int(_uint64_ value, uint8 *data, uint8 offset, uint8 size) {
 	uint8 i;
 	for (i=0; i<size; i++) {
 		data[offset+i] = ((value >> (i * 8)) & 0xFF);
@@ -261,10 +263,11 @@ void ICACHE_FLASH_ATTR emtr_get_output(emtr_callback command_done) {
 #endif
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 8);
 	
-	emtr_send_packet->data[0] = 0x41; // Set adress pointer
+	emtr_send_packet->data[0] = EMTR_SET_ADDRESS;            // Set address pointer
 	emtr_send_packet->data[1] = (EMTR_OUT_BASE >> 8) & 0xFF; // address
 	emtr_send_packet->data[2] = (EMTR_OUT_BASE >> 0) & 0xFF; // address
-	emtr_send_packet->data[3] = 0x4E; // Read N bytes
+	
+	emtr_send_packet->data[3] = EMTR_READ;                   // Read N bytes
 	emtr_send_packet->data[4] = EMTR_OUT_LEN;
 	
 	emtr_send_packet->ask_only = false;
@@ -310,10 +313,11 @@ void ICACHE_FLASH_ATTR emtr_get_calibration(emtr_callback command_done) {
 #endif
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 8);
 	
-	emtr_send_packet->data[0] = 0x41; // Set adress pointer
+	emtr_send_packet->data[0] = EMTR_SET_ADDRESS;                    // Set address pointer
 	emtr_send_packet->data[1] = (EMTR_CALIBRATION_BASE >> 8) & 0xFF; // address
 	emtr_send_packet->data[2] = (EMTR_CALIBRATION_BASE >> 0) & 0xFF; // address
-	emtr_send_packet->data[3] = 0x4E; // Read N bytes
+	
+	emtr_send_packet->data[3] = EMTR_READ;                           // Read N bytes
 	emtr_send_packet->data[4] = EMTR_CALIBRATION_LEN;
 	
 	emtr_send_packet->ask_only = false;
@@ -365,10 +369,11 @@ void ICACHE_FLASH_ATTR emtr_get_event(emtr_callback command_done) {
 #endif
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 8);
 	
-	emtr_send_packet->data[0] = 0x41; // Set adress pointer
+	emtr_send_packet->data[0] = EMTR_SET_ADDRESS;               // Set address pointer
 	emtr_send_packet->data[1] = (EMTR_EVENTS_BASE >> 8) & 0xFF; // address
 	emtr_send_packet->data[2] = (EMTR_EVENTS_BASE >> 0) & 0xFF; // address
-	emtr_send_packet->data[3] = 0x4E; // Read N bytes
+	
+	emtr_send_packet->data[3] = EMTR_READ;                      // Read N bytes
 	emtr_send_packet->data[4] = EMTR_EVENTS_LEN;
 	
 	emtr_send_packet->ask_only = false;
@@ -383,10 +388,11 @@ void ICACHE_FLASH_ATTR emtr_set_event(emtr_event_registers *registers, emtr_call
 #endif
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 2+5+EMTR_EVENTS_LEN+2+1);
 	
-	emtr_send_packet->data[0] = 0x41; // Set adress pointer
+	emtr_send_packet->data[0] = EMTR_SET_ADDRESS;               // Set address pointer
 	emtr_send_packet->data[1] = (EMTR_EVENTS_BASE >> 8) & 0xFF; // address
 	emtr_send_packet->data[2] = (EMTR_EVENTS_BASE >> 0) & 0xFF; // address
-	emtr_send_packet->data[3] = 0x4D; // Write N bytes
+	
+	emtr_send_packet->data[3] = EMTR_WRITE;                     // Write N bytes
 	emtr_send_packet->data[4] = EMTR_EVENTS_LEN;
 	
 	emtr_set_int(registers->over_current_limit,         emtr_send_packet->data,  0+5, 4);
@@ -428,8 +434,25 @@ uint16 ICACHE_FLASH_ATTR emtr_address() {
 	return emtr_params.address;
 }
 
+_uint64_ ICACHE_FLASH_ATTR emtr_counter() {
+	return emtr_params.counter;
+}
+
+_uint64_ ICACHE_FLASH_ATTR emtr_counter_add(_uint64_ value) {
+	emtr_set_counter(emtr_params.counter + value, NULL);
+	return emtr_params.counter;
+}
+
+LOCAL void ICACHE_FLASH_ATTR emtr_counter_receive(emtr_packet *packet) {
+	if (packet->len != 19) {
+		emtr_params.counter = 0;
+	}
+	emtr_params.counter = emtr_extract_int(packet->data, 0, 8);
+}
+
 LOCAL void ICACHE_FLASH_ATTR emtr_address_receive(emtr_packet *packet) {
 	emtr_params.address = packet->data[0] * 256 + packet->data[1];
+	emtr_get_counter(emtr_counter_receive);
 }
 
 void ICACHE_FLASH_ATTR emtr_get_address(emtr_callback command_done) {
@@ -438,12 +461,46 @@ void ICACHE_FLASH_ATTR emtr_get_address(emtr_callback command_done) {
 #endif
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 7);
 	
-	emtr_send_packet->data[0] = 0x41; // Set adress pointer
-	emtr_send_packet->data[1] = 0x00; // address
-	emtr_send_packet->data[2] = 0x26; // address
-	emtr_send_packet->data[3] = 0x52; // Read 2 bytes
+	emtr_send_packet->data[0] = EMTR_SET_ADDRESS; // Set adress pointer
+	emtr_send_packet->data[1] = 0x00;             // address
+	emtr_send_packet->data[2] = 0x26;             // address
+	emtr_send_packet->data[3] = EMTR_READ_16;     // Read 2 bytes
 	
 	emtr_send_packet->ask_only = false;
+	emtr_send_packet->callback = command_done;
+	
+	emtr_send(emtr_send_packet);
+}
+
+void ICACHE_FLASH_ATTR emtr_get_counter(emtr_callback command_done) {
+#if EMTR_DEBUG
+	debug("emtr_get_counter()\n");
+#endif
+	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 5);
+	
+	emtr_send_packet->data[0] = EMTR_FLASH_READ;  // Command
+	emtr_send_packet->data[1] = 0x00;             // page
+	
+	emtr_send_packet->ask_only = false;
+	emtr_send_packet->callback = command_done;
+	
+	emtr_send(emtr_send_packet);
+}
+
+void ICACHE_FLASH_ATTR emtr_set_counter(_uint64_ value, emtr_callback command_done) {
+#if EMTR_DEBUG
+	debug("emtr_set_counter()\n");
+#endif
+	emtr_params.counter = value;
+	
+	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 21);
+	
+	emtr_send_packet->data[0] = EMTR_FLASH_WRITE;  // Command
+	emtr_send_packet->data[1] = 0x00;              // page
+	
+	emtr_set_int(emtr_params.counter, emtr_send_packet->data, 2, 8);
+	
+	emtr_send_packet->ask_only = true;
 	emtr_send_packet->callback = command_done;
 	
 	emtr_send(emtr_send_packet);
@@ -455,12 +512,12 @@ void ICACHE_FLASH_ATTR emtr_clear_event(uint16 event, emtr_callback command_done
 #endif
 	emtr_packet_init(&emtr_send_packet, EMTR_START_FRAME, 9);
 	
-	emtr_send_packet->data[0] = 0x41; // Set adress pointer
-	emtr_send_packet->data[1] = 0x00; // address
-	emtr_send_packet->data[2] = 0x92; // address
-	emtr_send_packet->data[3] = 0x57; // Write 2 bytes
+	emtr_send_packet->data[0] = EMTR_SET_ADDRESS;    // Set adress pointer
+	emtr_send_packet->data[1] = 0x00;                // address
+	emtr_send_packet->data[2] = 0x92;                // address
+	emtr_send_packet->data[3] = EMTR_WRITE_16;       // Write 2 bytes
 	emtr_send_packet->data[4] = (event >> 8) & 0xFF; // event high
-	emtr_send_packet->data[5] = event & 0xFF;        // event low
+	emtr_send_packet->data[5] = (event >> 0) & 0xFF; // event low
 	
 	emtr_send_packet->ask_only = true;
 	emtr_send_packet->callback = command_done;
@@ -490,5 +547,5 @@ void ICACHE_FLASH_ATTR emtr_down() {
 	uart_write_byte(EMTR_START_FRAME);
 	
 	// Len
-	uart_write_byte(60);
+	uart_write_byte(65);
 }

@@ -10,6 +10,19 @@
 	#define EMTR_ACK_FRAME        0x06
 	#define EMTR_ERROR_NAK        0x15
 	#define EMTR_ERROR_CRC        0x51
+
+	#define EMTR_SET_ADDRESS      0x41
+	
+	#define EMTR_READ             0x4E
+	#define EMTR_READ_16          0x52
+	#define EMTR_READ_32          0x44
+
+	#define EMTR_WRITE            0x4D
+	#define EMTR_WRITE_16         0x57
+	#define EMTR_WRITE_32         0x45
+	
+	#define EMTR_FLASH_READ       0x42
+	#define EMTR_FLASH_WRITE      0x50
 	
 	#include "user_devices.h"
 	
@@ -33,7 +46,8 @@
 	} emtr_packet;
 	
 	typedef struct {
-		uint16 address;
+		uint16    address;
+		_uint64_  counter;
 	} emtr_sys_params;
 	
 	typedef struct {
@@ -107,7 +121,13 @@
 	
 	typedef void (*emtr_callback)(emtr_packet *packet);
 	
-	uint16 emtr_address();
+	uint16   emtr_address();
+	_uint64_ emtr_counter();
+
+	_uint64_ emtr_counter_add(_uint64_ value);
+	
+	void   emtr_get_counter(emtr_callback command_done);
+	void   emtr_set_counter(_uint64_ value, emtr_callback command_done);
 	void   emtr_get_address(emtr_callback command_done);
 	
 	void   emtr_set_timeout_callback(emtr_callback command_timeout);
