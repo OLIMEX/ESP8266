@@ -86,10 +86,6 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 	;
 	time = now;
 	
-	if (emtr_current_mode != EMTR_LOG) {
-		return;
-	}
-	
 	if (registers == NULL) {
 		registers = (emtr_output_registers *)os_zalloc(sizeof(emtr_output_registers));
 	}
@@ -107,7 +103,6 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 			data_str,
 			"\"Address\" : \"0x%04X\", "
 			"\"Counter\" : %d, "
-			"\"ReadInterval\" : %d, "
 			"\"Interval\" : %d, "
 			
 			"\"CurrentRMS\" : %d, "
@@ -122,7 +117,6 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 			"\"SystemStatus\" : \"0x%04X\"",
 			emtr_address(),
 			emtr_counter(),
-			emtr_read_interval,
 			interval,
 			
 			registers->current_rms,
@@ -175,10 +169,6 @@ LOCAL uint32  emtr_read_timer = 0;
 #if EMTR_DEBUG
 		debug("EMTR: %s\n", DEVICE_NOT_FOUND);
 #endif
-		return;
-	}
-	
-	if (emtr_current_mode != EMTR_LOG) {
 		return;
 	}
 	
@@ -382,9 +372,7 @@ void ICACHE_FLASH_ATTR emtr_handler(
 			NULL
 		);
 		setTimeout(emtr_calibration_read, NULL, 1500);
-	}
-	
-	if (emtr_current_mode == EMTR_CONFIGURE) {
+	} else if (emtr_current_mode == EMTR_CONFIGURE) {
 		json_data(
 			response, MOD_EMTR, OK_STR,
 			json_sprintf(
@@ -441,8 +429,24 @@ void ICACHE_FLASH_ATTR emtr_handler(
 			NULL
 		);
 		setTimeout(emtr_events_read, NULL, 1500);
+	} else {
+		json_data(
+			response, MOD_EMTR, OK_STR,
+			json_sprintf(
+				data_str,
+				"\"Address\" : \"0x%04X\", "
+				"\"Mode\" : \"%s\", "
+				"\"Counter\" : %d, "
+				"\"ReadInterval\" : %d",
+				emtr_address(),
+				emtr_mode_str(emtr_current_mode),
+				emtr_counter(),
+				emtr_read_interval
+			),
+			NULL
+		);
 	}
-
+	
 	emtr_start_read();
 }
 

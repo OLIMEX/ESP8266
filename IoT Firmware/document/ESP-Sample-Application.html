@@ -230,8 +230,15 @@
 			display: none;
 		}
 		
+		#emtr input[name=Counter] {
+			width: 95px;
+		}
+		#emtr #emtr-reset {
+			width: 50px;
+		}
+		
 		#emtr input[name=ReadInterval][type=text]{
-			text-align: center
+			text-align: center;
 		}
 		
 		.emtr-mode {
@@ -341,7 +348,10 @@
 					
 					$('#irda select[name=Mode]').irdaMode();
 					$('#finger select[name=Mode]').fingerMode();
+					
 					$('#emtr select[name=Mode]').emtrMode();
+					$('#emtr-reset').emtrReset();
+					
 					$('.bits').bits();
 					
 					if (false) {
@@ -416,7 +426,6 @@
 							'refresh',
 							function () {
 								var value = $this.val().toLowerCase();
-								$form.find('input[name=Counter]').attr('disabled', value == 'log');
 								$form.find('div.emtr-mode').hide();
 								$form.find('div.emtr-mode.'+value).show();
 								$('.bits').bits();
@@ -431,6 +440,25 @@
 						);
 						
 						$this.trigger('refresh');
+					}
+				);
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.emtrReset = function () {
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						var $counter = $this.closest('form').find('input[name=Counter]');
+						
+						$this.click(
+							function () {
+								$counter.prop('disabled', false).val(0);
+								$this.submit();
+								$counter.prop('disabled', true);
+							}
+						);
 					}
 				);
 			}
@@ -501,6 +529,17 @@
 						var $this = $(e);
 						var timeout = null;
 						var value;
+						var $text = $this.closest('form').find('input[type=text][name='+$this.attr('name')+']:disabled');
+						
+						$this.bind(
+							'input',
+							function () {
+								$this.data('refresh', false);
+								if ($text.length > 0) {
+									$text.val($this.val());
+								}
+							}
+						);
 						
 						$this.change(
 							function (event) {
@@ -513,8 +552,8 @@
 								timeout = setTimeout(
 									function () {
 										$this.val(value);
-										$this.data('refresh', true);
 										$this.submit();
+										$this.data('refresh', true);
 										timeout = null;
 									},
 									200
@@ -676,7 +715,7 @@
 					reset = true; 
 				}
 				
-				if (this.is('form') && reset) {
+				if (this.is('form') && !this.hasClass('no-reset') && reset) {
 					this.get(0).reset();
 				}
 				
@@ -993,7 +1032,7 @@
 						);
 
 						
-						$this.find('button[type=button]').click(
+						$this.find('button[type=button]:contains(Refresh)').click(
 							function() {
 								// console.log('');
 								$this.trigger('init8266');
@@ -1419,7 +1458,7 @@
 				<legend>ESP8266 Connection</legend>
 				<label>WebSocket</label> <input type="checkbox" name="websocket" value="1" onchange="$(this).submit();" /> <br/>
 				<label>SSL</label>       <input type="checkbox" name="ssl"       value="1" onchange="$(this).submit();" /> <br/>
-				<label>Host</label>      <input type="text"     name="host"      value="192.168.0.125" /> <br/>
+				<label>Host</label>      <input type="text"     name="host"      value="192.168.4.1" /> <br/>
 				<label>User</label>      <input type="text"     name="user"      value="olimex" /> <br/>
 				<label>Password</label>  <input type="text"     name="password"  value="olimex" /> <br/>
 				<button type="submit">Connect</button> <button type="button">Disconnect</button><br/>
@@ -1626,7 +1665,7 @@
 			<div class="status"></div>
 		</form>
 		
-		<form id="emtr" class="esp event module" action="/mod-emtr" method="POST">
+		<form id="emtr" class="esp event module no-reset" action="/mod-emtr" method="POST">
 			<fieldset>
 				<legend>MOD-EMTR</legend>
 				<label>Address</label>            <input type="text" name="Address"           disabled="disabled" /> <br/>
@@ -1639,7 +1678,10 @@
 					</select>
 				<br/>
 				
-				<label>Counter</label>       <input type="text"  name="Counter"      disabled="disabled" /> <br/>
+				<label>Counter</label>
+					<input  type="text" name="Counter" disabled="disabled" /> 
+					<button type="button" id="emtr-reset">Reset</button>
+				<br/>
 				<label>Read Interval</label> <input type="range" name="ReadInterval" min="10" max="1000" step="10" /> <br/>
 				<label></label>              <input type="text"  name="ReadInterval" disabled="disabled" /> <br/>
 				
