@@ -47,7 +47,8 @@
 	
 	typedef struct {
 		uint16    address;
-		_uint64_  counter;
+		_uint64_  counter_active;
+		_uint64_  counter_apparent;
 	} emtr_sys_params;
 	
 	typedef struct {
@@ -122,16 +123,17 @@
 	typedef void (*emtr_callback)(emtr_packet *packet);
 	
 	uint16   emtr_address();
-	_uint64_ emtr_counter();
+	_uint64_ emtr_counter_active();
+	_uint64_ emtr_counter_apparent();
 
-	_uint64_ emtr_counter_add(_uint64_ value);
+	void   emtr_counter_add(_uint64_ active, _uint64_ apparent);
 	
 	void   emtr_get_counter(emtr_callback command_done);
-	void   emtr_set_counter(_uint64_ value, emtr_callback command_done);
+	void   emtr_set_counter(_uint64_ active, _uint64_ apparent, emtr_callback command_done);
 	void   emtr_get_address(emtr_callback command_done);
 	
 	void   emtr_set_timeout_callback(emtr_callback command_timeout);
-	void   emtr_clear_timeout(emtr_packet *packet);
+	void   emtr_clear_timeout();
 
 	void   emtr_parse_calibration(emtr_packet *packet, emtr_calibration_registers *registers);
 	void   emtr_get_calibration(emtr_callback command_done);

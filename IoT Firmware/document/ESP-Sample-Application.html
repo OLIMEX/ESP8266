@@ -230,7 +230,8 @@
 			display: none;
 		}
 		
-		#emtr input[name=Counter] {
+		#emtr input[name=CounterActive],
+		#emtr input[name=CounterApparent] {
 			width: 95px;
 		}
 		#emtr #emtr-reset {
@@ -450,13 +451,16 @@
 				return this.each(
 					function (i, e) {
 						var $this = $(e);
-						var $counter = $this.closest('form').find('input[name=Counter]');
+						var $counterActive = $this.closest('form').find('input[name=CounterActive]');
+						var $counterApparent = $this.closest('form').find('input[name=CounterApparent]');
 						
 						$this.click(
 							function () {
-								$counter.prop('disabled', false).val(0);
+								$counterActive.prop('disabled', false).val(0);
+								$counterApparent.prop('disabled', false).val(0);
 								$this.submit();
-								$counter.prop('disabled', true);
+								$counterActive.prop('disabled', true);
+								$counterApparent.prop('disabled', true);
 							}
 						);
 					}
@@ -1678,12 +1682,13 @@
 					</select>
 				<br/>
 				
-				<label>Counter</label>
-					<input  type="text" name="Counter" disabled="disabled" /> 
-					<button type="button" id="emtr-reset">Reset</button>
+				<label>Counter Active</label>
+					<input  type="text" name="CounterActive" disabled="disabled" /> 
+					<button type="button" id="emtr-reset">Reset</button> 
 				<br/>
-				<label>Read Interval</label> <input type="range" name="ReadInterval" min="10" max="1000" step="10" /> <br/>
-				<label></label>              <input type="text"  name="ReadInterval" disabled="disabled" /> <br/>
+				<label>Counter Apparent</label> <input  type="text" name="CounterApparent" disabled="disabled" /><br/>
+				<label>Read Interval</label>    <input type="range" name="ReadInterval" min="10" max="1000" step="10" /> <br/>
+				<label></label>                 <input type="text"  name="ReadInterval" disabled="disabled" /> <br/>
 				
 				<div class="emtr-mode log">
 					<label>Interval</label>           <input type="text" name="Interval"          disabled="disabled" /> <br/>

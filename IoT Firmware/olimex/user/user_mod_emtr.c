@@ -63,12 +63,12 @@ LOCAL void ICACHE_FLASH_ATTR emtr_event_done(emtr_packet *packet) {
 
 LOCAL void emtr_start_read();
 
-LOCAL void ICACHE_FLASH_ATTR emtr_timeout(emtr_packet *packet) {
+LOCAL void ICACHE_FLASH_ATTR emtr_timeout() {
 	char response[WEBSERVER_MAX_VALUE];
 	json_error(response, MOD_EMTR, TIMEOUT, NULL);
 	user_event_raise(EMTR_URL, response);
 	
-	emtr_clear_timeout(packet);
+	emtr_clear_timeout();
 	emtr_start_read();
 }
 
@@ -102,7 +102,8 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 		json_sprintf(
 			data_str,
 			"\"Address\" : \"0x%04X\", "
-			"\"Counter\" : %d, "
+			"\"CounterActive\" : %d, "
+			"\"CounterApparent\" : %d, "
 			"\"Interval\" : %d, "
 			
 			"\"CurrentRMS\" : %d, "
@@ -116,7 +117,8 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 			"\"EventFlag\" : %d, "
 			"\"SystemStatus\" : \"0x%04X\"",
 			emtr_address(),
-			emtr_counter(),
+			emtr_counter_active(),
+			emtr_counter_apparent(),
 			interval,
 			
 			registers->current_rms,
@@ -133,7 +135,10 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 		NULL
 	);
 	
-	emtr_counter_add(registers->apparent_power * interval / 1000);
+	emtr_counter_add(
+		registers->active_power * interval / 1000, 
+		registers->apparent_power * interval / 1000
+	);
 	
 	user_event_raise(EMTR_URL, response);
 	emtr_start_read();
@@ -202,7 +207,10 @@ void ICACHE_FLASH_ATTR emtr_handler(
 		
 	struct jsonparse_state parser;
 	int type;
+	bool set_counter = false;
 	emtr_mode mode = emtr_current_mode;
+	_uint64_ counter_active = emtr_counter_active();
+	_uint64_ counter_apparent = emtr_counter_apparent();
 	
 	if (method == POST && data != NULL && data_len != 0) {
 		jsonparse_setup(&parser, data, data_len);
@@ -223,10 +231,16 @@ void ICACHE_FLASH_ATTR emtr_handler(
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
 					emtr_read_interval = jsonparse_get_value_as_int(&parser);
-				} else if (jsonparse_strcmp_value(&parser, "Counter") == 0) {
+				} else if (jsonparse_strcmp_value(&parser, "CounterActive") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					emtr_set_counter(jsonparse_get_value_as_int(&parser), NULL);
+					counter_active = jsonparse_get_value_as_int(&parser);
+					set_counter = true;
+				} else if (jsonparse_strcmp_value(&parser, "CounterApparent") == 0) {
+					jsonparse_next(&parser);
+					jsonparse_next(&parser);
+					counter_apparent = jsonparse_get_value_as_int(&parser);
+					set_counter = true;
 				}
 				
 				if (mode == EMTR_CONFIGURE) {
@@ -312,6 +326,9 @@ void ICACHE_FLASH_ATTR emtr_handler(
 		}
 		
 		emtr_set_event(emtr_registers.event, NULL);
+		if (set_counter) {
+			emtr_set_counter(counter_active, counter_apparent, NULL);
+		}
 	}
 	
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
@@ -322,7 +339,8 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				data_str,
 				"\"Address\" : \"0x%04X\", "
 				"\"Mode\" : \"%s\", "
-				"\"Counter\" : %d, "
+				"\"CounterActive\" : %d, "
+				"\"CounterApparent\" : %d, "
 				"\"ReadInterval\" : %d, "
 				
 				"\"GainCurrentRMS\" : %d, "
@@ -346,7 +364,8 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				"\"AccumulationInterval\" : %d",
 				emtr_address(),
 				emtr_mode_str(emtr_current_mode),
-				emtr_counter(),
+				emtr_counter_active(),
+				emtr_counter_apparent(),
 				emtr_read_interval,
 				
 				emtr_registers.calibration->gain_current_rms,
@@ -379,7 +398,8 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				data_str,
 				"\"Address\" : \"0x%04X\", "
 				"\"Mode\" : \"%s\", "
-				"\"Counter\" : %d, "
+				"\"CounterActive\" : %d, "
+				"\"CounterApparent\" : %d, "
 				"\"ReadInterval\" : %d, "
 				
 				"\"OverCurrentLimit\" : %d, "
@@ -403,7 +423,8 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				"\"EventClear\" : %d",
 				emtr_address(),
 				emtr_mode_str(emtr_current_mode),
-				emtr_counter(),
+				emtr_counter_active(),
+				emtr_counter_apparent(),
 				emtr_read_interval,
 				
 				emtr_registers.event->over_current_limit,
@@ -436,11 +457,13 @@ void ICACHE_FLASH_ATTR emtr_handler(
 				data_str,
 				"\"Address\" : \"0x%04X\", "
 				"\"Mode\" : \"%s\", "
-				"\"Counter\" : %d, "
+				"\"CounterActive\" : %d, "
+				"\"CounterApparent\" : %d, "
 				"\"ReadInterval\" : %d",
 				emtr_address(),
 				emtr_mode_str(emtr_current_mode),
-				emtr_counter(),
+				emtr_counter_active(),
+				emtr_counter_apparent(),
 				emtr_read_interval
 			),
 			NULL
