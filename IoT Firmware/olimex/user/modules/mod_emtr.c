@@ -583,5 +583,5 @@ void ICACHE_FLASH_ATTR emtr_down() {
 	uart_write_byte(EMTR_START_FRAME);
 	
 	// Len
-	uart_write_byte(65);
+	uart_write_byte(10);
 }
