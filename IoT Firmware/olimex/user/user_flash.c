@@ -300,7 +300,7 @@ LOCAL void ICACHE_FLASH_ATTR flash_region_truncate() {
 			flash_buf_pos = flash_buf_size;
 			
 			// Feed the watchdog to prevent reset
-			slop_wdt_feed();
+			system_soft_wdt_feed();
 		}
 	}
 	

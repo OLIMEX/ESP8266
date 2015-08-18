@@ -1,10 +1,17 @@
 download:
-boot_v1.2+.bin      0x00000
-user1.1024.new.2.bin  0x01000
-blank.bin           0x7e000 & 0xfe000
+boot_v1.2+.bin      	0x00000
+user1.1024.new.2.bin  	0x01000
+blank.bin           	0x7e000 & 0xfe000
 
-*NOTICE*: If you use Esp Flash Download Tool, please MAKE SURE to choose FLASH SIZE to 8Mbit.
+or
 
+eagle.flash.bin		0x00000
+eagle.irom0text.bin	0x40000
+blank.bin		0x7e000 & 0xfe000
+
+*NOTICE*:
+1.If you use Esp Flash Download Tool, please MAKE SURE to choose FLASH SIZE to 8Mbit.
+2.UPDATE is not supported in non-boot mode
 
 Update steps
 1.Make sure TE(terminal equipment) is in sta or sta+ap mode

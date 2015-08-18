@@ -609,7 +609,7 @@ clear:
 		debug("WebSocket: 2 frames - same packet\n");
 #endif
 		// Feed the watchdog to prevent reset
-		slop_wdt_feed();
+		system_soft_wdt_feed();
 		
 		// continue processing
 		// websocket_recv(request, pConnection, frame + header_len + data_len, frame_len - header_len - data_len);

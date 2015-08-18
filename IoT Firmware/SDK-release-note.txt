@@ -1,3 +1,45 @@
+esp_iot_sdk_v1.3.0_15_08_08 Release Note 
+Resolved Issues£¨Bugs below are eligible for Bug Bounty Program):
+1.Device can't connect to router after it gets ssid and password when using ESPTOUCH with router's ssid hidden. [·ëÖÇ]
+2.Format string of os_random can't be supported by atoi. [Ñî³¯Î»]
+3.Optimized os_printf seems to have an issue on 4 bytes aligned and other valuable suggestions. [Andrey Filimonov]
+4.SmartConfig can¡¯t get IP address after connected to router. [Ëï´óÃ÷]
+
+Optimization:
+1.Memory optimization to save 12KBytes.
+2.Optimize RF calibration to short the booting time,more details in documentation "2A-ESP8266__IOT_SDK_User_Manual" chapter "Appendix".
+3.Optimize Wi-Fi function to solve issue that ESP8266 may fail to connect to a special router.
+4.Optimize software timer to solve the a connecting problem.Please do not call "os_delay_us" or "while" or "for" to occupy CPU more than 10 ms in timer callback.
+5.Optimize system_get_rst_info to obtain more accurate information about the start-up.
+6.Optimize function of Wi-Fi scanning to be more reliable.
+7.Optimize function of changing Wi-Fi mode to be more reliable.
+8.Optimize WPS to improve connectivity.And WPS does not support WEP, it will return status "WPS_CB_ST_WEP".
+9.Optimize Wi-Fi function to solve softAP multiple stations DHCP issue.
+10.Optimize TCP in LAST_ACK status.
+11.Optimize TLS to support SHA256, SHA384, SHA512.
+12.Memory optimization during TLS hand-shaking.
+13.Optimize OTA funtion to download big chunk of data.
+14.Add CRC32 in OTA function.Folder "tools" in esp_iot_sdk has to be updated, otherwise OTA will fail.
+15.Optimize mDNS to support both softAP and station interfaces.
+16.Optimize ESP-NOW, more details in "Add APIs"
+17.Update SmartConfig to version 2.4.7
+18.Remove "-O2" from makefile.
+19.Optimize header files to improve compatibility, will not affect compilation.
+
+Add APIs:
+1.system_soft_wdt_feed : feed software watchdog
+2.wifi_softap_get_dhcps_lease£ºget IP range of ESP8266 softAP DHCP server 
+3.ESP-NOW APIs
+esp_now_set_kok: set the secure key to encrypt ESP-NOW communication key
+esp_now_register_send_cb: register ESP-NOW send callback
+esp_now_unregister_send_cb: unregister ESP-NOW send callback
+
+AT_v0.40 Release Note: 
+Note: For AT firmware to support FOTA, flash size need to be 1024KB or more than that.
+
+1.Add parameter <max conn> in command "AT+CWSAP" to set the maximum number of connections allowed.
+
+
 esp_iot_sdk_v1.2.0_15_07_03 Release Note 
 Resolved Issues£¨Bugs below are eligible for Bug Bounty Program):
 1.TLS server disconnect to ESP8266 may cause crash. [ËïÐÂ»¢]
