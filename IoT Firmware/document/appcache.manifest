@@ -1,7 +1,10 @@
 CACHE MANIFEST
-# 2015-07-31 v1.0.3
+# 2015-09-05 v1.0.3
 jquery-1.11.3.min.js
 iot-192.png
 iot-128.png
 iot-48.png
 iot-32.png
+
+NETWORK:
+*

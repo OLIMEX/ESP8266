@@ -22,7 +22,8 @@
 			"type": "image/png"
 		}
 	],
-	"start_url": "ESP-Sample-Application.html",
+	"start_url": "index.html",
 	"display": "standalone",
-	"orientation": "portrait"
+	"orientation": "portrait",
+	"permissions": ["http://*/"]
 }
