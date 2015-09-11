@@ -420,12 +420,12 @@ LOCAL void ICACHE_FLASH_ATTR webclient_connect(void *arg) {
 
 #if SSL_ENABLE
 			if (connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl) {
-				espconn_secure_sent(connection, request_data, os_strlen(request_data));
+				espconn_secure_send(connection, request_data, os_strlen(request_data));
 			} else {
-				espconn_sent(connection, request_data, os_strlen(request_data));
+				espconn_send(connection, request_data, os_strlen(request_data));
 			}
 #else
-			espconn_sent(connection, request_data, os_strlen(request_data));
+			espconn_send(connection, request_data, os_strlen(request_data));
 #endif
 			
 			os_free(request_data);
