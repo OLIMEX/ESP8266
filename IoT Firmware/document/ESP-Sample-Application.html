@@ -658,7 +658,7 @@
 						$this.append($tab);
 						$e.data('tab', $tab);
 						
-						if ($e.hasClass('module')) {
+						if ($e.hasClass('esp') || $e.hasClass('module')) {
 							$tab.hide();
 						}
 					}
@@ -864,20 +864,27 @@
 						$this.bind(
 							'error8266',
 							function (event, data) {
-								$this.get(0).message(data, 'error');
+								$status.message(data, 'error');
 							}
 						);
 						
 						$this.bind(
 							'event8266',
 							function (event, data) {
-								$this.get(0).message('OK');
+								$status.message('OK');
+							}
+						);
+						
+						$this.bind(
+							'abort8266',
+							function (event, data) {
+								$this.data('tab').click();
 							}
 						);
 						
 						$this.submit(
 							function (event) {
-								$this.get(0).message('OK');
+								$status.message('Connecting...', 'activity');
 								$('.esp').trigger('init8266', true);
 								event.preventDefault();
 								return false;
@@ -900,6 +907,10 @@
 				return this.each(
 					function (i, e) {
 						var $this = $(e);
+						
+						if (typeof e.message == 'undefined') {
+							e.message = function () {};
+						}
 						
 						$this.bind(
 							'error8266',
@@ -967,7 +978,7 @@
 				var Commands = $.Conveyor();
 				var socketURL;
 				
-				var longPollAction = this.filter('.long-poll').attr('action');
+				var longPollAction = $('.long-poll').attr('action');
 				
 				if (typeof window.WebSocket == 'undefined') {
 					$('#esp input[name=websocket]').prop('checked', false);
@@ -1089,6 +1100,11 @@
 						$this.bind(
 							'abort8266',
 							function () {
+								var $tab = $this.data('tab');
+								if ($tab) {
+									$tab.hide();
+								}
+								$this.hide();
 								Commands.abort();
 							}
 						);
@@ -1379,7 +1395,7 @@
 									$('form').trigger(request.event, JSON.parse(event.data));
 								} catch (e) {
 									console.log(event.data);
-								}
+								} 
 							};
 							
 							this.socket.onerror = function (event) {
@@ -1396,6 +1412,7 @@
 									conveyor.socket = null;
 									conveyor.clearSocketRequests();
 								}
+								$('form').trigger('abort8266');
 							};
 						} else {
 							if (this.socket.readyState != WebSocket.OPEN) {
@@ -1506,7 +1523,7 @@
 	<div id="menu">&equiv;</div>
 	<div id="tabs"></div>
 	<div id="container">
-		<form id="events" class="esp event long-poll" action="/events">
+		<form id="events" class="event long-poll" action="/events">
 			<input type="text" name="Event" value="Event" disabled="disabled" style="text-align: center;" /> <br/>
 		</form>
 		
