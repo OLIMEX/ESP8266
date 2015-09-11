@@ -67,11 +67,19 @@
 		uint8 remote_ip[4];
 	} connect_footprint;
 	
+	typedef struct _messages_queue_ {
+		uint8  *data;
+		uint16  data_len;
+		STAILQ_ENTRY(_messages_queue_) entries;
+	} messages_queue;
+	typedef STAILQ_HEAD(messages_queue_head, _messages_queue_) messages_queue_head;
+	
 	typedef struct _connections_queue_ {
 		char *pURL;
 		struct espconn *pConnection;
 		connect_footprint footprint;
 		void *extra;
+		messages_queue_head messages;
 		STAILQ_ENTRY(_connections_queue_) entries;
 	} connections_queue;
 	
@@ -113,4 +121,7 @@
 	void webserver_connection_clear(named_connection_queue *collection, struct espconn *pConnection);
 	bool webserver_connection_match(struct espconn *pConnection, connect_footprint *pFootprint);
 	connections_queue *webserver_connection_find(named_connection_queue *collection, struct espconn *pConnection);
+	
+	void webserver_queue_message(connections_queue *request, uint8 *data, uint16 data_len);
+	messages_queue *webserver_fetch_message(connections_queue *request);
 #endif

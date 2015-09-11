@@ -444,6 +444,41 @@ void ICACHE_FLASH_ATTR webserver_connection_reconnect(named_connection_queue *co
 }
 
 /******************************************************************************
+ * FunctionName : webserver_queue_message
+ * Description  : store message for later sending
+ * Parameters   : request
+ *              : data
+ *              : data_len
+ * Returns      : none
+*******************************************************************************/
+void ICACHE_FLASH_ATTR webserver_queue_message(connections_queue *request, uint8 *data, uint16 data_len) {
+	messages_queue *message;
+	
+	message = (messages_queue *)os_zalloc(sizeof(messages_queue));
+	
+	message->data = data;
+	message->data_len = data_len;
+	
+	STAILQ_INSERT_TAIL(&(request->messages), message, entries);
+}
+
+/******************************************************************************
+ * FunctionName : webserver_fetch_message
+ * Description  : send stored message
+ * Parameters   : request
+ * Returns      : none
+*******************************************************************************/
+messages_queue ICACHE_FLASH_ATTR *webserver_fetch_message(connections_queue *request) {
+	messages_queue *message = STAILQ_FIRST(&(request->messages));
+	
+	if (message) {
+		STAILQ_REMOVE(&(request->messages), message, _messages_queue_, entries);
+	}
+	
+	return message;
+}
+
+/******************************************************************************
  * FunctionName : webserver_connection_store
  * Description  : store long poll request
  * Parameters   : pConnection
@@ -467,6 +502,7 @@ connections_queue ICACHE_FLASH_ATTR *webserver_connection_store(named_connection
 	request->pConnection = pConnection;
 	request->extra = NULL;
 	connection_get_footprint(pConnection, &(request->footprint));
+	STAILQ_INIT(&(request->messages));
 	
 	STAILQ_INSERT_TAIL(&(collection->head), request, entries);
 	
@@ -632,12 +668,12 @@ void ICACHE_FLASH_ATTR webserver_send_response(struct espconn *pConnection, char
 
 #if SSL_ENABLE	
 	if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
-		espconn_secure_sent(pConnection, pBuf, length);
+		espconn_secure_send(pConnection, pBuf, length);
 	} else {
-		espconn_sent(pConnection, pBuf, length);
+		espconn_send(pConnection, pBuf, length);
 	}
 #else
-	espconn_sent(pConnection, pBuf, length);
+	espconn_send(pConnection, pBuf, length);
 #endif
 	
 	os_free(pBuf);

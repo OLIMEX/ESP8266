@@ -43,6 +43,7 @@
 	typedef struct {
 		bool authorized;
 		bool timeout;
+		bool sending;
 		websocket_type type;
 		websocket_state state;
 	} websocket_extra;

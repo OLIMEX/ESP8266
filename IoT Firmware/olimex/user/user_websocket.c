@@ -130,6 +130,18 @@ LOCAL uint16 ICACHE_FLASH_ATTR websocket_get_header(websocket_header *header, ui
 	return i;
 }
 
+LOCAL void ICACHE_FLASH_ATTR data_send(struct espconn *pConnection, uint8 *data, uint16 data_len) {
+#if SSL_ENABLE
+	if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
+		espconn_secure_send(pConnection, data, data_len);
+	} else {
+		espconn_send(pConnection, data, data_len);
+	}
+#else
+	espconn_send(pConnection, data, data_len);
+#endif
+}
+
 /******************************************************************************
  * FunctionName : websocket_send
  * Description  : Send Message 
@@ -159,18 +171,37 @@ LOCAL void ICACHE_FLASH_ATTR websocket_send(connections_queue *request, struct e
 	}
 	
 	uint16 frame_len = header_len + data_len;
-
-#if SSL_ENABLE	
-	if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
-		espconn_secure_sent(pConnection, frame, frame_len);
-	} else {
-		espconn_sent(pConnection, frame, frame_len);
-	}
-#else
-	espconn_sent(pConnection, frame, frame_len);
-#endif
 	
+	if (extra->sending) {
+		webserver_queue_message(request, frame, frame_len);
+		return;
+	}
+	
+	extra->sending = true;
+	
+	data_send(pConnection, frame, frame_len);
 	os_free(frame);
+}
+
+LOCAL void ICACHE_FLASH_ATTR websocket_sent(void *arg) {
+	struct espconn *pConnection = arg;
+	connections_queue *request;
+	websocket_extra *extra;
+	
+	STAILQ_FOREACH(request, &(websockets.head), entries) {
+		extra = request->extra;
+		if (webserver_connection_match(pConnection, &(request->footprint))) {
+			messages_queue *message;
+			message = webserver_fetch_message(request);
+			if (message) {
+				data_send(pConnection, message->data, message->data_len);
+				os_free(message->data);
+				os_free(message);
+			} else {
+				extra->sending = false;
+			}
+		}
+	}
 }
 
 /******************************************************************************
@@ -826,8 +857,11 @@ bool ICACHE_FLASH_ATTR websocket_server_upgrade(struct espconn *pConnection, cha
 	websocket_extra *extra = request->extra;
 	extra->authorized = false;
 	extra->timeout = false;
+	extra->sending = false;
 	extra->type = WEBSOCKET_SERVER;
 	extra->state = WEBSOCKET_OPEN;
+	
+	espconn_regist_sentcb(pConnection, websocket_sent);
 	
 	result = true;
 	
@@ -894,8 +928,11 @@ bool ICACHE_FLASH_ATTR websocket_client_upgrade(struct espconn *pConnection, cha
 	websocket_extra *extra = request->extra;
 	extra->authorized = true;
 	extra->timeout = false;
+	extra->sending = false;
 	extra->type = WEBSOCKET_CLIENT;
 	extra->state = WEBSOCKET_OPEN;
+	
+	espconn_regist_sentcb(pConnection, websocket_sent);
 	
 	result = true;
 	

@@ -14,7 +14,7 @@
 
 #include "driver/i2c_master.h"
 
-#define I2C_DELAY 50
+#define I2C_DELAY 100
 
 LOCAL uint8 m_nLastSDA;
 LOCAL uint8 m_nLastSCL;
