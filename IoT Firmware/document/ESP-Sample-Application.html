@@ -353,6 +353,8 @@
 					$('.esp').esp8266();
 					$('.event').event8266();
 					
+					$('#config-station input[name=DHCP]').stationDHCP();
+					
 					$('#irda select[name=Mode]').irdaMode();
 					$('#finger select[name=Mode]').fingerMode();
 					
@@ -554,6 +556,24 @@
 							
 							$target.trigger('refresh');
 						}
+					}
+				);
+			}
+		})(jQuery);
+		
+		(function ($) {
+			$.fn.stationDHCP = function () {
+				return this.each(
+					function (i, e) {
+						var $this = $(e);
+						var $form = $this.closest('form');
+						
+						function dhcp() {
+							$form.find('fieldset[name=IP] input').prop('disabled', $this.is(':checked'));
+						}
+						
+						$this.bind('refresh', dhcp);
+						$this.change(dhcp);
 					}
 				);
 			}
@@ -797,8 +817,8 @@
 							}
 							i.trigger('fromJSON', [json[name]]);
 							i.val(i.data('JSON') ? i.data('JSON') : json[name]);
-							i.trigger('refresh');
 						}
+						i.trigger('refresh');
 					}
 				}
 			}
