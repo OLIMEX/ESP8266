@@ -89,7 +89,7 @@ Supported Devices
 
 You will need a seral connection established. This connection requires seral cable with level shifter. We will use esptool. Enter bootloader mode - hold the button pressed down and power the board, then release the button. Use the following command issued from root folder:
 	
-	esptool/esptool.py --baud 576000 write_flash 0x00000 bin/boot_v1.2.bin 0x01000 bin/upgrade/user1.2048.new.3.bin 0x81000 bin/upgrade/user2.2048.new.3.bin --flash_size 16m
+	esptool/esptool.py --baud 576000 write_flash 0x00000 bin/boot_v1.2.bin 0x01000 bin/upgrade/user1.2048.new.3.bin 0x81000 bin/upgrade/user2.2048.new.3.bin 0x1FC000 bin/esp_init_data_default.bin --flash_size 16m
 
 **How to compile firmware**
 
