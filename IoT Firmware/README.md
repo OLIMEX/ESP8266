@@ -624,6 +624,12 @@ Sample POST data
 		{
 			"Relay" : 1
 		}
+	
+	If [value] is 0 relay is switched off.
+	
+	If [value] is 1 relay is switched on.
+	
+	If [value] is greater than 1 relay is switched on for [value]ms and then switched off. During this interval all other commands are ignored.
 
 	**JavaScript Example to switch relay on**
 
