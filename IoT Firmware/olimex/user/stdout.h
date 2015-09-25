@@ -1,6 +1,8 @@
 #ifndef __STD_OUT_H__
 	#define __STD_OUT_H__
 	
+	#include "osapi.h"
+	
 	#define debug os_printf
 
 	#define WIFI_DEBUG_BUFFER_LEN  81
