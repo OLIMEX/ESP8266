@@ -24,6 +24,15 @@
 	
 	#define SERVER_BA_REALM                "ESP8266 Autentication"
 	
+	// URLs
+	#define USER_CONFIG_URL                "/config"
+	#define USER_CONFIG__URL               "/config/"
+	#define USER_CONFIG_IOT_URL            "/config/iot"
+	#define USER_CONFIG_AP_URL             "/config/access-point"
+	#define USER_CONFIG_STATION_URL        "/config/station"
+	#define USER_CONFIG_FIRMWARE_URL       "/config/firmware"
+	#define USER_CONFIG_SSL_URL            "/config/ssl"
+	
 	// Defaults
 	#define USER_CONFIG_DEFAULT_USER       "olimex"
 	#define USER_CONFIG_DEFAULT_PASSWD     "olimex"

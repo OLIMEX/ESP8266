@@ -5,6 +5,8 @@
 #include "mem.h"
 #include "base64.h"
 
+#include "user_interface.h"
+
 #include "user_json.h"
 #include "user_timer.h"
 #include "user_events.h"
@@ -28,8 +30,11 @@ void ICACHE_FLASH_ATTR user_event_connect() {
 	debug("EVENTS: Station connected\n");
 	memory_info();
 #endif
-	char status[WEBSERVER_MAX_VALUE];
-	user_event_raise(NULL, json_status(status, ESP8266, CONNECTED, NULL));
+	char status[WEBSERVER_MAX_RESPONSE_LEN];
+	user_event_raise(
+		USER_CONFIG_STATION_URL, 
+		json_data(status, ESP8266, CONNECTED, (char *)config_wifi_station(), NULL)
+	);
 }
 
 void ICACHE_FLASH_ATTR user_event_reconnect() {
@@ -40,6 +45,29 @@ void ICACHE_FLASH_ATTR user_event_reconnect() {
 	user_event_raise(NULL, json_status(status, ESP8266, RECONNECT, NULL));
 	websocket_close_all(RECONNECT, NULL);
 	long_poll_close_all();
+}
+
+LOCAL void ICACHE_FLASH_ATTR user_event_wifi(System_Event_t *evt) {
+	switch (evt->event) {
+		case EVENT_STAMODE_CONNECTED:
+		break;
+		
+		case EVENT_STAMODE_DISCONNECTED:
+		break;
+		
+		case EVENT_STAMODE_AUTHMODE_CHANGE:
+		break;
+		
+		case EVENT_STAMODE_GOT_IP:
+			user_event_connect();
+		break;
+		
+		case EVENT_SOFTAPMODE_STACONNECTED:
+		break;
+		
+		case EVENT_SOFTAPMODE_STADISCONNECTED:
+		break;
+	}
 }
 
 void ICACHE_FLASH_ATTR user_event_build(char *event, char *url, char *data) {
@@ -159,6 +187,6 @@ void ICACHE_FLASH_ATTR events_handler(
 }
 
 void ICACHE_FLASH_ATTR user_events_init() {
-	wifi_set_station_connected_callback(user_event_connect);
+	wifi_set_event_handler_cb(user_event_wifi);
 	webserver_register_handler_callback(EVENTS_URL, events_handler);
 }

@@ -30,28 +30,13 @@ void ICACHE_FLASH_ATTR user_config_init() {
 	flash_region_register("PrivateKey",   0x101, 0x001);
 	flash_region_register("Certificate",  0x102, 0x001);
 	
-	webserver_register_handler_callback("/config",			    config_handler);
-	webserver_register_handler_callback("/config/",			    config_handler);
-	webserver_register_handler_callback("/config/iot",		    config_iot_handler);
-	webserver_register_handler_callback("/config/access-point", config_ap_handler);
-	webserver_register_handler_callback("/config/station",	    config_station_handler);
-	webserver_register_handler_callback("/config/firmware",	    config_firmware_handler);
-	webserver_register_handler_callback("/config/ssl",          config_ssl_handler);
-}
-
-void ICACHE_FLASH_ATTR wifi_set_station_connected_callback(wifi_station_connected_callback function) {
-	station_connected = function;
-}
-
-LOCAL void ICACHE_FLASH_ATTR user_config_station_connected() {
-	if (wifi_station_get_connect_status() != STATION_GOT_IP) {
-		setTimeout(user_config_station_connected, NULL, 1000);
-		return;
-	}
-	
-	if (station_connected != NULL) {
-		(*station_connected)();
-	}
+	webserver_register_handler_callback(USER_CONFIG_URL,           config_handler);
+	webserver_register_handler_callback(USER_CONFIG__URL,          config_handler);
+	webserver_register_handler_callback(USER_CONFIG_IOT_URL,       config_iot_handler);
+	webserver_register_handler_callback(USER_CONFIG_AP_URL,        config_ap_handler);
+	webserver_register_handler_callback(USER_CONFIG_STATION_URL,   config_station_handler);
+	webserver_register_handler_callback(USER_CONFIG_FIRMWARE_URL,  config_firmware_handler);
+	webserver_register_handler_callback(USER_CONFIG_SSL_URL,       config_ssl_handler);
 }
 
 LOCAL void ICACHE_FLASH_ATTR user_config_station_disconnect() {
@@ -69,8 +54,6 @@ LOCAL void ICACHE_FLASH_ATTR user_config_station_connect() {
 	if (status != STATION_CONNECTING) {
 		setTimeout((os_timer_func_t *)wifi_station_connect, NULL, 2000);
 	}
-	
-	setTimeout(user_config_station_connected, NULL, 3000);
 }
 
 void ICACHE_FLASH_ATTR user_config_restore_defaults() {
@@ -383,7 +366,7 @@ LOCAL char ICACHE_FLASH_ATTR *config_ip_info(uint8 interface) {
 	return ip_info_str;
 }
 
-LOCAL char ICACHE_FLASH_ATTR *config_wifi_ap() {
+char ICACHE_FLASH_ATTR *config_wifi_ap() {
 	struct softap_config config;
 	static char ap_str[WEBSERVER_MAX_VALUE*2];
 	os_sprintf(ap_str, "{}");
@@ -445,7 +428,7 @@ LOCAL char ICACHE_FLASH_ATTR *config_wifi_stored_ap() {
 	return stored_ap_str;
 }
 
-LOCAL char ICACHE_FLASH_ATTR *config_wifi_station() {
+char ICACHE_FLASH_ATTR *config_wifi_station() {
 	static char client_str[WEBSERVER_MAX_VALUE*3] = "";
 	struct station_config config;
 	
