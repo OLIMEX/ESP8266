@@ -39,8 +39,12 @@ LOCAL void ICACHE_FLASH_ATTR button_set_response(char *state) {
 	user_event_raise(BUTTON_URL, response);
 }
 
-void ICACHE_FLASH_ATTR button_short_press() {
-	button_set_response("Short Press");
+void ICACHE_FLASH_ATTR button_press() {
+	button_set_response("Press");
+}
+
+void ICACHE_FLASH_ATTR button_short_release() {
+	button_set_response("Short Release");
 	setTimeout(memory_info,  NULL, 100);
 }
 
@@ -63,7 +67,8 @@ void ICACHE_FLASH_ATTR user_button_init() {
 		GPIO_ID_PIN(0), 
 		PERIPHS_IO_MUX_GPIO0_U,
 		FUNC_GPIO0,
-		button_short_press,
+		button_press,
+		button_short_release,
 		button_long_press,
 		button_long_release
 	);

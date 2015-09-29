@@ -33,19 +33,21 @@ struct single_key_param ICACHE_FLASH_ATTR *key_init_single(
 	uint8  gpio_id, 
 	uint32 gpio_name, 
 	uint8  gpio_func, 
-	key_function short_press, 
+	key_function press, 
+	key_function short_release, 
 	key_function long_press, 
 	key_function long_release
 ) {
 	struct single_key_param *single_key = (struct single_key_param *)os_zalloc(sizeof(struct single_key_param));
-
+	
 	single_key->gpio_id = gpio_id;
 	single_key->gpio_name = gpio_name;
 	single_key->gpio_func = gpio_func;
-	single_key->short_press = short_press;
+	single_key->press = press;
+	single_key->short_release = short_release;
 	single_key->long_press = long_press;
 	single_key->long_release = long_release;
-
+	
 	return single_key;
 }
 
@@ -57,30 +59,34 @@ struct single_key_param ICACHE_FLASH_ATTR *key_init_single(
 *******************************************************************************/
 void ICACHE_FLASH_ATTR key_init(struct keys_param *keys) {
 	uint8 i;
-
+	
 	ETS_GPIO_INTR_ATTACH(key_intr_handler, keys);
-
+	
 	ETS_GPIO_INTR_DISABLE();
-
+	
 	for (i = 0; i < keys->key_num; i++) {
 		keys->single_key[i]->key_level = 1;
 		keys->single_key[i]->is_long = 0;
-
+		
 		PIN_FUNC_SELECT(keys->single_key[i]->gpio_name, keys->single_key[i]->gpio_func);
-
+		
+		// Set GPIO as input
 		gpio_output_set(0, 0, 0, GPIO_ID_PIN(keys->single_key[i]->gpio_id));
-
-		gpio_register_set(GPIO_PIN_ADDR(keys->single_key[i]->gpio_id), GPIO_PIN_INT_TYPE_SET(GPIO_PIN_INTR_DISABLE)
-						  | GPIO_PIN_PAD_DRIVER_SET(GPIO_PAD_DRIVER_DISABLE)
-						  | GPIO_PIN_SOURCE_SET(GPIO_AS_PIN_SOURCE));
-
+		
+		gpio_register_set(
+			GPIO_PIN_ADDR(keys->single_key[i]->gpio_id), 
+			GPIO_PIN_INT_TYPE_SET(GPIO_PIN_INTR_DISABLE) | 
+			GPIO_PIN_PAD_DRIVER_SET(GPIO_PAD_DRIVER_DISABLE) |
+			GPIO_PIN_SOURCE_SET(GPIO_AS_PIN_SOURCE)
+		);
+		
 		//clear gpio14 status
 		GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(keys->single_key[i]->gpio_id));
-
+		
 		//enable interrupt
 		gpio_pin_intr_state_set(GPIO_ID_PIN(keys->single_key[i]->gpio_id), GPIO_PIN_INTR_NEGEDGE);
 	}
-
+	
 	ETS_GPIO_INTR_ENABLE();
 }
 
@@ -117,13 +123,14 @@ LOCAL void ICACHE_FLASH_ATTR key_50ms_cb(struct single_key_param *single_key) {
 		single_key->key_level = 1;
 		gpio_pin_intr_state_set(GPIO_ID_PIN(single_key->gpio_id), GPIO_PIN_INTR_NEGEDGE);
 		
+		// RELEASE callback
 		if (single_key->is_long) {
 			if (single_key->long_release) {
 				single_key->long_release();
 			}
 		} else {
-			if (single_key->short_press) {
-				single_key->short_press();
+			if (single_key->short_release) {
+				single_key->short_release();
 			}
 		}
 	} else {
@@ -150,15 +157,23 @@ LOCAL void key_intr_handler(struct keys_param *keys) {
 			GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(keys->single_key[i]->gpio_id));
 
 			if (keys->single_key[i]->key_level == 1) {
-				// 5s, restart & enter softap mode
+				// 5s long release timer
 				os_timer_disarm(&keys->single_key[i]->key_5s);
 				os_timer_setfn(&keys->single_key[i]->key_5s, (os_timer_func_t *)key_5s_cb, keys->single_key[i]);
 				os_timer_arm(&keys->single_key[i]->key_5s, 5000, 0);
+				
 				keys->single_key[i]->key_level = 0;
 				keys->single_key[i]->is_long = 0;
 				gpio_pin_intr_state_set(GPIO_ID_PIN(keys->single_key[i]->gpio_id), GPIO_PIN_INTR_POSEDGE);
+				
+				if (keys->single_key[i]->press) {
+					// PRESS callback
+					os_timer_disarm(&keys->single_key[i]->key_press);
+					os_timer_setfn(&keys->single_key[i]->key_press, (os_timer_func_t *)keys->single_key[i]->press, NULL);
+					os_timer_arm(&keys->single_key[i]->key_press, 5, 0);
+				}
 			} else {
-				// 50ms, check if this is a real key up
+				// 50ms check if this is a real key up
 				os_timer_disarm(&keys->single_key[i]->key_50ms);
 				os_timer_setfn(&keys->single_key[i]->key_50ms, (os_timer_func_t *)key_50ms_cb, keys->single_key[i]);
 				os_timer_arm(&keys->single_key[i]->key_50ms, 50, 0);
