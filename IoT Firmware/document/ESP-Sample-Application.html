@@ -714,7 +714,7 @@
 								(val === null ?
 									null
 									:
-									(typeof val == 'string' && val.match(/^\d+$/) ?
+									(typeof val == 'string' && val.match(/^-?\d+$/) ?
 										parseInt(val)
 										:
 										val
@@ -1696,6 +1696,17 @@
 				<label>user2.bin</label>    <input type="file" name="user2.bin" /> <br/>
 				
 				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="battery" class="esp event" action="/battery" method="POST">
+			<fieldset name="Battery">
+				<legend>Battery</legend>
+				<label>State</label>   <input type="text" name="State"   disabled="disabled" /> <br/>
+				<label>Percent</label> <input type="text" name="Percent" disabled="disabled" /> <br/>
+				<label></label>        <input type="range" name="Percent" min="0" max="100" step="1" disabled="disabled" /> <br/>
 				<button type="button">Refresh</button>
 			</fieldset>
 			<div class="status"></div>

@@ -27,9 +27,12 @@
 	unsigned int   default_private_key_len = 0;
 #endif
 
+#include "driver/key.h"
+
 #include "user_button.h"
 #include "user_relay.h"
 #include "user_adc.h"
+#include "user_battery.h"
 
 #include "user_events.h"
 #include "user_webserver.h"
@@ -89,8 +92,10 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	
 	// Native Devices
 	user_button_init();
+	key_init();
 	user_relay_init();
 	user_adc_init();
+	user_battery_init();
 	
 	// I2C Devices
 	i2c_master_gpio_init();
