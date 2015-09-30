@@ -39,16 +39,16 @@ LOCAL void ICACHE_FLASH_ATTR button_set_response(char *state) {
 	user_event_raise(BUTTON_URL, response);
 }
 
-void ICACHE_FLASH_ATTR button_press() {
+LOCAL void ICACHE_FLASH_ATTR button_press() {
 	button_set_response("Press");
 }
 
-void ICACHE_FLASH_ATTR button_short_release() {
+LOCAL void ICACHE_FLASH_ATTR button_short_release() {
 	button_set_response("Short Release");
 	setTimeout(memory_info,  NULL, 100);
 }
 
-void ICACHE_FLASH_ATTR button_long_press() {
+LOCAL void ICACHE_FLASH_ATTR button_long_press() {
 	button_set_response("Long Press");
 	
 	debug("CONFIG: Restore defaults\n");
@@ -56,14 +56,13 @@ void ICACHE_FLASH_ATTR button_long_press() {
 	user_config_load();
 }
 
-void ICACHE_FLASH_ATTR button_long_release() {
+LOCAL void ICACHE_FLASH_ATTR button_long_release() {
 	button_set_response("Long Release");
 }
 
 void ICACHE_FLASH_ATTR user_button_init() {
-	static struct single_key_param *keys[1] = {NULL};
-	
-	keys[0] = key_init_single(
+	struct single_key_param *key = NULL;
+	key = key_init_single(
 		GPIO_ID_PIN(0), 
 		PERIPHS_IO_MUX_GPIO0_U,
 		FUNC_GPIO0,
@@ -73,12 +72,10 @@ void ICACHE_FLASH_ATTR user_button_init() {
 		button_long_release
 	);
 	
-	static struct keys_param param = {
-		.key_num = 1,
-		.single_key = keys
-	};
-	
-	key_init(&param);
+	if (key == NULL) {
+		debug("BUTTON: Initialization Fail\n");
+		return;
+	}
 	
 	webserver_register_handler_callback(BUTTON_URL, button_handler);
 	device_register(NATIVE, 0, BUTTON_URL, NULL, NULL);

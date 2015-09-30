@@ -3,6 +3,8 @@
 	
 	#include "gpio.h"
 	
+	#define KEYS_MAX_COUNT 2
+	
 	typedef void (* key_function)(void);
 	
 	struct single_key_param {
@@ -37,6 +39,7 @@
 		key_function long_press, 
 		key_function long_release
 	);
-	void key_init(struct keys_param *key);
+	
+	void key_init();
 
 #endif

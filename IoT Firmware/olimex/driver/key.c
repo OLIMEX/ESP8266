@@ -17,6 +17,12 @@
 
 #include "driver/key.h"
 
+LOCAL struct single_key_param *key_data[KEYS_MAX_COUNT];
+LOCAL struct keys_param key_parameters = {
+	.key_num = 0,
+	.single_key = key_data
+};
+
 LOCAL void key_intr_handler(struct keys_param *keys);
 
 /******************************************************************************
@@ -38,6 +44,10 @@ struct single_key_param ICACHE_FLASH_ATTR *key_init_single(
 	key_function long_press, 
 	key_function long_release
 ) {
+	if (key_parameters.key_num >= KEYS_MAX_COUNT) {
+		return NULL;
+	}
+	
 	struct single_key_param *single_key = (struct single_key_param *)os_zalloc(sizeof(struct single_key_param));
 	
 	single_key->gpio_id = gpio_id;
@@ -48,6 +58,9 @@ struct single_key_param ICACHE_FLASH_ATTR *key_init_single(
 	single_key->long_press = long_press;
 	single_key->long_release = long_release;
 	
+	key_parameters.single_key[key_parameters.key_num] = single_key;
+	key_parameters.key_num++;
+	
 	return single_key;
 }
 
@@ -57,34 +70,34 @@ struct single_key_param ICACHE_FLASH_ATTR *key_init_single(
  * Parameters   : key_param *keys - keys parameter, which inited by key_init_single
  * Returns	  : none
 *******************************************************************************/
-void ICACHE_FLASH_ATTR key_init(struct keys_param *keys) {
+void ICACHE_FLASH_ATTR key_init() {
 	uint8 i;
 	
-	ETS_GPIO_INTR_ATTACH(key_intr_handler, keys);
+	ETS_GPIO_INTR_ATTACH(key_intr_handler, &key_parameters);
 	
 	ETS_GPIO_INTR_DISABLE();
 	
-	for (i = 0; i < keys->key_num; i++) {
-		keys->single_key[i]->key_level = 1;
-		keys->single_key[i]->is_long = 0;
+	for (i = 0; i < key_parameters.key_num; i++) {
+		key_parameters.single_key[i]->key_level = 1;
+		key_parameters.single_key[i]->is_long = 0;
 		
-		PIN_FUNC_SELECT(keys->single_key[i]->gpio_name, keys->single_key[i]->gpio_func);
+		PIN_FUNC_SELECT(key_parameters.single_key[i]->gpio_name, key_parameters.single_key[i]->gpio_func);
 		
 		// Set GPIO as input
-		gpio_output_set(0, 0, 0, GPIO_ID_PIN(keys->single_key[i]->gpio_id));
+		gpio_output_set(0, 0, 0, GPIO_ID_PIN(key_parameters.single_key[i]->gpio_id));
 		
 		gpio_register_set(
-			GPIO_PIN_ADDR(keys->single_key[i]->gpio_id), 
+			GPIO_PIN_ADDR(key_parameters.single_key[i]->gpio_id), 
 			GPIO_PIN_INT_TYPE_SET(GPIO_PIN_INTR_DISABLE) | 
 			GPIO_PIN_PAD_DRIVER_SET(GPIO_PAD_DRIVER_DISABLE) |
 			GPIO_PIN_SOURCE_SET(GPIO_AS_PIN_SOURCE)
 		);
 		
 		//clear gpio14 status
-		GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(keys->single_key[i]->gpio_id));
+		GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(key_parameters.single_key[i]->gpio_id));
 		
 		//enable interrupt
-		gpio_pin_intr_state_set(GPIO_ID_PIN(keys->single_key[i]->gpio_id), GPIO_PIN_INTR_NEGEDGE);
+		gpio_pin_intr_state_set(GPIO_ID_PIN(key_parameters.single_key[i]->gpio_id), GPIO_PIN_INTR_NEGEDGE);
 	}
 	
 	ETS_GPIO_INTR_ENABLE();
