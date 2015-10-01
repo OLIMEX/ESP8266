@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_LED_8x8_RGB_ENABLE
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "mem.h"
@@ -356,3 +359,4 @@ bool ICACHE_FLASH_ATTR led_8x8_rgb_scroll(uint8 r, uint8 g, uint8 b, char *c, ui
 	
 	return true;
 }
+#endif

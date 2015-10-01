@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_FINGER_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -307,3 +310,4 @@ void ICACHE_FLASH_ATTR mod_finger_init() {
 	
 	setTimeout(finger_start_read, NULL, 2000);
 }
+#endif

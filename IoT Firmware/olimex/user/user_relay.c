@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if RELAY_ENABLE
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "stdout.h"
@@ -93,3 +96,4 @@ void ICACHE_FLASH_ATTR relay_handler(
 	
 	user_relay_state(response);
 }
+#endif

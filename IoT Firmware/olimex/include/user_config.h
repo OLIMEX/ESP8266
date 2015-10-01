@@ -9,7 +9,32 @@
 	#if SSL_ENABLE
 		#define SSL_KEY_SIZE               1024
 	#endif
+
+/***********************************************
+ * Modules conditional compiling
+ ***********************************************/
+	// ESP8266-EVB native
+	#define BUTTON_ENABLE                  1
+	#define RELAY_ENABLE                   1
+	#define ADC_ENABLE                     1
+	// ESP8266-EVB-BAT native
+	#define BATTERY_ENABLE                 1
 	
+	// UEXT modules
+	// UART
+	#define MOD_RFID_ENABLE                1
+	#define MOD_FINGER_ENABLE              1
+	#define MOD_EMTR_ENABLE                1
+	// I2C
+	#define MOD_RGB_ENABLE                 1
+	#define MOD_TC_MK2_ENABLE              1
+	#define MOD_IO2_ENABLE                 1
+	#define MOD_IRDA_ENABLE                1
+	// SPI
+	#define MOD_LED_8x8_RGB_ENABLE         1
+	
+/***********************************************/
+
 	#define USER_CONFIG_RECONNECT_AFTER    3000
 	#define USER_CONFIG_REBOOT_AFTER       5000
 	

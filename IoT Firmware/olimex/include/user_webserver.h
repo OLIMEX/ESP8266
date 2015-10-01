@@ -95,6 +95,7 @@
 		STAILQ_ENTRY(_http_connection_queue_) entries;
 	} http_connection_queue;
 	
+	void memory_info();
 	void webserver_init();
 
 	uint16 webserver_get_status();

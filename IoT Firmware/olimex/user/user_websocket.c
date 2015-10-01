@@ -441,7 +441,7 @@ LOCAL void ICACHE_FLASH_ATTR websocket_handle_message(connections_queue *request
 	
 	if (callback == NULL) {
 		char error[WEBSERVER_MAX_VALUE];
-		websocket_send_message(request->pURL, json_error(error, ESP8266, "URL Not Found", NULL), pConnection);
+		user_websocket_event(cURL, json_error(error, ESP8266, "URL Not Found", NULL), pConnection);
 		return;
 	}
 	

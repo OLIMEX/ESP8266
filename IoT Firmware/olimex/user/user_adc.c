@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if ADC_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -120,3 +123,4 @@ void ICACHE_FLASH_ATTR user_adc_init() {
 	device_register(NATIVE, 0, ADC_URL, NULL, NULL);
 	user_adc_timer_init();
 }
+#endif

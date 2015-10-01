@@ -1348,6 +1348,13 @@ void ICACHE_FLASH_ATTR webserver_init_https() {
 }
 #endif
 
+void ICACHE_FLASH_ATTR memory_info() {
+	system_print_meminfo();
+	debug("Free heap: %d\n", system_get_free_heap_size());
+	timers_info();
+	webserver_connections_info();
+}
+
 /******************************************************************************
  * FunctionName : webserver_init
  * Description  : initialize as a server

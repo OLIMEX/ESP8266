@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_IRDA_ENABLE
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "mem.h"
@@ -158,3 +161,4 @@ i2c_status ICACHE_FLASH_ATTR irda_set(i2c_config *config) {
 #endif
 	return I2C_OK;
 }
+#endif

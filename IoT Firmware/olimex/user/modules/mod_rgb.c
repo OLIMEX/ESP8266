@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_RGB_ENABLE
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "mem.h"
@@ -112,3 +115,4 @@ i2c_status ICACHE_FLASH_ATTR rgb_set(i2c_config *config) {
 	error: i2c_master_stop();
 	return I2C_DATA_NACK;
 }
+#endif

@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_RFID_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -8,7 +11,6 @@
 #include "user_json.h"
 #include "user_events.h"
 #include "user_webserver.h"
-#include "user_config.h"
 #include "user_devices.h"
 
 #include "user_mod_rfid.h"
@@ -105,3 +107,4 @@ void ICACHE_FLASH_ATTR rfid_handler(
 		NULL
 	);
 }
+#endif

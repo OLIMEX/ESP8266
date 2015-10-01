@@ -68,9 +68,15 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	system_init_done_cb(user_init_done);
 	
 	// UART Devices
+#if MOD_RFID_ENABLE
 	mod_rfid_init();
+#endif
+#if MOD_FINGER_ENABLE
 	mod_finger_init();
+#endif
+#if MOD_EMTR_ENABLE
 	mod_emtr_init();
+#endif
 	devices_init();
 	
 	debug("\n\nSDK version: %s\n", system_get_sdk_version());
@@ -91,21 +97,39 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	webserver_register_handler_callback(WIFI_SCAN_URL, wifi_scan_handler);
 	
 	// Native Devices
+#if BUTTON_ENABLE
 	user_button_init();
-	key_init();
+#endif
+#if RELAY_ENABLE
 	user_relay_init();
+#endif
+#if ADC_ENABLE
 	user_adc_init();
+#endif
+#if BATTERY_ENABLE
 	user_battery_init();
+#endif
 	
 	// I2C Devices
 	i2c_master_gpio_init();
+#if MOD_RGB_ENABLE
 	mod_rgb_init();
+#endif
+#if MOD_TC_MK2_ENABLE
 	mod_tc_mk2_init();
+#endif
+#if MOD_IO2_ENABLE
 	mod_io2_init();
+#endif
+#if MOD_IRDA_ENABLE
 	mod_irda_init();
+#endif
 	
 	// SPI Devices
+#if MOD_LED_8x8_RGB_ENABLE
 	mod_led_8x8_rgb_init();
+#endif
 	
+	key_init();
 	webserver_init();
 }

@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if BUTTON_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -13,13 +16,6 @@
 #include "user_config.h"
 #include "user_button.h"
 #include "user_devices.h"
-
-void ICACHE_FLASH_ATTR memory_info() {
-	system_print_meminfo();
-	debug("Free heap: %d\n", system_get_free_heap_size());
-	timers_info();
-	webserver_connections_info();
-}
 
 LOCAL void ICACHE_FLASH_ATTR button_set_response(char *state) {
 	char response[WEBSERVER_MAX_VALUE];
@@ -93,3 +89,4 @@ void ICACHE_FLASH_ATTR button_handler(
 ) {
 	webserver_set_status(0);
 }
+#endif

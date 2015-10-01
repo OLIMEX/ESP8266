@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_EMTR_ENABLE
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "mem.h"
@@ -585,3 +588,4 @@ void ICACHE_FLASH_ATTR emtr_down() {
 	// Len
 	uart_write_byte(10);
 }
+#endif

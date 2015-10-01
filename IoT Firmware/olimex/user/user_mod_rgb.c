@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_RGB_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -91,3 +94,4 @@ void ICACHE_FLASH_ATTR mod_rgb_handler(
 		json_error(response, MOD_RGB, i2c_status_str(status), address_str);
 	}
 }
+#endif

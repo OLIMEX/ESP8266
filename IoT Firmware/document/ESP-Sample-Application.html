@@ -842,7 +842,8 @@
 									
 									if (
 										msg.indexOf('SSL is not enabled') >= 0 ||
-										msg.indexOf('Device not found') >= 0
+										msg.indexOf('URL Not Found')      >= 0 ||
+										msg.indexOf('Device not found')   >= 0
 									) {
 										$this.hide();
 									}
@@ -960,7 +961,7 @@
 								}
 								
 								if (typeof data.Error != 'undefined') {
-									$this.get(0).message(data.Device+': '+data.Error, 'error');
+									$this.get(0).message(data.Error, 'error');
 									return;
 								}
 								

@@ -21,6 +21,9 @@
  *     Contact: support@olimex.com 
  */
 
+#include "user_config.h"
+#if MOD_TC_MK2_ENABLE
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "mem.h"
@@ -123,3 +126,4 @@ i2c_status ICACHE_FLASH_ATTR tc_read(i2c_config *config) {
 	
 	return I2C_OK;
 }
+#endif

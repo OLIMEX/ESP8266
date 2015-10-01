@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_TC_MK2_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -163,3 +166,4 @@ void ICACHE_FLASH_ATTR mod_tc_mk2_init() {
 		mod_tc_mk2_timer_init();
 	}
 }
+#endif

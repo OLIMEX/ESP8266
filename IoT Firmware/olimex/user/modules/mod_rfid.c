@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_RFID_ENABLE
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "mem.h"
@@ -140,3 +143,4 @@ void ICACHE_FLASH_ATTR rfid_init() {
 	setTimeout(rfid_info, NULL, 50);
 	setTimeout(rfid_check, module, 400);
 }
+#endif

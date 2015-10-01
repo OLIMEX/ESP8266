@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_LED_8x8_RGB_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -129,3 +132,4 @@ void ICACHE_FLASH_ATTR mod_led_8x8_rgb_handler(
 		NULL
 	);
 }
+#endif

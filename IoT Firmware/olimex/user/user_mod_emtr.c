@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if MOD_EMTR_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -482,3 +485,4 @@ void ICACHE_FLASH_ATTR mod_emtr_init() {
 	setTimeout(emtr_events_read, NULL, 2000);
 	setTimeout(emtr_start_read, NULL, 2500);
 }
+#endif

@@ -462,7 +462,11 @@ LOCAL char ICACHE_FLASH_ATTR *config_mac(uint8 interface) {
 	uint8 mac[6];
 	
 	wifi_get_macaddr(interface, mac);
-	os_sprintf(mac_str[interface], "%X:%X:%X:%X:%X:%X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	os_sprintf(
+		mac_str[interface], 
+		"%02X:%02X:%02X:%02X:%02X:%02X", 
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
+	);
 	
 	return mac_str[interface];
 }

@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if BATTERY_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -138,3 +141,4 @@ void ICACHE_FLASH_ATTR user_battery_init() {
 	
 	setInterval(battery_state_get, NULL, BATTERY_STATE_REFRESH);
 }
+#endif

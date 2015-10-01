@@ -5,6 +5,7 @@
 #include "queue.h"
 
 #include "user_interface.h"
+#include "user_config.h"
 #include "user_i2c_scan.h"
 #include "user_devices.h"
 
@@ -141,9 +142,19 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 			os_sprintf(i2c_str, ", \"ID\" : \"0x%02x\", \"Addresses\" : [%s]", description->id, addresses);
 		} else if (description->type == UART) {
 			found = 
-				(description->url == RFID_URL   && uart_device == UART_RFID) ||
-				(description->url == FINGER_URL && uart_device == UART_FINGER) ||
+				false
+#if MOD_RFID_ENABLE
+				||
+				(description->url == RFID_URL   && uart_device == UART_RFID) 
+#endif
+#if MOD_FINGER_ENABLE
+				||
+				(description->url == FINGER_URL && uart_device == UART_FINGER) 
+#endif
+#if MOD_EMTR_ENABLE	
+				||
 				(description->url == EMTR_URL   && uart_device == UART_EMTR)
+#endif
 			;
 		} else {
 			found = true;
