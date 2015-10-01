@@ -1,5 +1,6 @@
 - [ABOUT Olimex ESP8266-EVB IoT Firmware](#)
 	- [Security](#security)
+	- [Operating modes](#operating-modes)
 	- [QUICK START](#quick-start)
 	- [OPERATION](#operation)
 		- [Basic Response Message Format](#basic-response-message-format)
@@ -33,9 +34,24 @@ allows such developers to use UEXT modules manufactured by Olimex with ease.
 ## Security
 
 SSL implementation is quite restricted due to small RAM amount. 
-Successfully tested with 512 bit keys. Unfortunately because of large number of supported modules there is not enough free RAM. If you want to enable SSL you should reduce supported modules and modify olimex/include/user_config.h
+Successfully tested with 512 bit keys. Unfortunately because of large number of supported modules there is not enough free RAM. If you want to enable SSL you should reduce supported modules in olimex/include/user_config.h
+
+For example:
 	
-	#define SSL_ENABLE  1
+	#define SSL_ENABLE                     1
+	
+	#define ADC_ENABLE                     0
+	#define BATTERY_ENABLE                 0
+	
+	#define MOD_RFID_ENABLE                0
+	#define MOD_FINGER_ENABLE              0
+	#define MOD_EMTR_ENABLE                0
+	
+	// ...and so on.
+
+You can use [Sample HTML / JavaScript application](#sample-html--javascript-application) to upload your SSL keys.
+
+## Operating modes
 
 Firmware operates in two different modes:
 * HTTP REST Service
