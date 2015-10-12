@@ -21,29 +21,12 @@ LOCAL uint8 battery_state = 0;
 LOCAL uint8 battery_percent = 0;
 
 LOCAL uint16 ICACHE_FLASH_ATTR battery_adc_filter() {
-LOCAL uint16 filter[BATTERY_FILTER_COUNT];
-
-LOCAL uint8 index = 0;
-LOCAL uint8 count = 0;
-
-	filter[index] = system_adc_read();
-	index++;
-	if (index == BATTERY_FILTER_COUNT) {
-		index = 0;
-	}
-	
-	if (count < BATTERY_FILTER_COUNT) {
-		count++;
-	}
-	
-	uint32 adc = 0;
+	LOCAL uint32 adc = 0;
 	uint8 i;
-	for (i=0; i<count; i++) {
-		adc += filter[i];
+	for (i=0; i<BATTERY_FILTER_COUNT*2; i++) {
+		adc = adc - (adc >> BATTERY_FILTER_SHIFT) + system_adc_read();
 	}
-	adc = adc / count;
-	
-	return adc;
+	return adc >> BATTERY_FILTER_SHIFT;
 }
 
 LOCAL uint8 ICACHE_FLASH_ATTR battery_percent_get() {
@@ -63,6 +46,7 @@ LOCAL uint8 ICACHE_FLASH_ATTR battery_percent_get() {
 
 LOCAL void ICACHE_FLASH_ATTR battery_set_response(char *response) {
 	char data[WEBSERVER_MAX_VALUE];
+#if BATTERY_DEBUG
 	debug(
 		"BATTERY:\n"
 		"    State %d\n"
@@ -70,7 +54,7 @@ LOCAL void ICACHE_FLASH_ATTR battery_set_response(char *response) {
 		battery_state, 
 		battery_percent
 	);
-	
+#endif	
 	json_data(
 		response, ESP8266, OK_STR,
 		json_sprintf(
