@@ -81,11 +81,12 @@ LOCAL uint32 finger_read_timer = 0;
 
 	finger_current_buff = 0;
 	clearTimeout(finger_read_timer);
-	finger_read_timer = setTimeout(finger_gen_img, finger_read, FINGER_TIMEOUT);
+	finger_read_timer = setTimeout(finger_gen_img, finger_read, FINGER_SCAN_TIMEOUT);
 }
 
 LOCAL void ICACHE_FLASH_ATTR finger_timeout(finger_packet *packet) {
 	char response[WEBSERVER_MAX_VALUE];
+	finger_clear_timeout(packet);
 	json_error(response, MOD_FINGER, TIMEOUT, NULL);
 	user_event_raise(FINGER_URL, response);
 	finger_start_read();

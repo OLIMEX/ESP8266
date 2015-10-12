@@ -7,7 +7,8 @@
 		#define FINGER_DEBUG           0
 		#define FINGER_VERBOSE_OUTPUT  0
 
-		#define FINGER_TIMEOUT         1000
+		#define FINGER_SCAN_TIMEOUT    1000
+		#define FINGER_TIMEOUT         3000
 
 		#define FINGER_START_FRAME_01  0xEF
 		#define FINGER_START_FRAME_02  0x01
@@ -95,6 +96,7 @@
 		uint16 finger_packet_size();
 		uint16 finger_baud_rate();
 		
+		void finger_clear_timeout(finger_packet *packet);
 		void finger_set_timeout_callback(finger_callback command_timeout);
 		
 		void finger_verify_password(finger_callback command_done);

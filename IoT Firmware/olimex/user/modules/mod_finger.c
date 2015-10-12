@@ -63,8 +63,9 @@ const char ICACHE_FLASH_ATTR *finger_error_str(uint8 status) {
 	}
 }
 
-LOCAL void ICACHE_FLASH_ATTR finger_default_timeout(finger_packet *packet) {
+void ICACHE_FLASH_ATTR finger_clear_timeout(finger_packet *packet) {
 	debug("FINGER: %s\n", TIMEOUT);
+	finger_timeout = 0;
 }
 
 void ICACHE_FLASH_ATTR finger_set_timeout_callback(finger_callback command_timeout) {
@@ -146,7 +147,7 @@ LOCAL void ICACHE_FLASH_ATTR finger_send(finger_packet *packet) {
 	uart_write_buff(packet->data, packet->len);
 	
 	if (finger_command_timeout == NULL) {
-		finger_set_timeout_callback(finger_default_timeout);
+		finger_set_timeout_callback(finger_clear_timeout);
 	}
 	finger_timeout = setTimeout((os_timer_func_t *)finger_command_timeout, packet, FINGER_TIMEOUT);
 }
@@ -520,8 +521,6 @@ void ICACHE_FLASH_ATTR finger_init() {
 	
 	uart_char_in_set(finger_char_in);
 	uart_init(BIT_RATE_57600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
-	
-	finger_set_timeout_callback(finger_default_timeout);
 	
 	// Verify password
 	setTimeout((os_timer_func_t *)finger_verify_password, finger_password_response, 100);
