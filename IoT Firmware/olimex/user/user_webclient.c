@@ -470,15 +470,15 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 	);
 #endif
 	
-#if SSL_ENABLE
 	if (connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl) {
+#if SSL_ENABLE
 		espconn_secure_connect(connection);
+#else
+		debug("WEBCLIENT: SSL is disabled\n");
+#endif
 	} else {
 		espconn_connect(connection);
 	}
-#else
-	espconn_connect(connection);
-#endif
 }
 
 void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {
