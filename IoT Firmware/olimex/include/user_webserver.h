@@ -10,7 +10,7 @@
 	#define WEBSERVER_MAX_VALUE          150
 	#define WEBSERVER_MAX_RESPONSE_LEN  1024
 	
-	#define WEBSERVER_MAX_PACKET_LEN    2048
+	#define WEBSERVER_MAX_PACKET_LEN    4096
 	
 	#define WEBSERVER_DEBUG                0
 	#define WEBSERVER_VERBOSE_OUTPUT       0

@@ -1339,7 +1339,7 @@ void ICACHE_FLASH_ATTR webserver_init_https() {
 	connection.proto.tcp->local_port = WEBSERVER_SSL_PORT;
 	espconn_regist_connectcb(&connection, webserver_connect);
 	
-	espconn_secure_set_size(ESPCONN_SERVER, WEBSERVER_MAX_PACKET_LEN);
+	espconn_secure_set_size(ESPCONN_BOTH, WEBSERVER_MAX_PACKET_LEN);
 	
 	espconn_secure_accept(&connection);
 	debug("WEBSERVER: Maximum allowed HTTPS connections [%d]\n", espconn_tcp_get_max_con_allow(&connection));
