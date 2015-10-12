@@ -463,8 +463,8 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 	debug(
 		"WEBCLIENT: %s [%s:%d] [%d.%d.%d.%d:%d]\n", 
 		webclient_method_str(request->method), 
-		connection->proto.tcp->remote_port,
 		request->host, 
+		connection->proto.tcp->remote_port,
 		IP2STR(connection->proto.tcp->remote_ip),
 		connection->proto.tcp->local_port
 	);
