@@ -1,8 +1,4 @@
-
-const ESP8266_button           = 'ESP8266';
 const ESP8266_button_URL       = '/button';
-
-
 const ESP8266_relay_URL       = '/relay';
 
 var lastRelayState = 0;
