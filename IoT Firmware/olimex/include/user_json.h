@@ -16,14 +16,34 @@
 	void  jsonparse_object_str(struct jsonparse_state *parser, char *dst, int dst_len);
 	
 	extern const char ESP8266[];
+	#if DEVICE == SWITCH2
+	extern const char SWITCH2_STR[];
+	#endif
+	
+	#if MOD_IO2_ENABLE
 	extern const char MOD_IO2[];
+	#endif
+	#if MOD_IRDA_ENABLE
 	extern const char MOD_IRDA[];
+	#endif
+	#if MOD_LED_8x8_RGB_ENABLE
 	extern const char MOD_LED8x8RGB[];
+	#endif
+	#if MOD_RFID_ENABLE
 	extern const char MOD_RFID[];
+	#endif
+	#if MOD_RGB_ENABLE
 	extern const char MOD_RGB[];
+	#endif
+	#if MOD_TC_MK2_ENABLE
 	extern const char MOD_TC_MK2[];
+	#endif
+	#if MOD_FINGER_ENABLE
 	extern const char MOD_FINGER[];
+	#endif
+	#if MOD_EMTR_ENABLE
 	extern const char MOD_EMTR[];
+	#endif
 	
 	extern const char DEVICE_NOT_FOUND[];
 	extern const char TIMEOUT[];

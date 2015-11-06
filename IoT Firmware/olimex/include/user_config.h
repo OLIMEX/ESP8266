@@ -10,35 +10,61 @@
 		#define SSL_KEY_SIZE               1024
 	#endif
 	
+	#define SWITCH2                        1
+	
 /***********************************************
  * Modules conditional compiling
  ***********************************************/
-	#define UART0_SWAP                     0
-	#define UART1_ENABLE                   0
-	
-	// ESP8266-EVB native
-	#define BUTTON_ENABLE                  1
-	#define RELAY_ENABLE                   1
-	#define ADC_ENABLE                     1
-	// ESP8266-EVB-BAT native
-	#define BATTERY_ENABLE                 0
-	
-	// UEXT modules
-	// UART
-	#define MOD_RFID_ENABLE                1
-	#define MOD_FINGER_ENABLE              1
-	#define MOD_EMTR_ENABLE                1
-	// I2C
-	#define MOD_RGB_ENABLE                 1
-	#define MOD_TC_MK2_ENABLE              1
-	#define MOD_IO2_ENABLE                 1
-	#define MOD_IRDA_ENABLE                1
-	// SPI
-	#define MOD_LED_8x8_RGB_ENABLE         1
-	
+	#if DEVICE == SWITCH2
+		#define UART0_SWAP                     0
+		#define UART1_ENABLE                   0
+		
+		// ESP8266-EVB native
+		#define BUTTON_ENABLE                  1
+		#define RELAY_ENABLE                   0
+		#define ADC_ENABLE                     0
+		// ESP8266-EVB-BAT native
+		#define BATTERY_ENABLE                 0
+		
+		// UEXT modules
+		// UART
+		#define MOD_RFID_ENABLE                0
+		#define MOD_FINGER_ENABLE              0
+		#define MOD_EMTR_ENABLE                0
+		// I2C
+		#define MOD_RGB_ENABLE                 0
+		#define MOD_TC_MK2_ENABLE              0
+		#define MOD_IO2_ENABLE                 0
+		#define MOD_IRDA_ENABLE                0
+		// SPI
+		#define MOD_LED_8x8_RGB_ENABLE         0
+	#else 
+		#define UART0_SWAP                     0
+		#define UART1_ENABLE                   0
+		
+		// ESP8266-EVB native
+		#define BUTTON_ENABLE                  1
+		#define RELAY_ENABLE                   1
+		#define ADC_ENABLE                     1
+		// ESP8266-EVB-BAT native
+		#define BATTERY_ENABLE                 0
+		
+		// UEXT modules
+		// UART
+		#define MOD_RFID_ENABLE                1
+		#define MOD_FINGER_ENABLE              1
+		#define MOD_EMTR_ENABLE                1
+		// I2C
+		#define MOD_RGB_ENABLE                 1
+		#define MOD_TC_MK2_ENABLE              1
+		#define MOD_IO2_ENABLE                 1
+		#define MOD_IRDA_ENABLE                1
+		// SPI
+		#define MOD_LED_8x8_RGB_ENABLE         1
+	#endif
 /***********************************************/
 
-	#if UART1_ENABLE
+	#if UART1_ENABLE || (DEVICE == SWITCH2)
 		#define I2C_ENABLE                 0
 	#else
 		#define I2C_ENABLE                 1

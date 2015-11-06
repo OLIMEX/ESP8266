@@ -7,15 +7,34 @@
 #include "user_json.h"
 
 const char ESP8266[]           = "ESP8266";
+#if DEVICE == SWITCH2
+const char SWITCH2_STR[]       = "ESP-SWITCH2";
+#endif
 
+#if MOD_IO2_ENABLE
 const char MOD_IO2[]           = "MOD-IO2";
+#endif
+#if MOD_IRDA_ENABLE
 const char MOD_IRDA[]          = "MOD-IRDA";
+#endif
+#if MOD_LED_8x8_RGB_ENABLE
 const char MOD_LED8x8RGB[]     = "MOD-LED8x8RGB";
+#endif
+#if MOD_RFID_ENABLE
 const char MOD_RFID[]          = "MOD-RFID";
+#endif
+#if MOD_RGB_ENABLE
 const char MOD_RGB[]           = "MOD-RGB";
+#endif
+#if MOD_TC_MK2_ENABLE
 const char MOD_TC_MK2[]        = "MOD-TC-MK2";
+#endif
+#if MOD_FINGER_ENABLE
 const char MOD_FINGER[]        = "MOD-FINGER";
+#endif
+#if MOD_EMTR_ENABLE
 const char MOD_EMTR[]          = "MOD-EMTR";
+#endif
 
 const char DEVICE_NOT_FOUND[]  = "Device not found";
 const char TIMEOUT[]           = "Timeout";

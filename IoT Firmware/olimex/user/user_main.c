@@ -35,6 +35,8 @@
 #include "user_adc.h"
 #include "user_battery.h"
 
+#include "user_switch2.h"
+
 #include "user_events.h"
 #include "user_webserver.h"
 
@@ -115,6 +117,9 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #endif
 #if BATTERY_ENABLE
 	user_battery_init();
+#endif
+#if DEVICE == SWITCH2
+	user_switch2_init();
 #endif
 	
 #if I2C_ENABLE	

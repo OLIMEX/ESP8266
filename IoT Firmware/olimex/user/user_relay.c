@@ -16,12 +16,6 @@
 LOCAL uint8  relay_state = 0;
 LOCAL uint32 relay_timer = 0;
 
-void ICACHE_FLASH_ATTR user_relay_init() {
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
-	webserver_register_handler_callback(RELAY_URL, relay_handler);
-	device_register(NATIVE, 0, RELAY_URL, NULL, NULL);
-}
-
 LOCAL void ICACHE_FLASH_ATTR user_relay_state(char *response) {
 	char data_str[WEBSERVER_MAX_VALUE];
 	json_data(
@@ -96,4 +90,11 @@ void ICACHE_FLASH_ATTR relay_handler(
 	
 	user_relay_state(response);
 }
+
+void ICACHE_FLASH_ATTR user_relay_init() {
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
+	webserver_register_handler_callback(RELAY_URL, relay_handler);
+	device_register(NATIVE, 0, RELAY_URL, NULL, NULL);
+}
+
 #endif
