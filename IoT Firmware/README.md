@@ -34,7 +34,7 @@ allows such developers to use UEXT modules manufactured by Olimex with ease.
 ## Security
 
 SSL implementation is quite restricted due to small RAM amount. 
-Successfully tested with 512 bit keys. Unfortunately because of large number of supported modules there is not enough free RAM. If you want to enable SSL you should reduce supported modules in olimex/include/user_config.h
+Successfully tested with 1024 bit keys. Unfortunately because of large number of supported modules there is not enough free RAM. If you want to enable SSL you should reduce supported modules in olimex/include/user_config.h
 
 For example:
 	
@@ -114,12 +114,12 @@ If you do not want to use precompiled binaries from bin/upgrade folder then you 
 *Compiling bin/upgrade/user1.2048.new.3.bin*
 	
 	make clean
-	make COMPILE=gcc SPI_SIZE_MAP=3 BOOT=new APP=1
+	make APP=1
 
 *Compiling bin/upgrade/user2.2048.new.3.bin*
 	
 	make clean
-	make COMPILE=gcc SPI_SIZE_MAP=3 BOOT=new APP=2
+	make APP=2
 
 
 **JavaScript code example**
@@ -1080,7 +1080,7 @@ Sample Event Message
 	
 ## Sample HTML / JavaScript application
 
-See *document* folder - ESP-Sample-Application.html			
+See *app* folder - index.html			
 	
 ![Sample Application Screenshot](ESP8266-Sample-HTML-JS-Application.jpg "Sample Application Screenshot")
 	
