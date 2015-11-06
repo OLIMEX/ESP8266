@@ -34,20 +34,12 @@ allows such developers to use UEXT modules manufactured by Olimex with ease.
 ## Security
 
 SSL implementation is quite restricted due to small RAM amount. 
-Successfully tested with 1024 bit keys. Unfortunately because of large number of supported modules there is not enough free RAM. If you want to enable SSL you should reduce supported modules in olimex/include/user_config.h
+Successfully tested with 1024 bit keys. Unfortunately because of large number of supported modules there is not enough free RAM. If you want to enable SSL you should compile firmware with reduced modules support
 
 For example:
 	
-	#define SSL_ENABLE                     1
-	
-	#define ADC_ENABLE                     0
-	#define BATTERY_ENABLE                 0
-	
-	#define MOD_RFID_ENABLE                0
-	#define MOD_FINGER_ENABLE              0
-	#define MOD_EMTR_ENABLE                0
-	
-	// ...and so on.
+	make clean
+	make DEVICE=EVB_ONLY SSL=1 APP=1
 
 You can use [Sample HTML / JavaScript application](#sample-html--javascript-application) to upload your SSL keys.
 
@@ -105,7 +97,7 @@ Supported Devices
 
 You will need a seral connection established. This connection requires seral cable with level shifter. We will use esptool. Enter bootloader mode - hold the button pressed down and power the board, then release the button. Use the following command issued from root folder:
 	
-	esptool/esptool.py --baud 576000 write_flash 0x00000 bin/boot_v1.2.bin 0x01000 bin/upgrade/user1.2048.new.3.bin 0x81000 bin/upgrade/user2.2048.new.3.bin 0x1FC000 bin/esp_init_data_default.bin --flash_size 16m
+	esptool/esptool.py --baud 576000 write_flash 0x00000 bin/boot_v1.2.bin 0x01000 bin/upgrade/user1.2048.new.3.bin 0x81000 bin/upgrade/user2.2048.new.3.bin 0x1FC000 bin/esp_init_data_default.bin 0x1FE000 bin/blank.bin --flash_size 16m
 
 **How to compile firmware**
 
