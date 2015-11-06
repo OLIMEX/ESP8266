@@ -9,7 +9,6 @@
 
 #include "driver/spi_register.h"
 
-#include "user_font.h"
 #include "user_utf8.h"
 #include "mod_led_8x8_rgb.h"
 
@@ -171,62 +170,6 @@ bool ICACHE_FLASH_ATTR led_8x8_rgb_set(uint16 x, uint16 y, uint8 r, uint8 g, uin
 	return true;
 }
 
-uint16 ICACHE_FLASH_ATTR led_8x8_rgb_size_x(char *c) {
-	return utf8_length(c) * (FONT_COLUMNS + 1);
-}
-
-uint8 ICACHE_FLASH_ATTR led_8x8_rgb_column(char *c, uint16 x) {
-	if (x >= led_8x8_rgb_size_x(c)) {
-		// outside string
-		return 0;
-	}
-	
-	uint16 ci = x / (FONT_COLUMNS + 1);
-	uint16 cc = x % (FONT_COLUMNS + 1);
-	
-	if (cc == FONT_COLUMNS) {
-		// spacer column
-		return 0;
-	}
-	
-	c = utf8_char_at(c, ci);
-	if (c == NULL) {
-		return 0;
-	}
-	
-	uint32 utf = utf8_decode_char(c);
-	if (utf == 0) {
-		return 0;
-	}
-	
-	uint8 i;
-	uint8 font = 0xFF;
-	for (i=0; i<FONT_COUNT; i++) {
-		if (
-			utf >= FONT_DESCRIPTION[i].first && 
-			utf <= FONT_DESCRIPTION[i].last
-		) {
-			font = i;
-			break;
-		}
-	}
-	
-	if (font == 0xFF) {
-		// char not in font range
-		return 0;
-	}
-	
-	if (font == LATIN) {
-		return FONT_LATIN[utf - FONT_DESCRIPTION[font].first][cc];
-	} else if (font == CYRILLIC) {
-		return FONT_CYRILLIC[utf - FONT_DESCRIPTION[font].first][cc];
-	} else if (font == LATIN_EXTRA) {
-		return FONT_LATIN_EXTRA[utf - FONT_DESCRIPTION[font].first][cc];
-	}
-	
-	return 0;
-}
-
 bool ICACHE_FLASH_ATTR led_8x8_rgb_print(uint16 x, uint16 y, uint8 r, uint8 g, uint8 b, char *c) {
 	if (led_8x8_rgb_buffer == NULL) {
 		return false;
@@ -234,9 +177,9 @@ bool ICACHE_FLASH_ATTR led_8x8_rgb_print(uint16 x, uint16 y, uint8 r, uint8 g, u
 	
 	uint8 col, j;
 	uint16 i;
-	uint16 size = led_8x8_rgb_size_x(c);
+	uint16 size = utf8_columns_count(c);
 	for (i=0; i<size; i++) {
-		col = led_8x8_rgb_column(c, i);
+		col = utf8_column(c, i);
 		for (j=0; j<8; j++) {
 			if (col & 0x80) {
 				led_8x8_rgb_set(x, y+j, r, g, b);
@@ -309,7 +252,7 @@ bool ICACHE_FLASH_ATTR led_8x8_rgb_shift_left() {
 	}
 }
 
-LOCAL uint16 scroll_in_progress = false;
+LOCAL bool   scroll_in_progress = false;
 LOCAL char  *scroll_c = NULL;
 LOCAL uint16 scroll_i = 0;
 
@@ -323,12 +266,16 @@ LOCAL uint16 scroll_size = 0;
 LOCAL uint8  scroll_delay = 0;
 LOCAL led_8x8_rgb_done_callback scroll_done = NULL;
 
+bool ICACHE_FLASH_ATTR led_8x8_rgb_busy() {
+	return scroll_in_progress;
+}
+
 void ICACHE_FLASH_ATTR _led_8x8_rgb_scroll_() {
 	uint8 col, j;
 	
 	led_8x8_rgb_shift_left();
 	
-	col = led_8x8_rgb_column(scroll_c, scroll_i);
+	col = utf8_column(scroll_c, scroll_i);
 	for (j=0; j<8; j++) {
 		if (col & 0x80) {
 			led_8x8_rgb_set(scroll_x, scroll_y + j, scroll_r, scroll_g, scroll_b);
@@ -372,10 +319,10 @@ bool ICACHE_FLASH_ATTR led_8x8_rgb_scroll(uint8 r, uint8 g, uint8 b, char *c, ui
 	scroll_in_progress = true;
 	
 	scroll_x = led_8x8_rgb_cols * 8 - 1;
-	scroll_y = led_8x8_rgb_rows * 8 / 2 - FONT_ROWS / 2;
+	scroll_y = led_8x8_rgb_rows * 8 / 2 - utf8_font_rows() / 2;
 	
 	scroll_i = 0;
-	scroll_size = led_8x8_rgb_size_x(c);
+	scroll_size = utf8_columns_count(c);
 	scroll_delay = delay;
 
 	scroll_r = r;

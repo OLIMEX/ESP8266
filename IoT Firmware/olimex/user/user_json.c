@@ -10,6 +10,9 @@ const char ESP8266[]           = "ESP8266";
 #if DEVICE == SWITCH2
 const char SWITCH2_STR[]       = "ESP-SWITCH2";
 #endif
+#if DEVICE == BADGE
+const char BADGE_STR[]         = "ESP-BADGE";
+#endif
 
 #if MOD_IO2_ENABLE
 const char MOD_IO2[]           = "MOD-IO2";
@@ -43,6 +46,7 @@ const char OK_STR[]            = "OK";
 const char REBOOTING[]         = "Rebooting";
 const char CONNECTED[]         = "Connected";
 const char RECONNECT[]         = "Reconnect station";
+const char BUSY_STR[]          = "Busy";
 const char DONE[]              = "Done";
 const char RESTORED_DEFAULTS[] = "Restored defaults";
 
@@ -98,6 +102,37 @@ char ICACHE_FLASH_ATTR *json_data(char *buffer, const char *device, const char *
 char ICACHE_FLASH_ATTR *json_i2c_address(char *address_str, uint8 address) {
 	os_sprintf(address_str,	"\"I2C_Address\" : \"0x%02x\"", address);
 	return address_str;
+}
+
+/******************************************************************************
+ * FunctionName : json_escape_str
+ * Description  : escape quotes and back slashes
+ *                returned pointer should be freed after usage
+ * Parameters   : 
+*******************************************************************************/
+char ICACHE_FLASH_ATTR *json_escape_str(char *str, uint16 max_len) {
+	char *buff = (char *)os_zalloc(max_len);
+	
+	uint16 l = 0;
+	char  *s = str;
+	char  *b = buff;
+	
+	while (*s != '\0' && l < max_len-1) {
+		if (*s == '"' || *s == '\\') {
+			*b = '\\';
+			b++;
+			l++;
+		}
+		
+		*b = *s;
+		b++;
+		l++;
+		s++;
+	}
+	
+	*b = '\0';
+	
+	return buff;
 }
 
 /******************************************************************************

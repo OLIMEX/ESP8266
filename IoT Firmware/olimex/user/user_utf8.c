@@ -1,6 +1,11 @@
+#include "user_config.h"
+#if FONT_UTF8_ENABLE
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "stdout.h"
+
+#include "user_font.h"
 
 uint16 ICACHE_FLASH_ATTR utf8_length(char *str) {
 	uint16 i=0;
@@ -89,3 +94,69 @@ uint32 ICACHE_FLASH_ATTR utf8_decode_char(char *str) {
 	
 	return utf;
 }
+
+uint8 ICACHE_FLASH_ATTR utf8_font_rows() {
+	return FONT_ROWS;
+}
+
+uint8 ICACHE_FLASH_ATTR utf8_font_columns() {
+	return FONT_COLUMNS;
+}
+
+uint16 ICACHE_FLASH_ATTR utf8_columns_count(char *c) {
+	return utf8_length(c) * (FONT_COLUMNS + 1);
+}
+
+uint8 ICACHE_FLASH_ATTR utf8_column(char *c, uint16 x) {
+	if (x >= utf8_columns_count(c)) {
+		// outside string
+		return 0;
+	}
+	
+	uint16 ci = x / (FONT_COLUMNS + 1);
+	uint16 cc = x % (FONT_COLUMNS + 1);
+	
+	if (cc == FONT_COLUMNS) {
+		// spacer column
+		return 0;
+	}
+	
+	c = utf8_char_at(c, ci);
+	if (c == NULL) {
+		return 0;
+	}
+	
+	uint32 utf = utf8_decode_char(c);
+	if (utf == 0) {
+		return 0;
+	}
+	
+	uint8 i;
+	uint8 font = 0xFF;
+	for (i=0; i<FONT_COUNT; i++) {
+		if (
+			utf >= FONT_DESCRIPTION[i].first && 
+			utf <= FONT_DESCRIPTION[i].last
+		) {
+			font = i;
+			break;
+		}
+	}
+	
+	if (font == 0xFF) {
+		// char not in font range
+		return 0;
+	}
+	
+	if (font == LATIN) {
+		return FONT_LATIN[utf - FONT_DESCRIPTION[font].first][cc];
+	} else if (font == CYRILLIC) {
+		return FONT_CYRILLIC[utf - FONT_DESCRIPTION[font].first][cc];
+	} else if (font == LATIN_EXTRA) {
+		return FONT_LATIN_EXTRA[utf - FONT_DESCRIPTION[font].first][cc];
+	}
+	
+	return 0;
+}
+
+#endif

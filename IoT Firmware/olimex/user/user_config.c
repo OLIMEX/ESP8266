@@ -17,6 +17,7 @@
 #include "user_config.h"
 #include "user_events.h"
 #include "user_devices.h"
+#include "user_wifi_scan.h"
 
 LOCAL user_config user_configuration;
 
@@ -53,7 +54,29 @@ LOCAL void ICACHE_FLASH_ATTR user_config_station_connect() {
 	
 	if (status != STATION_CONNECTING) {
 		setTimeout((os_timer_func_t *)wifi_station_connect, NULL, 2000);
+		setTimeout((os_timer_func_t *)wifi_auto_detect,  NULL, 3000);
 	}
+}
+
+LOCAL void ICACHE_FLASH_ATTR config_default_ssid(char *ssid) {
+	uint8 mac[6];
+	wifi_get_macaddr(SOFTAP_IF, mac);
+	os_sprintf(
+		ssid, 
+		USER_CONFIG_DEFAULT_AP_SSID
+		"_%02X%02X%02X", 
+		mac[3], mac[4], mac[5]
+	);
+}
+
+LOCAL void ICACHE_FLASH_ATTR config_default_token(char *token) {
+	uint8 mac[6];
+	wifi_get_macaddr(SOFTAP_IF, mac);
+	os_sprintf(
+		token, 
+		"%02X%02X%02X%02X%02X%02X", 
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
+	);
 }
 
 void ICACHE_FLASH_ATTR user_config_restore_defaults() {
@@ -63,22 +86,33 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	os_sprintf(user_configuration.user,     USER_CONFIG_DEFAULT_USER);
 	os_sprintf(user_configuration.password, USER_CONFIG_DEFAULT_PASSWD);
 	
-	os_memset(user_configuration.events_server, '\0', sizeof(user_configuration.events_server));
-	os_memset(user_configuration.events_user, '\0', sizeof(user_configuration.events_user));
+	os_memset(user_configuration.events_server,   '\0', sizeof(user_configuration.events_server));
+	os_memset(user_configuration.events_user,     '\0', sizeof(user_configuration.events_user));
 	os_memset(user_configuration.events_password, '\0', sizeof(user_configuration.events_password));
-	os_memset(user_configuration.events_path, '\0', sizeof(user_configuration.events_path));
-	os_memset(user_configuration.events_name, '\0', sizeof(user_configuration.events_name));
-	os_memset(user_configuration.events_token, '\0', sizeof(user_configuration.events_token));
+	os_memset(user_configuration.events_path,     '\0', sizeof(user_configuration.events_path));
+	os_memset(user_configuration.events_name,     '\0', sizeof(user_configuration.events_name));
+	os_memset(user_configuration.events_token,    '\0', sizeof(user_configuration.events_token));
+	
 	user_configuration.events_websocket = true;
 	user_configuration.events_ssl = false;
-	os_sprintf(user_configuration.events_path, "/");
+	
+#if DEVICE == BADGE	
+	os_sprintf(user_configuration.events_server,   USER_CONFIG_DEFAULT_EVENT_SERVER);
+#endif
+	os_sprintf(user_configuration.events_path,     USER_CONFIG_DEFAULT_EVENT_PATH);
+	os_sprintf(user_configuration.events_name,     USER_CONFIG_DEFAULT_AP_SSID);
+	config_default_token(user_configuration.events_token);
 	
 	user_configuration.access_point.dhcp = 1;
 	IP4_ADDR(&user_configuration.access_point.ip.ip,      192,168,  4,1);
 	IP4_ADDR(&user_configuration.access_point.ip.netmask, 255,255,255,0);
 	IP4_ADDR(&user_configuration.access_point.ip.gw,      192,168,  4,1);
-	
+
+#if DEVICE == BADGE	
+	user_configuration.station_auto_connect = 1;
+#else
 	user_configuration.station_auto_connect = 0;
+#endif
 	user_configuration.station.dhcp = 1;
 	IP4_ADDR(&user_configuration.station.ip.ip,           192,168, 10,2);
 	IP4_ADDR(&user_configuration.station.ip.netmask,      255,255,255,0);
@@ -99,6 +133,8 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 		.max_connection = 2,
 		.beacon_interval = 100
 	};
+	config_default_ssid(ap_config.ssid);
+	
 	wifi_softap_set_config(&ap_config);
 
 	struct station_config s_config = {
@@ -235,6 +271,11 @@ char ICACHE_FLASH_ATTR *user_config_user() {
 char ICACHE_FLASH_ATTR *user_config_password() {
 	return (char *)&user_configuration.password;
 }
+
+bool ICACHE_FLASH_ATTR user_config_station_auto_connect() {
+	return (bool)user_configuration.station_auto_connect;
+}
+
 
 char ICACHE_FLASH_ATTR *user_config_events_server() {
 	return (char *)&user_configuration.events_server;
@@ -443,7 +484,7 @@ char ICACHE_FLASH_ATTR *config_wifi_station() {
 	static char client_str[WEBSERVER_MAX_VALUE*3] = "";
 	struct station_config config;
 	
-	wifi_station_get_config(&config);
+	wifi_station_get_config_default(&config);
 	
 	os_sprintf(
 		client_str,
@@ -788,7 +829,7 @@ void ICACHE_FLASH_ATTR config_station_handler(
 		int json_type;
 		
 		struct station_config config;
-		wifi_station_get_config(&config);
+		wifi_station_get_config_default(&config);
 		
 		jsonparse_setup(&parser, data, data_len);
 		while ((json_type = jsonparse_next(&parser)) != 0) {

@@ -7,6 +7,8 @@
 	
 	typedef unsigned long int _uint64_;
 	
+	uint32 pow_int(uint32 num, uint8 pow);
+	
 	bool  str_match(char *pattern, char * string);
 	char *strncpy_null(char *dest, char *src, uint16 n);
 	void *strstr_end(char *haystack, char *needle);
@@ -35,4 +37,5 @@
 	
 	void sha1(char *msg, int len, char *digest);
 	
+	uint16 crc16(uint8 *data, uint16 len);
 #endif

@@ -855,7 +855,7 @@ bool ICACHE_FLASH_ATTR websocket_server_upgrade(struct espconn *pConnection, cha
 	connections_queue *request = webserver_connection_store(&websockets, pConnection, pURL, keep_alive);
 	request->extra = (websocket_extra *)os_zalloc(sizeof(websocket_extra));
 	websocket_extra *extra = request->extra;
-	extra->authorized = false;
+	extra->authorized = !user_config_authentication();
 	extra->timeout = false;
 	extra->sending = false;
 	extra->type = WEBSOCKET_SERVER;

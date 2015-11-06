@@ -29,7 +29,7 @@ LOCAL uint16 ICACHE_FLASH_ATTR battery_adc_filter() {
 	return adc >> BATTERY_FILTER_SHIFT;
 }
 
-LOCAL uint8 ICACHE_FLASH_ATTR battery_percent_get() {
+uint8 ICACHE_FLASH_ATTR battery_percent_get() {
 	uint16 adc = battery_adc_filter();
 	uint8  percent;
 	

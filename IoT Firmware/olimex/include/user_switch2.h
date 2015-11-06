@@ -1,5 +1,5 @@
-#ifndef __USER_RELAY_H__
-	#define __USER_RELAY_H__
+#ifndef __USER_SWITCH2_H__
+	#define __USER_SWITCH2_H__
 	
 	#include "user_config.h"
 	#if DEVICE == SWITCH2

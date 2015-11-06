@@ -153,6 +153,10 @@
 				if ($e.hasClass('esp') || $e.hasClass('module')) {
 					$tab.hide();
 				}
+				
+				if ($e.hasClass('on-top')) {
+					$tab.addClass('on-top');
+				}
 			}
 		);
 		$this.children(':first').click();
@@ -186,7 +190,7 @@
 						(val === null ?
 							null
 							:
-							(typeof val == 'string' && val.match(/^-?\d+$/) ?
+							(typeof val == 'string' && val.match(/^\d+$/) ?
 								parseInt(val)
 								:
 								val
@@ -273,10 +277,8 @@
 		}
 		
 		for (var name in json) {
-			if (typeof json[name] === 'object') {
-				this.find('[name="'+name+'"]').unserializeJSON(json[name]);
-			} else {
-				var i = this.find(':input[name="'+name+'"]');
+			var i = this.find('[name="'+name+'"]');
+			if (i.is(':input')) {
 				if (i.is(':checkbox')) {
 					if (json[name]) {
 						i.prop('checked', true);
@@ -291,6 +293,8 @@
 					i.val(i.data('JSON') ? i.data('JSON') : json[name]);
 				}
 				i.trigger('refresh');
+			} else if (typeof json[name] === 'object') {
+				i.unserializeJSON(json[name]);
 			}
 		}
 	}
@@ -306,10 +310,14 @@
 							var $this = $(e);
 							var status = $this.hasClass('status');
 							var active = $this.hasClass('active');
+							var onTop  = $this.hasClass('on-top');
 							$this.removeClass();
 							
 							if (css != 'activity' && css != 'error') {
 								$this.show();
+								if (onTop) {
+									$this.click();
+								}
 							}
 							
 							if (
@@ -327,6 +335,10 @@
 							
 							if (active) {
 								$this.addClass('active');
+							}
+							
+							if (onTop) {
+								$this.addClass('on-top');
 							}
 							
 							if (css) {
@@ -601,12 +613,40 @@
 						Commands.abort();
 					}
 				);
-
 				
 				$this.find('button[type=button]:contains(Refresh)').click(
 					function() {
 						// console.log('');
 						$this.trigger('init8266');
+					}
+				);
+				
+				$this.bind(
+					'post8266',
+					function (event, jsonData) {
+						init();
+						$status.message('Submit...', 'activity');
+						
+						Commands.pipe({
+							retry: 2,
+							websocket: websocket,
+							longPoll: false,
+							
+							socketURL: socketURL,
+							baseURL: baseURL,
+							action: $this.attr('action'),
+							
+							type: $this.attr('method'),
+							data: jsonData,
+							timeout: timeout,
+							user: user,
+							password: password,
+							
+							event: 'event8266',
+							
+							success: commandSuccess,
+							error: commandError
+						});
 					}
 				);
 				
@@ -887,6 +927,7 @@
 						try {
 							$('form').trigger(request.event, JSON.parse(event.data));
 						} catch (e) {
+							// console.log(e.message);
 							console.log(event.data);
 						} 
 					};

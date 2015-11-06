@@ -10,8 +10,10 @@
 
 #include "user_json.h"
 #include "user_webserver.h"
+#include "user_events.h"
 #include "user_relay.h"
 #include "user_devices.h"
+#include "user_switch.h"
 
 LOCAL uint8  relay_state = 0;
 LOCAL uint32 relay_timer = 0;
@@ -29,10 +31,17 @@ LOCAL void ICACHE_FLASH_ATTR user_relay_state(char *response) {
 	);
 }
 
+uint8 ICACHE_FLASH_ATTR user_relay_get() {
+	return relay_state;
+}
+
 LOCAL void ICACHE_FLASH_ATTR user_relay_set(uint8 state) {
 	if (relay_timer == 0) {
 		GPIO_OUTPUT_SET(GPIO_ID_PIN(5), state);
 		relay_state = state;
+#if DEVICE == SWITCH		
+		switch_led(SWITCH_LED2, relay_state);
+#endif
 	}
 }
 

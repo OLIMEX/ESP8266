@@ -11,15 +11,21 @@
 		#define BATTERY_URL             "/battery"
 		#define BATTERY_STATE_REFRESH   1000
 		
-		#define BATTERY_MIN_ADC          685
-		#define BATTERY_MAX_ADC          810
+		#if DEVICE == BADGE
+			#define BATTERY_MIN_ADC          500
+			#define BATTERY_MAX_ADC          750
+		#else 
+			#define BATTERY_MIN_ADC          685
+			#define BATTERY_MAX_ADC          810
+		#endif
 		
 		#define BATTERY_FILTER_COUNT       10
 		#define BATTERY_FILTER_SHIFT       4
 		
-		void user_battery_init();
+		void  user_battery_init();
+		uint8 battery_percent_get();
 		
-		void button_handler(
+		void battery_handler(
 			struct espconn *pConnection, 
 			request_method method, 
 			char *url, 

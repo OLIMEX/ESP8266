@@ -20,6 +20,10 @@
 	void user_event_raise(char *url, char *data);
 	void user_event_progress(uint8 progress);
 	void user_websocket_event(char *url, char *data, struct espconn *pConnection);
+	
+	void user_event_server_error();
+	void user_event_server_ok();
+	
 	void user_event_reboot();
 	void user_event_connect();
 	void user_event_reconnect();

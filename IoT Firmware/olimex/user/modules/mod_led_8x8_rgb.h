@@ -27,6 +27,8 @@
 		
 		bool   led_8x8_rgb_set(uint16 x, uint16 y, uint8 r, uint8 g, uint8 b);
 		
+		bool   led_8x8_rgb_busy();
+		
 		uint16 led_8x8_rgb_size_x(char *c);
 		bool   led_8x8_rgb_print(uint16 x, uint16 y, uint8 r, uint8 g, uint8 b, char *c);
 		bool   led_8x8_rgb_scroll(uint8 r, uint8 g, uint8 b, char *c, uint8 speed, led_8x8_rgb_done_callback done);
