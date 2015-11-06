@@ -18,7 +18,7 @@
 	#define RELAY_ENABLE                   1
 	#define ADC_ENABLE                     1
 	// ESP8266-EVB-BAT native
-	#define BATTERY_ENABLE                 1
+	#define BATTERY_ENABLE                 0
 	
 	// UEXT modules
 	// UART

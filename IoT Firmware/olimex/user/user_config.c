@@ -319,6 +319,7 @@ void ICACHE_FLASH_ATTR user_config_load_private_key() {
 	extern unsigned int default_private_key_len;
 	
 	default_private_key_len = user_config_load_ssl("PrivateKey", " PRIVATE KEY-----", default_private_key, SSL_KEY_SIZE);
+	espconn_secure_set_default_private_key(default_private_key, default_private_key_len);
 	debug("PRIVATE KEY: Load %s [%d]\n\n", default_private_key_len > 0 ? "success" : "failure", default_private_key_len);
 }
 
@@ -327,6 +328,7 @@ void ICACHE_FLASH_ATTR user_config_load_certificate() {
 	extern unsigned int default_certificate_len;
 	
 	default_certificate_len = user_config_load_ssl("Certificate", " CERTIFICATE-----", default_certificate, SSL_KEY_SIZE);
+	espconn_secure_set_default_certificate(default_certificate, default_certificate_len);
 	debug("CERTIFICATE: Load %s [%d]\n\n", default_certificate_len > 0 ? "success" : "failure", default_certificate_len);
 }
 #endif
