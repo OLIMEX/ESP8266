@@ -78,6 +78,7 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	IP4_ADDR(&user_configuration.access_point.ip.netmask, 255,255,255,0);
 	IP4_ADDR(&user_configuration.access_point.ip.gw,      192,168,  4,1);
 	
+	user_configuration.station_auto_connect = 0;
 	user_configuration.station.dhcp = 1;
 	IP4_ADDR(&user_configuration.station.ip.ip,           192,168, 10,2);
 	IP4_ADDR(&user_configuration.station.ip.netmask,      255,255,255,0);
@@ -85,6 +86,8 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	
 	os_sprintf(user_configuration.check, "ESP");
 	user_config_store(NULL);
+	
+	wifi_set_opmode(STATIONAP_MODE);
 	
 	struct softap_config ap_config = {
 		.ssid = USER_CONFIG_DEFAULT_AP_SSID,
@@ -105,12 +108,12 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 		.bssid = ""
 	};
 	wifi_station_set_config(&s_config);
-	wifi_station_set_auto_connect(0);
+	
+	wifi_station_set_auto_connect(user_configuration.station_auto_connect);
+	wifi_station_set_reconnect_policy(user_configuration.station_auto_connect);
 	if (wifi_station_get_connect_status() != STATION_IDLE) {
 		user_config_station_disconnect();
 	}
-	
-	wifi_set_opmode(STATIONAP_MODE);
 	
 	debug("CONFIG: %s settings\n", RESTORED_DEFAULTS);
 	
@@ -124,7 +127,7 @@ void ICACHE_FLASH_ATTR user_config_load() {
 	debug("CONFIG: Loading...\n");
 	debug("CONFIG: Size of user_congig %d\n", sizeof(user_config));
 	SpiFlashOpResult result;
-
+	
 	result = spi_flash_read(
 		USER_CONFIG_START_SECTOR * SPI_FLASH_SEC_SIZE,
 		(uint32 *)&user_configuration, 
@@ -138,14 +141,17 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		user_config_restore_defaults();
 	}
 	
+	wifi_set_ip_info(SOFTAP_IF, &user_configuration.access_point.ip);
 	if (user_configuration.access_point.dhcp == 0) {
 		wifi_softap_dhcps_stop();
-		wifi_set_ip_info(SOFTAP_IF, &user_configuration.access_point.ip);
 	} else {
 		if (wifi_softap_dhcps_status() != DHCP_STARTED) {
 			wifi_softap_dhcps_start();
 		}
 	}
+	
+	wifi_station_set_auto_connect(user_configuration.station_auto_connect);
+	wifi_station_set_reconnect_policy(user_configuration.station_auto_connect);
 	
 	if (user_configuration.station.dhcp == 0) {
 		wifi_station_dhcpc_stop();
@@ -156,8 +162,7 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		}
 	}
 	
-	wifi_station_set_reconnect_policy(wifi_station_get_auto_connect());
-	if (wifi_station_get_auto_connect()) {
+	if (user_configuration.station_auto_connect) {
 		uint8 status = wifi_station_get_connect_status();
 		uint16 reconnect_after = 300;
 		
@@ -166,6 +171,10 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		}
 		
 		setTimeout(user_config_station_connect, NULL, reconnect_after);
+	} else {
+		if (wifi_station_get_connect_status() != STATION_IDLE) {
+			user_config_station_disconnect();
+		}
 	}
 }
 
@@ -795,8 +804,8 @@ void ICACHE_FLASH_ATTR config_station_handler(
 				} else if (jsonparse_strcmp_value(&parser, "AutoConnect") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					int autoconnect = jsonparse_get_value_as_int(&parser);
-					wifi_station_set_auto_connect(autoconnect);
+					user_configuration.station_auto_connect = jsonparse_get_value_as_int(&parser);
+					wifi_station_set_auto_connect(user_configuration.station_auto_connect);
 				} else if (jsonparse_strcmp_value(&parser, "DHCP") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
