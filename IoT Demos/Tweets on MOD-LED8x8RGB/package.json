@@ -1,6 +1,6 @@
 {
   "name": "olimex-iot-demo",
-  "version": "1.0.7",
+  "version": "2.0.0",
   "description": "WebSocket ESP8266 Olimex IoT Demo",
   "dependencies": {
     "express": "~4.13.1",
