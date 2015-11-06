@@ -1,0 +1,274 @@
+* {
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+}
+
+body {
+	font: 14px Arial, sans-serif;
+	line-height: 30px;
+	white-space: nowrap;
+}
+
+#container {
+	display: inline-block;
+	border: solid 1px black;
+	min-width: 360px;
+	min-height: 470px;
+	padding: 10px;
+}
+
+#menu {
+	position: absolute;
+	right: 0;
+	margin: 10px;
+	width: 30px;
+	height: 30px;
+	background: white;
+	text-align: center;
+	font-size: 40px;
+	display: none;
+}
+
+#menu:hover {
+	cursor: pointer;
+}
+
+
+#tabs {
+	text-align: right;
+	display: block;
+	position: relative;
+	width: 170px;
+	float: left;
+}
+
+#tabs div {
+	display: block;
+	margin: 0;
+	margin-bottom: 4px;
+	padding: 0 10px;
+	
+	border: solid 1px lightgray;
+	border-right: solid 1px black;
+	border-radius: 7px 0 0 0;
+	
+	background: white;
+	
+	z-index: 999;
+	position: relative;
+	left: 1px;
+	color: gray;
+	cursor: pointer;
+}
+
+#tabs div.active {
+	color: black;
+	border-color: black;
+	border-right: solid 1px white;
+}
+
+#tabs div.activity {
+	color: blue;
+}
+
+#tabs div.error {
+	color: red;
+}
+
+form {
+	display: inline-block;
+	vertical-align: top;
+	margin: 0;
+}
+
+form.esp {
+	display: none;
+}
+
+form.active input	{
+	background: green !important;
+	color: white;
+}
+form.disabled input {
+	background: red	!important;
+	color: white;
+}
+
+form.esp.long-poll {
+	display: inline-block;
+}
+
+fieldset {
+	display: block;
+	border: solid 1px black;
+	margin-bottom: 10px;
+}
+
+label {
+	display: inline-block;
+	width: 120px;
+}
+
+.bits {
+	display: inline-block; 
+	width: 100px; 
+	white-space: normal; 
+	vertical-align: top;
+}
+
+.bits * {
+	display: inline-block; 
+	width: 20px !important; 
+	white-space: normal; 
+	margin: 0;
+	font-size: 10px;
+	text-align: center;
+	line-height: 12px;
+}
+
+input[type=range] {
+	height: 3px;
+	border: none;
+	width: 175px;
+}
+input[type=range]:focus {
+	outline: none;
+}
+input[type=range].red {
+	-webkit-appearance: none;
+	background: red;
+}
+input[type=range].green {
+	-webkit-appearance: none;
+	background: green;
+}
+input[type=range].blue {
+	-webkit-appearance: none;
+	background: blue;
+}
+
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+	/* IE10+ CSS styles go here */
+	input[type=range] {
+		height: 75px;
+		background: none !important;
+	}
+	input[type=range]::-ms-track {
+		height: 3px;
+		color: transparent;
+		border: none;
+		background: grey;
+	}
+	input[type=range]::-ms-thumb {
+		height: 22px;
+		width: 7px;
+		border: 1px solid black;
+		background: lightgrey;
+	}
+	input[type=range].red::-ms-fill-lower {
+		background: red;
+	}
+	input[type=range].green::-ms-fill-lower {
+		background: green;
+	}
+	input[type=range].blue::-ms-fill-lower {
+		background: blue;
+	}
+}
+
+input[type=text] {
+	width: 150px;
+}
+
+input[type=file],
+#config-firmware input[type=text] {
+	width: 180px;
+}
+
+.status {
+	font-size: 10px;
+	line-height: 20px;
+	background: gray;
+	color: white;
+	padding: 0 10px;
+	margin: 0 2px;
+}
+
+.activity {
+	background: gray;
+	color: lightblue;
+}
+
+.error {
+	background: red;
+	color: white;
+}
+
+#finger-delete {
+	display: none;
+}
+
+#emtr input[name=CounterActive],
+#emtr input[name=CounterApparent] {
+	width: 70px;
+	margin-left: 20px;
+}
+#emtr #emtr-reset {
+	width: 50px;
+}
+
+#emtr input[type=range]	{
+	width: 150px;
+}
+
+#emtr label {
+	width: 140px;
+}
+
+#emtr input[name=ReadInterval][type=text]{
+	text-align: center;
+}
+
+.emtr-mode {
+	display: none;
+}
+
+.emtr-mode input[type=text] {
+	width: 90px;
+}
+
+#emtr .emtr-mode label {
+	width: 200px;
+}
+
+@media only screen and (max-device-width:640px) {
+	body {
+		margin:0;
+		padding: 0;
+	}
+	
+	#tabs {
+		position: absolute;
+		right: 0;
+		float: none;
+		
+		background: white;
+		border: solid 1px black;
+		padding: 1px;
+	}
+	
+	#tabs div {
+		border: none;
+		border-radius: 0;
+		text-align: left;
+	}
+	
+	#tabs div:hover {
+		background: lightgray;
+	}
+	
+	#container {
+		width: 100%;
+		border: none;
+	}
+}
