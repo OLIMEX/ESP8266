@@ -91,6 +91,7 @@
 		
 		ip_config access_point;
 		ip_config station;
+		uint8     station_auto_connect;
 		
 		char      events_server[USER_CONFIG_EVENTS_SIZE];
 		char      events_user[USER_CONFIG_USER_SIZE];
@@ -102,7 +103,7 @@
 		char      events_name[USER_CONFIG_USER_SIZE];
 		char      events_token[USER_CONFIG_TOKEN_SIZE];
 		
-		char      check[4];
+		char      check[7];
 	} user_config;
 	
 	typedef void (*wifi_station_connected_callback)(void);

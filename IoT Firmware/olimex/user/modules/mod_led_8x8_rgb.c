@@ -10,6 +10,7 @@
 #include "driver/spi_register.h"
 
 #include "user_font.h"
+#include "user_utf8.h"
 #include "mod_led_8x8_rgb.h"
 
 #define SPI 			0
@@ -171,7 +172,7 @@ bool ICACHE_FLASH_ATTR led_8x8_rgb_set(uint16 x, uint16 y, uint8 r, uint8 g, uin
 }
 
 uint16 ICACHE_FLASH_ATTR led_8x8_rgb_size_x(char *c) {
-	return os_strlen(c) * (FONT_COLUMNS + 1);
+	return utf8_length(c) * (FONT_COLUMNS + 1);
 }
 
 uint8 ICACHE_FLASH_ATTR led_8x8_rgb_column(char *c, uint16 x) {
@@ -183,18 +184,47 @@ uint8 ICACHE_FLASH_ATTR led_8x8_rgb_column(char *c, uint16 x) {
 	uint16 ci = x / (FONT_COLUMNS + 1);
 	uint16 cc = x % (FONT_COLUMNS + 1);
 	
-	c += ci;
-	if (*c < 0x20 || *c > 0x7F) {
-		// invalid char
-		return 0;
-	}
-	
 	if (cc == FONT_COLUMNS) {
 		// spacer column
 		return 0;
 	}
 	
-	return FONT[*c - 0x20][cc];
+	c = utf8_char_at(c, ci);
+	if (c == NULL) {
+		return 0;
+	}
+	
+	uint32 utf = utf8_decode_char(c);
+	if (utf == 0) {
+		return 0;
+	}
+	
+	uint8 i;
+	uint8 font = 0xFF;
+	for (i=0; i<FONT_COUNT; i++) {
+		if (
+			utf >= FONT_DESCRIPTION[i].first && 
+			utf <= FONT_DESCRIPTION[i].last
+		) {
+			font = i;
+			break;
+		}
+	}
+	
+	if (font == 0xFF) {
+		// char not in font range
+		return 0;
+	}
+	
+	if (font == LATIN) {
+		return FONT_LATIN[utf - FONT_DESCRIPTION[font].first][cc];
+	} else if (font == CYRILLIC) {
+		return FONT_CYRILLIC[utf - FONT_DESCRIPTION[font].first][cc];
+	} else if (font == LATIN_EXTRA) {
+		return FONT_LATIN_EXTRA[utf - FONT_DESCRIPTION[font].first][cc];
+	}
+	
+	return 0;
 }
 
 bool ICACHE_FLASH_ATTR led_8x8_rgb_print(uint16 x, uint16 y, uint8 r, uint8 g, uint8 b, char *c) {
