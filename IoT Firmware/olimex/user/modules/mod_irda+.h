@@ -2,7 +2,7 @@
 	#define __MOD_IRDA_H__
 	
 	#include "user_config.h"
-	#if MOD_IRDA_ENABLE
+	#if MOD_IRDA_ENABLE & I2C_ENABLE
 
 		#define MOD_IRDA_DEBUG        0
 		

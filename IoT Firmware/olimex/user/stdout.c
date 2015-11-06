@@ -51,10 +51,14 @@ LOCAL void ICACHE_FLASH_ATTR wifi_debug_flush() {
 	wifi_write_char('\0');
 }
 
-void ICACHE_FLASH_ATTR stdout_init() {
-	uart_init(BIT_RATE_115200, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
-	uart_char_in_set(uart_write_char);
-	stdout_uart_debug();
+void ICACHE_FLASH_ATTR stdout_init(uint8 uart) {
+	uart_init(uart, BIT_RATE_115200, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
+	if (uart == UART0) {
+		uart_char_in_set(uart_write_char);
+	} else {
+		uart_char_in_set(NULL);
+	}
+	stdout_uart_debug(uart);
 }
 
 void ICACHE_FLASH_ATTR stdout_disable() {
@@ -66,8 +70,12 @@ void ICACHE_FLASH_ATTR stdout_debug_disable() {
 	os_install_putc1(NULL);
 }
 
-void ICACHE_FLASH_ATTR stdout_uart_debug() {
-	os_install_putc1((void *)uart_write_char);
+void ICACHE_FLASH_ATTR stdout_uart_debug(uint8 uart) {
+	if (uart == UART0) {
+		os_install_putc1((void *)uart_write_char);
+	} else {
+		os_install_putc1((void *)uart1_write_char);
+	}
 }
 
 void ICACHE_FLASH_ATTR stdout_wifi_debug() {

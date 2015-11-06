@@ -572,7 +572,7 @@ void ICACHE_FLASH_ATTR emtr_init() {
 	stdout_disable();
 	uart_char_in_set(emtr_char_in);
 	
-	uart_init(BIT_RATE_4800, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
+	uart_init(UART0, BIT_RATE_4800, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
 	
 	// Get address
 	setTimeout((os_timer_func_t *)emtr_get_address, emtr_address_receive, 100);

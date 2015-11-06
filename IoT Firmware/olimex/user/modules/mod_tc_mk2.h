@@ -2,7 +2,7 @@
 	#define __MOD_TC_MK2_H__
 
 	#include "user_config.h"
-	#if MOD_TC_MK2_ENABLE
+	#if MOD_TC_MK2_ENABLE & I2C_ENABLE
 
 		#define MOD_TC_MK2_ID           0x27
 		#define MOD_TC_MK2_DEFAULT_ADDR 0x23

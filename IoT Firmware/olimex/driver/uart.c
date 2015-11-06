@@ -39,32 +39,37 @@ LOCAL void uart_rx_intr_handler(void *para);
  * Returns	    : NONE
 *******************************************************************************/
 LOCAL void ICACHE_FLASH_ATTR uart_config(
+	uint8            uart,
 	UartBaudRate     baud_rate, 
 	UartBitsNum4Char data_bits, 
 	UartParityMode   parity, 
 	UartStopBitsNum  stop_bits
 ) {
-	/* rcv_buff size if 0x100 */
-	ETS_UART_INTR_ATTACH(uart_rx_intr_handler,  NULL);
-	PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
-	
-	#if UART_HW_RTS
-	// HW FLOW CONTROL RTS PIN
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_U0RTS); 
-	#endif
-	#if UART_HW_CTS
-	//HW FLOW CONTROL CTS PIN
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_U0CTS); 
-	#endif
+	if (uart == UART0) {
+		/* rcv_buff size if 0x100 */
+		ETS_UART_INTR_ATTACH(uart_rx_intr_handler,  NULL);
+		PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
+		PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
+		
+		#if UART_HW_RTS
+		// HW FLOW CONTROL RTS PIN
+		PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_U0RTS); 
+		#endif
+		#if UART_HW_CTS
+		//HW FLOW CONTROL CTS PIN
+		PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_U0CTS); 
+		#endif
+	} else {
+		PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_U1TXD_BK);
+	}
 	
 	//SET BAUDRATE
-	uart_div_modify(UART0, UART_CLK_FREQ / baud_rate); 
+	uart_div_modify(uart, UART_CLK_FREQ / baud_rate); 
 	
 	// SET BIT AND PARITY MODE
 	UartExistParity exist_parity = (parity == NONE_BITS ? STICK_PARITY_DIS : STICK_PARITY_EN);
 	WRITE_PERI_REG(
-		UART_CONF0(UART0), 
+		UART_CONF0(uart), 
 		((exist_parity & UART_PARITY_EN_M)  << UART_PARITY_EN_S) | 
 		((parity       & UART_PARITY_M)     << UART_PARITY_S) |
 		((stop_bits    & UART_STOP_BIT_NUM) << UART_STOP_BIT_NUM_S) |
@@ -72,32 +77,39 @@ LOCAL void ICACHE_FLASH_ATTR uart_config(
 	);
 	
 	// clear rx and tx fifo,not ready
-	SET_PERI_REG_MASK(UART_CONF0(UART0),   UART_RXFIFO_RST | UART_TXFIFO_RST);	//RESET FIFO
-	CLEAR_PERI_REG_MASK(UART_CONF0(UART0), UART_RXFIFO_RST | UART_TXFIFO_RST);
+	SET_PERI_REG_MASK(UART_CONF0(uart),   UART_RXFIFO_RST | UART_TXFIFO_RST);	//RESET FIFO
+	CLEAR_PERI_REG_MASK(UART_CONF0(uart), UART_RXFIFO_RST | UART_TXFIFO_RST);
 	
-	// set rx fifo trigger
-	WRITE_PERI_REG(
-		UART_CONF1(UART0),
-		((100 & UART_RXFIFO_FULL_THRHD) << UART_RXFIFO_FULL_THRHD_S) |
-		#if UART_HW_RTS
-		((110 & UART_RX_FLOW_THRHD) << UART_RX_FLOW_THRHD_S) |
-		UART_RX_FLOW_EN |   // enable rx flow control
+	if (uart == UART0) {
+		// set rx fifo trigger
+		WRITE_PERI_REG(
+			UART_CONF1(uart),
+			((100 & UART_RXFIFO_FULL_THRHD) << UART_RXFIFO_FULL_THRHD_S) |
+			#if UART_HW_RTS
+			((110 & UART_RX_FLOW_THRHD) << UART_RX_FLOW_THRHD_S) |
+			UART_RX_FLOW_EN |   // enable rx flow control
+			#endif
+			((0x02 & UART_RX_TOUT_THRHD) << UART_RX_TOUT_THRHD_S) |
+			UART_RX_TOUT_EN |
+			((0x10 & UART_TXFIFO_EMPTY_THRHD) << UART_TXFIFO_EMPTY_THRHD_S)
+		); //wjl
+	
+		#if UART_HW_CTS
+		SET_PERI_REG_MASK(UART_CONF0(uart), UART_TX_FLOW_EN);  //add this sentence to add a tx flow control via MTCK (CTS)
 		#endif
-		((0x02 & UART_RX_TOUT_THRHD) << UART_RX_TOUT_THRHD_S) |
-		UART_RX_TOUT_EN |
-		((0x10 & UART_TXFIFO_EMPTY_THRHD) << UART_TXFIFO_EMPTY_THRHD_S)
-	); //wjl
-	
-	#if UART_HW_CTS
-	SET_PERI_REG_MASK(UART_CONF0(UART0), UART_TX_FLOW_EN);  //add this sentence to add a tx flow control via MTCK (CTS)
-	#endif
-	SET_PERI_REG_MASK(UART_INT_ENA(UART0), UART_RXFIFO_TOUT_INT_ENA | UART_FRM_ERR_INT_ENA);
+		SET_PERI_REG_MASK(UART_INT_ENA(uart), UART_RXFIFO_TOUT_INT_ENA | UART_FRM_ERR_INT_ENA);
+	} else {
+		WRITE_PERI_REG(
+			UART_CONF1(uart),
+			((UartDev.rcv_buff.TrigLvl & UART_RXFIFO_FULL_THRHD) << UART_RXFIFO_FULL_THRHD_S)
+		); //TrigLvl default val == 1
+	}
 		
 	//clear all interrupt
-	WRITE_PERI_REG(UART_INT_CLR(UART0), 0xffff);
+	WRITE_PERI_REG(UART_INT_CLR(uart), 0xffff);
 	
 	//enable rx_interrupt
-	SET_PERI_REG_MASK(UART_INT_ENA(UART0), UART_RXFIFO_FULL_INT_ENA | UART_RXFIFO_OVF_INT_ENA);
+	SET_PERI_REG_MASK(UART_INT_ENA(uart), UART_RXFIFO_FULL_INT_ENA | UART_RXFIFO_OVF_INT_ENA);
 }
 
 void uart_rx_intr_disable(uint8 uart) {
@@ -167,25 +179,40 @@ void ICACHE_FLASH_ATTR uart_char_in_set(uart_char_in_callback func) {
  * Returns	  : NONE
 *******************************************************************************/
 void ICACHE_FLASH_ATTR uart_init(
+	uint8            uart,
 	UartBaudRate     baud_rate, 
 	UartBitsNum4Char data_bits, 
 	UartParityMode   parity, 
 	UartStopBitsNum  stop_bits
 ) {
-	system_os_task(uart_recv, UART_TASK_PRIORITY, uart_recv_queue, UART_TASK_QUEUE_LEN);
-	uart_config(baud_rate, data_bits, parity, stop_bits);
-	ETS_UART_INTR_ENABLE();
+	if (uart == UART0) {
+		system_os_task(uart_recv, UART_TASK_PRIORITY, uart_recv_queue, UART_TASK_QUEUE_LEN);
+		uart_config(uart, baud_rate, data_bits, parity, stop_bits);
+		ETS_UART_INTR_ENABLE();
+	} else {
+		uart_config(uart, baud_rate, data_bits, parity, stop_bits);
+	}
 }
 
 /******************************************************************************
  * FunctionName : uart_tx_one_char
- * Description  : Internal used function
- *				  Use uart interface to transfer one char
+ * Description  : Use uart interface to transfer one char
  * Parameters   : uint8 TxChar - character to tx
  * Returns	    : OK
 *******************************************************************************/
 LOCAL void ICACHE_FLASH_ATTR uart_tx_one_char(uint8 uart, uint8 TxChar) {
 	while (((READ_PERI_REG(UART_STATUS(uart)) >> UART_TXFIFO_CNT_S) & UART_TXFIFO_CNT) >= 126) ;
+	WRITE_PERI_REG(UART_FIFO(uart), TxChar);
+}
+
+/******************************************************************************
+ * FunctionName : uart_tx_one_char_direct
+ * Description  : Use uart interface to transfer one char
+ * Parameters   : uint8 TxChar - character to tx
+ * Returns	    : OK
+*******************************************************************************/
+LOCAL void ICACHE_FLASH_ATTR uart_tx_one_char_direct(uint8 uart, uint8 TxChar) {
+	while (((READ_PERI_REG(UART_STATUS(uart)) >> UART_TXFIFO_CNT_S) & UART_TXFIFO_CNT) != 0) ;
 	WRITE_PERI_REG(UART_FIFO(uart), TxChar);
 }
 
@@ -202,21 +229,29 @@ LOCAL void ICACHE_FLASH_ATTR uart_tx_one_char_no_wait(uint8 uart, uint8 TxChar) 
 	}
 }
 
-void ICACHE_FLASH_ATTR uart_write_char(char c) {
+LOCAL void ICACHE_FLASH_ATTR _uart_write_char_(uint8 uart, char c) {
 LOCAL char last;
 	if (c == '\n') {
 		if (last == '\r') {
 			return;
 		}
-		uart_tx_one_char(UART0, '\r');
+		uart_tx_one_char(uart, '\r');
 	}
 	
-	uart_tx_one_char(UART0, c);
+	uart_tx_one_char(uart, c);
 	
 	last = c;
 	if (c == '\r') {
-		uart_tx_one_char(UART0, '\n');
+		uart_tx_one_char(uart, '\n');
 	}
+}
+
+void ICACHE_FLASH_ATTR uart_write_char(char c) {
+	_uart_write_char_(UART0, c);
+}
+
+void ICACHE_FLASH_ATTR uart1_write_char(char c) {
+	_uart_write_char_(UART1, c);
 }
 
 void ICACHE_FLASH_ATTR uart_write_char_no_wait(char c) {
@@ -260,5 +295,11 @@ void ICACHE_FLASH_ATTR uart_write_buff(uint8 *buff, uint32 len) {
 	uint32 i;
 	for (i=0; i<len; i++) {
 		uart_tx_one_char(UART0, buff[i]);
+	}
+}
+void ICACHE_FLASH_ATTR uart_write_buff_direct(uint8 *buff, uint32 len) {
+	uint32 i;
+	for (i=0; i<len; i++) {
+		uart_tx_one_char_direct(UART0, buff[i]);
 	}
 }

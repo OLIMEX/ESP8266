@@ -28,6 +28,7 @@
 #endif
 
 #include "driver/key.h"
+#include "driver/uart.h"
 
 #include "user_button.h"
 #include "user_relay.h"
@@ -66,6 +67,12 @@ void ICACHE_FLASH_ATTR user_init_done() {
  *******************************************************************************/
 void ICACHE_FLASH_ATTR user_init(void) {
 	system_init_done_cb(user_init_done);
+#if UART0_SWAP
+	system_uart_swap();
+#endif
+#if UART1_ENABLE
+	stdout_init(UART1);
+#endif
 	
 	// UART Devices
 #if MOD_RFID_ENABLE
@@ -110,6 +117,7 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	user_battery_init();
 #endif
 	
+#if I2C_ENABLE	
 	// I2C Devices
 	i2c_master_gpio_init();
 #if MOD_RGB_ENABLE
@@ -123,6 +131,7 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #endif
 #if MOD_IRDA_ENABLE
 	mod_irda_init();
+#endif
 #endif
 	
 	// SPI Devices

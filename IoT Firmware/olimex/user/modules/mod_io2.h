@@ -2,7 +2,7 @@
 	#define __MOD_IO2_H__
 	
 	#include "user_config.h"
-	#if MOD_IO2_ENABLE
+	#if MOD_IO2_ENABLE & I2C_ENABLE
 		#define MOD_IO2_ID           0x23
 		#define MOD_IO2_DEFAULT_ADDR 0x21
 

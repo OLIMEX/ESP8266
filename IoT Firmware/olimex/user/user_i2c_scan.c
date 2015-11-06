@@ -1,3 +1,6 @@
+#include "user_config.h"
+#if I2C_ENABLE
+
 #include "ets_sys.h"
 #include "stdout.h"
 #include "osapi.h"
@@ -55,3 +58,5 @@ bool ICACHE_FLASH_ATTR i2c_scan_start(i2c_scan_done_callback done_callback) {
 	setTimeout(i2c_scan, NULL, 1);
 	return true;
 }
+
+#endif

@@ -9,10 +9,13 @@
 	#if SSL_ENABLE
 		#define SSL_KEY_SIZE               1024
 	#endif
-
+	
 /***********************************************
  * Modules conditional compiling
  ***********************************************/
+	#define UART0_SWAP                     0
+	#define UART1_ENABLE                   0
+	
 	// ESP8266-EVB native
 	#define BUTTON_ENABLE                  1
 	#define RELAY_ENABLE                   1
@@ -35,6 +38,12 @@
 	
 /***********************************************/
 
+	#if UART1_ENABLE
+		#define I2C_ENABLE                 0
+	#else
+		#define I2C_ENABLE                 1
+	#endif
+	
 	#define USER_CONFIG_RECONNECT_AFTER    3000
 	#define USER_CONFIG_REBOOT_AFTER       5000
 	

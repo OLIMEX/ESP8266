@@ -4,6 +4,8 @@
 #include "mem.h"
 #include "queue.h"
 
+#include "driver/uart.h"
+
 #include "user_interface.h"
 #include "user_config.h"
 #include "user_i2c_scan.h"
@@ -62,11 +64,15 @@ char ICACHE_FLASH_ATTR *device_find_url(device_type type, uint8 id) {
 }
 
 LOCAL void ICACHE_FLASH_ATTR devices_init_done() {
+#if UART1_ENABLE
+	stdout_init(UART1);
+#else
 	if (device_get_uart() == UART_NONE) {
-		stdout_init();
+		stdout_init(UART0);
 	} else {
 		stdout_wifi_debug();
 	}
+#endif
 }
 
 void ICACHE_FLASH_ATTR devices_init() {
@@ -123,6 +129,7 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 		
 		bool found = false;
 		i2c_str[0] = '\0';
+#if I2C_ENABLE
 		if (description->type == I2C) {
 			i2c_device *d;
 			char addresses[WEBSERVER_MAX_VALUE];
@@ -140,7 +147,9 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 			}
 			
 			os_sprintf(i2c_str, ", \"ID\" : \"0x%02x\", \"Addresses\" : [%s]", description->id, addresses);
-		} else if (description->type == UART) {
+		} else 
+#endif
+		if (description->type == UART) {
 			found = 
 				false
 #if MOD_RFID_ENABLE
@@ -207,5 +216,9 @@ void ICACHE_FLASH_ATTR devices_handler(
 	uint16 response_len
 ) {
 	webserver_set_status(0);
+#if I2C_ENABLE	
 	i2c_scan_start(devices_i2c_done);
+#else
+	devices_i2c_done(NULL);
+#endif
 }
