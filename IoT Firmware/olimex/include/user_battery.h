@@ -14,7 +14,7 @@
 		#define BATTERY_MIN_ADC          685
 		#define BATTERY_MAX_ADC          810
 		
-		#define BATTERY_FILTER_COUNT       5
+		#define BATTERY_FILTER_COUNT       10
 		#define BATTERY_FILTER_SHIFT       4
 		
 		void user_battery_init();

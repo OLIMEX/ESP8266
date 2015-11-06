@@ -24,8 +24,8 @@ LOCAL wifi_station_connected_callback station_connected = NULL;
 
 void ICACHE_FLASH_ATTR user_config_init() {
 	flash_region_register("boot.bin",     0x000, 0x001);
-	flash_region_register("user1.bin",    0x001, 0x04F);
-	flash_region_register("user2.bin",    0x081, 0x04F);
+	flash_region_register("user1.bin",    0x001, 0x07B);
+	flash_region_register("user2.bin",    0x081, 0x07B);
 	flash_region_register("user-config",  0x100, 0x001);
 	flash_region_register("PrivateKey",   0x101, 0x001);
 	flash_region_register("Certificate",  0x102, 0x001);
