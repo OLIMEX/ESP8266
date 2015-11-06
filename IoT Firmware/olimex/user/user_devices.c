@@ -219,6 +219,6 @@ void ICACHE_FLASH_ATTR devices_handler(
 #if I2C_ENABLE	
 	i2c_scan_start(devices_i2c_done);
 #else
-	devices_i2c_done(NULL);
+	setTimeout(devices_i2c_done, NULL, 10);
 #endif
 }
