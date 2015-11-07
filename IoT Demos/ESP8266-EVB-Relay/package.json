@@ -11,5 +11,8 @@
     "url": "https://github.com/OLIMEX/ESP8266/tree/master/IoT%20Demos"
   },
   "author": "Dimitar Manovski",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "esp8266-iotjs": "0.0.1"
+  }
 }
