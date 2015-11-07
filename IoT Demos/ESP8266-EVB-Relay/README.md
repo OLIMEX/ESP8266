@@ -32,7 +32,7 @@ First install node.js  and NPM on your computer.
 
 Then type the following command in command prompt:
 	
-	cd ESP8266-EVB IoT-js
+	cd ESP8266-EVB-Relay
 	npm install 
 
 ### Usage
@@ -42,8 +42,7 @@ To start the demo use the following command
 	
 
 
-
- ## Events
+## Events
  - ready (when is web socket is open for requests)
  - relayStateIsChange (Is triggered when relay state is change)
  - push (Is triggered when button is pressed)
