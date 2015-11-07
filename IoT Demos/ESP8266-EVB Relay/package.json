@@ -1,9 +1,0 @@
-{
-  "name": "ESP8266-EVB Relay",
-  "version": "0.0.1",
-  "description": "Switch Relay state with button",
-  "dependencies": {
-    "express": "^4.10.2",
-    "websocket": "~1.0.19"
-  }
-}
