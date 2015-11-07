@@ -23,8 +23,8 @@ LOCAL struct {
 	emtr_event_registers       *event;
 } emtr_registers = {NULL, NULL};
 
-LOCAL emtr_mode emtr_current_mode = EMTR_LOG;
-LOCAL uint32    emtr_read_interval = 420;
+LOCAL emtr_mode emtr_current_mode  = EMTR_LOG;
+LOCAL uint32    emtr_read_interval = 1000;
 
 LOCAL const char ICACHE_FLASH_ATTR *emtr_mode_str(uint8 mode) {
 	switch (mode) {

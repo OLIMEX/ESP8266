@@ -1,5 +1,5 @@
 #include "user_config.h"
-#if MOD_IO2_ENABLE
+#if MOD_IO2_ENABLE & I2C_ENABLE
 
 #include "ets_sys.h"
 #include "osapi.h"

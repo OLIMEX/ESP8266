@@ -18,6 +18,8 @@
 			char *response,
 			uint16 response_len
 		);
-
+		
+		void  user_relay_init();
+		uint8 user_relay_get();
 	#endif
 #endif

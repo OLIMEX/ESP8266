@@ -28,11 +28,16 @@
 #endif
 
 #include "driver/key.h"
+#include "driver/uart.h"
 
 #include "user_button.h"
 #include "user_relay.h"
 #include "user_adc.h"
 #include "user_battery.h"
+
+#include "user_switch.h"
+#include "user_switch2.h"
+#include "user_badge.h"
 
 #include "user_events.h"
 #include "user_webserver.h"
@@ -66,6 +71,16 @@ void ICACHE_FLASH_ATTR user_init_done() {
  *******************************************************************************/
 void ICACHE_FLASH_ATTR user_init(void) {
 	system_init_done_cb(user_init_done);
+	
+//	wifi_set_phy_mode(PHY_MODE_11N);
+//	wifi_set_sleep_type(MODEM_SLEEP_T);
+	
+#if UART0_SWAP
+	system_uart_swap();
+#endif
+#if UART1_ENABLE
+	stdout_init(UART1);
+#endif
 	
 	// UART Devices
 #if MOD_RFID_ENABLE
@@ -109,7 +124,14 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #if BATTERY_ENABLE
 	user_battery_init();
 #endif
+#if DEVICE == SWITCH
+	user_switch_init();
+#endif
+#if DEVICE == SWITCH2
+	user_switch2_init();
+#endif
 	
+#if I2C_ENABLE	
 	// I2C Devices
 	i2c_master_gpio_init();
 #if MOD_RGB_ENABLE
@@ -124,10 +146,14 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #if MOD_IRDA_ENABLE
 	mod_irda_init();
 #endif
+#endif
 	
 	// SPI Devices
 #if MOD_LED_8x8_RGB_ENABLE
 	mod_led_8x8_rgb_init();
+#endif
+#if DEVICE == BADGE
+	badge_init();
 #endif
 	
 	key_init();

@@ -1,276 +1,319 @@
-if (typeof process.env.TWITTER_CONSUMER_KEY == 'undefined') {
-	console.log('FATAL ERROR: Missing TWITTER_CONSUMER_KEY environment variable');
-	process.exit(1001);
+﻿require('./main');
+require('./lib/clock');
+require('./lib/open-fest-program');
+
+var Connections  = require('./lib/connections');
+var Properties   = require('./lib/properties');
+var Actions      = require('./lib/actions');
+var Triggers     = require('./lib/triggers');
+var ParamBuilder = require('./lib/param-builder');
+var Messages     = require('./lib/messages');
+var Badges       = require('./lib/badges');
+var Badges       = require('./lib/open-fest-program');
+
+try {
+	var Twitter = require('./lib/twitter');
+} catch (err) {
+	console.log(err.message);
 }
 
-if (typeof process.env.TWITTER_CONSUMER_SECRET == 'undefined') {
-	console.log('FATAL ERROR: Missing TWITTER_CONSUMER_SECRET environment variable');
-	process.exit(1001);
-}
+/****************************************************************************
+ * Miscellaneous
+ ****************************************************************************/
 
-if (typeof process.env.TWITTER_TOKEN == 'undefined') {
-	console.log('FATAL ERROR: Missing TWITTER_TOKEN environment variable');
-	process.exit(1001);
-}
-
-if (typeof process.env.TWITTER_TOKEN_SECRET == 'undefined') {
-	console.log('FATAL ERROR: Missing TWITTER_TOKEN_SECRET environment variable');
-	process.exit(1001);
-}
-
-var TRACK = [
-	'#olimex',
-	'@olimex'
-];
-
-// Init Messages queue
-var messages = [];
-
-const DEFAULT_MESSAGE         = 'Tweet with '+TRACK.join(' or ')+' to see your message here ;-)';
-const MESSAGE_PAUSE           = 2000;
-
-const MOD_TC_MK2              = 'MOD-TC-MK2';
-
-const MOD_LED8x8RGB           = 'MOD-LED8x8RGB';
-const MOD_LED8x8RGB_URL       = '/mod-led-8x8-rgb';
-
-const MOD_LED8x8RGB_COLS      = 4;
-const MOD_LED8x8RGB_ROWS      = 1;
-const MOD_LED8x8RGB_SPEED     = 70;
-
-// Initialization
-var express = require('express');
-var app = express();
-
-var bodyParser = require('body-parser');
-var jsonParser = bodyParser.json();
-
-var http = require('http').Server(app);
-var ws = require('websocket').server;
-
-/*
- * Initialize WebSocket Server
- */
-var websocket = new ws({
-	httpServer: http,
-	autoAcceptConnections: false
-});
-
-/*
- * Set common response HTTP headers
- */
-function responseHeaders(response) {
-	response.setHeader('Access-Control-Allow-Origin', '*');
-	response.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-}
-
-/*
- * Handle HTTP OPTIONS requests
- */
-app.options('*', 
-	function(request, response) {
-		console.log('OPTIONS ['+request.url+']');
-		responseHeaders(response);
-		response.send();
-	}
-);
-
-/*
- * Handle HTTP GET requests
- */
-app.get('*', 
-	function(request, response) {
-		console.log('GET ['+request.url+']');
-		responseHeaders(response);
-		response.send('{"Status" : "OK"}');
-	}
-);
-
-/*
- * Listen on default HTTP port
- */
-http.listen(
-	80, 
-	function() {
-		console.log('Listening on *:80');	
-	}
-);
-
-/*
- * Check if origin is allowed
- */
-function originIsAllowed(origin) {
-	// FIX THIS TO USE IN PRODUCTION ENVIRONMENT
-	return true;
-}
-
-/*
- * Handle WebSocket requests
- */
-websocket.on(
-	'request', 
-	function(request) {
-		console.log('WEBSOCKET: Connection request ['+request.resource+']');
+function rgbFlash(ledNode, r, g, b) {
+	var ledConnection = Connections.get(ledNode);
+	if (ledConnection !== null) {
+		ledConnection.sendUTF(
+			JSON.stringify(
+				{
+					Method: 'POST',
+					URL: '/mod-rgb',
+					Data: {R: r, G: g, B: b}
+				}
+			)
+		);
 		
-		if (!originIsAllowed(request.origin)) {
-			// Make sure we only accept requests from an allowed origin 
-			request.reject();
-			console.log('WEBSOCKET: Connection from origin [' + request.origin + '] rejected.');
-			return;
-		}
-
-		var connection = request.accept();
-		console.log('WEBSOCKET: Connection accepted');
-		
-		// Start display messages
 		setTimeout(
 			function () {
-				nextMessage(connection, MOD_LED8x8RGB_URL);
-			},
-			MESSAGE_PAUSE
-		);
-		
-		connection.on(
-			'message', 
-			function(message) {
-				if (message.type === 'utf8') {
-					try {
-						var data = JSON.parse(message.utf8Data);
-						
-						// Is this ESP8266 Event Message
-						if (typeof data.EventData != 'undefined') {
-							if (typeof data.EventData.Device != 'undefined') {
-								// Is this is MOD-LED8x8RGB event
-								if (
-									data.EventData.Device == MOD_LED8x8RGB &&
-									data.EventData.Status == 'Done'
-								) {
-									// Display next message after 2 seconds
-									setTimeout(
-										function () {
-											nextMessage(connection, MOD_LED8x8RGB_URL)
-										},
-										MESSAGE_PAUSE
-									);
-								}
-								
-								// Is this is MOD-TC-MK2 event
-								if (
-									data.EventData.Device == MOD_TC_MK2 && 
-									data.EventData.Status == 'OK'
-								) {
-									messages.push(
-										{
-											// Temperature message
-											text: 'Temperature: '+data.EventData.Data.Temperature.toFixed(2),
-											// Color WHITE
-											color: {r: 1, g: 1, b: 1}
-										}									
-									);
-								}
-							}
+				ledConnection.sendUTF(
+					JSON.stringify(
+						{
+							Method: 'POST',
+							URL: '/mod-rgb',
+							Data: {R: 0, G: 0, B: 0}
 						}
-						
-						console.log('WEBSOCKET: ' + message.utf8Data + '\n');
-					} catch (err) {
-						// console.log(err);
-						console.log(message.utf8Data);
-					}
-				} else if (message.type === 'binary') {
-					console.log('WEBSOCKET: Received Binary Message of ' + message.binaryData.length + ' bytes');
-				}
-			}
-		);
-		
-		connection.on(
-			'close', 
-			function(reasonCode, description) {
-				console.log('WEBSOCKET: CLOSE ' + connection.remoteAddress + ' ['+reasonCode+'] ['+description+']');
-			}
+					)
+				);
+			},
+			2000
 		);
 	}
-);
-
-// Init Twitter Stream 
-var TwitterStream = require('node-tweet-stream');
-var twitter = new TwitterStream(
-	{
-		consumer_key    : process.env.TWITTER_CONSUMER_KEY,
-		consumer_secret : process.env.TWITTER_CONSUMER_SECRET,
-		token           : process.env.TWITTER_TOKEN,
-		token_secret    : process.env.TWITTER_TOKEN_SECRET
-	}
-);
-
-/*
- * Handle tweets
- */
-twitter.on(
-	'tweet', 
-	function (tweet) {
-		console.log('TWEET: ['+tweet.user.name+'] '+tweet.text+'\n');
-		messages.push(
-			{
-				// User name and tweet text
-				text: tweet.user.name+': '+tweet.text,
-				// Color CYAN
-				color: {r: 0, g: 1, b: 1}
-			}
-			
-		);
-	}
-);
-
-
-/*
- * Handle Twitter errors
- */
-twitter.on(
-	'error', 
-	function (err) {
-		console.log('TWEET ERROR: '+err+'\n');
-	}
-);
-
-for (i in TRACK) {
-	twitter.track(TRACK[i]);
 }
 
-/*
- * Display next message
- */
-function nextMessage(connection, url) {
-	var msg;
-	
-	// Is there are tweets in the queue
-	if (messages.length > 0) {
-		// Get first message in the queue
-		msg = messages.shift();
-	} else {
-		msg = {
-			// Default message
-			text: DEFAULT_MESSAGE,
-			// Default message color YELLOW
-			color: { r: 1, g: 1, b: 0}
-		};
+/****************************************************************************
+ * Switch
+ ****************************************************************************/
+var RelayState = {};
+function Relay(params) {
+	RelayState[params.node] = params.relay;
+}
+
+function RelayToggle(params) {
+	var connection = Connections.get(params.node);
+	if (connection === null) {
+		return;
 	}
 	
-	// Send message to ESP8266 to display it
 	connection.sendUTF(
 		JSON.stringify(
 			{
-				URL: url,
 				Method: 'POST',
+				URL: '/relay',
 				Data: {
-					cols: MOD_LED8x8RGB_COLS,
-					rows: MOD_LED8x8RGB_ROWS,
-					R: msg.color.r,
-					G: msg.color.g,
-					B: msg.color.b,
-					Speed: MOD_LED8x8RGB_SPEED,
-					Text: msg.text
+					Relay: RelayState[connection.node.Token] ? 0 : 1
 				}
 			}
 		)
 	);
 }
+
+Actions.
+	register('Relay', Relay).
+	parameter('node',  'string', true).
+	parameter('relay', 'number', true)
+;
+
+Actions.
+	register('RelayToggle', RelayToggle).
+	parameter('node', 'string', true)
+;	
+
+// Relay
+Triggers.onPropertyChange(
+	null, 'ESP8266', 'Relay', null, null,
+	'Relay',
+	ParamBuilder().
+		parameter('node', '[NodeToken]').
+		parameter('relay', '[Relay]')
+);
+	
+// Button
+Triggers.onPropertyChange(
+	null, 'ESP8266', 'Button', null, 'Short Release',
+	'RelayToggle',
+	ParamBuilder().
+		parameter('node', 'ESP_SWITCH')
+);
+
+/****************************************************************************
+ * EVB Display
+ ****************************************************************************/
+
+function EVBDisplay(params) {
+	console.log('EVBDisplay('+JSON.stringify(params)+')');
+	var messageQueue = Messages.init(params.node, 'MOD-LED8x8RGB', '/mod-led-8x8-rgb', 1, 6, 70);
+	if (typeof Twitter == 'object') {
+		messageQueue.defaultMsg(
+			{
+				text: 'Tweet with '+Twitter.tracking().join(' or ')+' to see your message here ;-)',
+				r: 1, g: 1, b: 0
+			}
+		);
+	}
+}
+
+Actions.
+	register('EVBDisplay', EVBDisplay).
+	parameter('node', 'string', true)
+;
+ 
+// EVBDisplay
+Triggers.onRegisterDevice(
+	null, '/mod-led-8x8-rgb',
+	'EVBDisplay',
+	ParamBuilder().
+		parameter('node', '[NodeToken]')
+);
+
+/****************************************************************************
+ * Door Actions
+ ****************************************************************************/
+ 
+function DoorStayClosed(params) {
+	rgbFlash(params.ledNode, 50, 0, 0);
+}
+
+function DoorOpen(params) {
+	var connection = Connections.get(params.node);
+	if (connection === null) {
+		return;
+	}
+	
+	rgbFlash(params.ledNode, 0, 50, 0);
+	
+	connection.sendUTF(
+		JSON.stringify(
+			{
+				Method: 'POST',
+				URL: '/mod-io2',
+				Data: {Relay1: 1}
+			}
+		)
+	);
+	
+	setTimeout(
+		function () {
+			connection.sendUTF(
+				JSON.stringify(
+					{
+						Method: 'POST',
+						URL: '/mod-io2',
+						Data: {Relay1: 0}
+					}
+				)
+			);
+		},
+		2000
+	);
+}
+
+Actions.
+	register('DoorOpen', DoorOpen).
+	parameter('node',    'string', true).
+	parameter('ledNode', 'string', true)
+;
+
+Actions.
+	register('DoorStayClosed', DoorStayClosed).
+	parameter('ledNode', 'string', true)
+;
+
+Triggers.onPropertyChange(
+	'EVB', 'MOD-FINGER', 'Status', null, 'Match found', 
+	'DoorOpen',
+	ParamBuilder().
+		parameter('node',    'EVB').
+		parameter('ledNode', 'EVB')
+);
+
+Triggers.onPropertyChange(
+	'EVB', 'MOD-FINGER', 'Error', null, 'Not found',
+	'DoorStayClosed',
+	ParamBuilder().
+		parameter('msgNode', 'EVB').
+		parameter('ledNode', 'EVB')
+);
+
+/****************************************************************************
+ * IFTTT Actions
+ ****************************************************************************/
+
+ function IFTTTButton(params) {
+	rgbFlash(params.ledNode, 0, 50, 50);
+ }
+ 
+function IFTTTDo(params) {
+	rgbFlash(params.ledNode, 50, 0, 50);
+}
+
+function IFTTTSwitch(params) {
+	var connection = Connections.get(params.node);
+	if (connection === null) {
+		return;
+	}
+	
+	connection.sendUTF(
+		JSON.stringify(
+			{
+				Method: 'POST',
+				URL: '/switch2',
+				Data: JSON.parse('{"Relay'+params.relay+'" : 2}')
+			}
+		)
+	);
+}
+
+Actions.
+	register('IFTTTButton', IFTTTButton).
+	parameter('ledNode', 'string', true)
+;
+
+Actions.
+	register('IFTTTDo', IFTTTDo).
+	parameter('ledNode', 'string', true)
+;
+
+Actions.
+	register('IFTTTSwitch', IFTTTSwitch).
+	parameter('node',  'string', true).
+	parameter('relay', 'number', true)
+;
+
+// IFTTT triggers
+Triggers.register(
+	'$[?(@.IFTTTEvent=="button")]',
+	'IFTTTButton',
+	ParamBuilder().
+		parameter('ledNode', 'EVB')
+);
+
+Triggers.register(
+	'$[?(@.IFTTTEvent=="do")]',
+	'IFTTTDo',
+	ParamBuilder().
+		parameter('ledNode', 'EVB')
+);
+
+Triggers.register(
+	'$[?(@.IFTTTEvent=="switch1")]',
+	'IFTTTSwitch',
+	ParamBuilder().
+		parameter('node',   'SWITCH2').
+		parameter('relay', 1)
+);
+ 
+Triggers.register(
+	'$[?(@.IFTTTEvent=="switch2")]',
+	'IFTTTSwitch',
+	ParamBuilder().
+		parameter('node', 'SWITCH2').
+		parameter('relay', 2)
+);
+ 
+ /****************************************************************************
+ * Messages
+ ****************************************************************************/
+
+// Custom triggers
+Triggers.onPropertyChange(
+	'EVB', 'MOD-TC-MK2', 'Temperature', null, null,
+	'Messages.display',
+	ParamBuilder().
+		parameter('node', '*').
+		parameter('text', '[Temperature]°C')
+);
+
+Triggers.onPropertyChange(
+	'EVB_BAT', 'ESP8266', 'BatteryPercent', null, null,
+	'Messages.display',
+	ParamBuilder().
+		parameter('node', 'EVB').
+		parameter('text', '[BatteryState]: [BatteryPercent]%').
+		parameter('r', 0).
+		parameter('g', 1).
+		parameter('b', 1)
+);
+
+// Twitter triggers
+Triggers.register(
+	'$[?(@.TwitterEvent=="Tweet")]',
+	'Messages.display',
+	ParamBuilder().
+		parameter('node', '*').
+		parameter('text', '[TweetUser]: [TweetText]').
+		parameter('r', 1).
+		parameter('g', 0).
+		parameter('b', 1)
+);
+

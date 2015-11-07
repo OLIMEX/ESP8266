@@ -520,7 +520,7 @@ void ICACHE_FLASH_ATTR finger_init() {
 	stdout_disable();
 	
 	uart_char_in_set(finger_char_in);
-	uart_init(BIT_RATE_57600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
+	uart_init(UART0, BIT_RATE_57600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
 	
 	// Verify password
 	setTimeout((os_timer_func_t *)finger_verify_password, finger_password_response, 100);

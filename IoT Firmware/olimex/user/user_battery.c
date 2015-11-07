@@ -23,13 +23,13 @@ LOCAL uint8 battery_percent = 0;
 LOCAL uint16 ICACHE_FLASH_ATTR battery_adc_filter() {
 	LOCAL uint32 adc = 0;
 	uint8 i;
-	for (i=0; i<BATTERY_FILTER_COUNT*2; i++) {
+	for (i=0; i<BATTERY_FILTER_COUNT; i++) {
 		adc = adc - (adc >> BATTERY_FILTER_SHIFT) + system_adc_read();
 	}
 	return adc >> BATTERY_FILTER_SHIFT;
 }
 
-LOCAL uint8 ICACHE_FLASH_ATTR battery_percent_get() {
+uint8 ICACHE_FLASH_ATTR battery_percent_get() {
 	uint16 adc = battery_adc_filter();
 	uint8  percent;
 	
@@ -89,7 +89,6 @@ LOCAL void ICACHE_FLASH_ATTR battery_state_get() {
 	
 	if (
 		state != battery_state || 
-		abs(percent - battery_percent) > 1 || 
 		(percent != battery_percent && count > BATTERY_FILTER_COUNT)
 	) {
 		count = 0;

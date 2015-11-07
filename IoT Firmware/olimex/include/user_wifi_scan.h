@@ -1,7 +1,18 @@
 #ifndef __USER_WIFI_SCAN_H__
 	#define __USER_WIFI_SCAN_H__
 	
-	#define WIFI_SCAN_URL "/wifi-scan"
+	#define WIFI_SCAN_DEBUG          1
+	
+	#define WIFI_SCAN_URL            "/wifi-scan"
+	#define WIFI_SCAN_RESULT_CACHE   30000
+	
+	typedef struct {
+		char ssid[32];
+		sint8 rssi;
+		AUTH_MODE authmode;
+	} ap_info;
+
+	void wifi_auto_detect();
 	
 	void wifi_scan_handler(
 		struct espconn *pConnection, 

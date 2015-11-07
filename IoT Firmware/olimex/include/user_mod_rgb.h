@@ -2,7 +2,7 @@
 	#define __USER_MOD_RGB_H__
 	
 	#include "user_config.h"
-	#if MOD_RGB_ENABLE
+	#if MOD_RGB_ENABLE & I2C_ENABLE
 
 		#define MOD_RGB_URL      "/mod-rgb"
 		#define MOD_RGB_URL_ANY  "/mod-rgb/*"

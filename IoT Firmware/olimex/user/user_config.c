@@ -17,6 +17,7 @@
 #include "user_config.h"
 #include "user_events.h"
 #include "user_devices.h"
+#include "user_wifi_scan.h"
 
 LOCAL user_config user_configuration;
 
@@ -24,8 +25,8 @@ LOCAL wifi_station_connected_callback station_connected = NULL;
 
 void ICACHE_FLASH_ATTR user_config_init() {
 	flash_region_register("boot.bin",     0x000, 0x001);
-	flash_region_register("user1.bin",    0x001, 0x04F);
-	flash_region_register("user2.bin",    0x081, 0x04F);
+	flash_region_register("user1.bin",    0x001, 0x07B);
+	flash_region_register("user2.bin",    0x081, 0x07B);
 	flash_region_register("user-config",  0x100, 0x001);
 	flash_region_register("PrivateKey",   0x101, 0x001);
 	flash_region_register("Certificate",  0x102, 0x001);
@@ -53,7 +54,29 @@ LOCAL void ICACHE_FLASH_ATTR user_config_station_connect() {
 	
 	if (status != STATION_CONNECTING) {
 		setTimeout((os_timer_func_t *)wifi_station_connect, NULL, 2000);
+		setTimeout((os_timer_func_t *)wifi_auto_detect,  NULL, 3000);
 	}
+}
+
+LOCAL void ICACHE_FLASH_ATTR config_default_ssid(char *ssid) {
+	uint8 mac[6];
+	wifi_get_macaddr(SOFTAP_IF, mac);
+	os_sprintf(
+		ssid, 
+		USER_CONFIG_DEFAULT_AP_SSID
+		"_%02X%02X%02X", 
+		mac[3], mac[4], mac[5]
+	);
+}
+
+LOCAL void ICACHE_FLASH_ATTR config_default_token(char *token) {
+	uint8 mac[6];
+	wifi_get_macaddr(SOFTAP_IF, mac);
+	os_sprintf(
+		token, 
+		"%02X%02X%02X%02X%02X%02X", 
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
+	);
 }
 
 void ICACHE_FLASH_ATTR user_config_restore_defaults() {
@@ -63,21 +86,33 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	os_sprintf(user_configuration.user,     USER_CONFIG_DEFAULT_USER);
 	os_sprintf(user_configuration.password, USER_CONFIG_DEFAULT_PASSWD);
 	
-	os_memset(user_configuration.events_server, '\0', sizeof(user_configuration.events_server));
-	os_memset(user_configuration.events_user, '\0', sizeof(user_configuration.events_user));
+	os_memset(user_configuration.events_server,   '\0', sizeof(user_configuration.events_server));
+	os_memset(user_configuration.events_user,     '\0', sizeof(user_configuration.events_user));
 	os_memset(user_configuration.events_password, '\0', sizeof(user_configuration.events_password));
-	os_memset(user_configuration.events_path, '\0', sizeof(user_configuration.events_path));
-	os_memset(user_configuration.events_name, '\0', sizeof(user_configuration.events_name));
-	os_memset(user_configuration.events_token, '\0', sizeof(user_configuration.events_token));
+	os_memset(user_configuration.events_path,     '\0', sizeof(user_configuration.events_path));
+	os_memset(user_configuration.events_name,     '\0', sizeof(user_configuration.events_name));
+	os_memset(user_configuration.events_token,    '\0', sizeof(user_configuration.events_token));
+	
 	user_configuration.events_websocket = true;
 	user_configuration.events_ssl = false;
-	os_sprintf(user_configuration.events_path, "/");
+	
+#if DEVICE == BADGE	
+	os_sprintf(user_configuration.events_server,   USER_CONFIG_DEFAULT_EVENT_SERVER);
+#endif
+	os_sprintf(user_configuration.events_path,     USER_CONFIG_DEFAULT_EVENT_PATH);
+	os_sprintf(user_configuration.events_name,     USER_CONFIG_DEFAULT_AP_SSID);
+	config_default_token(user_configuration.events_token);
 	
 	user_configuration.access_point.dhcp = 1;
 	IP4_ADDR(&user_configuration.access_point.ip.ip,      192,168,  4,1);
 	IP4_ADDR(&user_configuration.access_point.ip.netmask, 255,255,255,0);
 	IP4_ADDR(&user_configuration.access_point.ip.gw,      192,168,  4,1);
-	
+
+#if DEVICE == BADGE	
+	user_configuration.station_auto_connect = 1;
+#else
+	user_configuration.station_auto_connect = 0;
+#endif
 	user_configuration.station.dhcp = 1;
 	IP4_ADDR(&user_configuration.station.ip.ip,           192,168, 10,2);
 	IP4_ADDR(&user_configuration.station.ip.netmask,      255,255,255,0);
@@ -85,6 +120,8 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	
 	os_sprintf(user_configuration.check, "ESP");
 	user_config_store(NULL);
+	
+	wifi_set_opmode(STATIONAP_MODE);
 	
 	struct softap_config ap_config = {
 		.ssid = USER_CONFIG_DEFAULT_AP_SSID,
@@ -96,6 +133,8 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 		.max_connection = 2,
 		.beacon_interval = 100
 	};
+	config_default_ssid(ap_config.ssid);
+	
 	wifi_softap_set_config(&ap_config);
 
 	struct station_config s_config = {
@@ -105,12 +144,12 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 		.bssid = ""
 	};
 	wifi_station_set_config(&s_config);
-	wifi_station_set_auto_connect(0);
+	
+	wifi_station_set_auto_connect(user_configuration.station_auto_connect);
+	wifi_station_set_reconnect_policy(user_configuration.station_auto_connect);
 	if (wifi_station_get_connect_status() != STATION_IDLE) {
 		user_config_station_disconnect();
 	}
-	
-	wifi_set_opmode(STATIONAP_MODE);
 	
 	debug("CONFIG: %s settings\n", RESTORED_DEFAULTS);
 	
@@ -124,7 +163,7 @@ void ICACHE_FLASH_ATTR user_config_load() {
 	debug("CONFIG: Loading...\n");
 	debug("CONFIG: Size of user_congig %d\n", sizeof(user_config));
 	SpiFlashOpResult result;
-
+	
 	result = spi_flash_read(
 		USER_CONFIG_START_SECTOR * SPI_FLASH_SEC_SIZE,
 		(uint32 *)&user_configuration, 
@@ -138,14 +177,17 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		user_config_restore_defaults();
 	}
 	
+	wifi_set_ip_info(SOFTAP_IF, &user_configuration.access_point.ip);
 	if (user_configuration.access_point.dhcp == 0) {
 		wifi_softap_dhcps_stop();
-		wifi_set_ip_info(SOFTAP_IF, &user_configuration.access_point.ip);
 	} else {
 		if (wifi_softap_dhcps_status() != DHCP_STARTED) {
 			wifi_softap_dhcps_start();
 		}
 	}
+	
+	wifi_station_set_auto_connect(user_configuration.station_auto_connect);
+	wifi_station_set_reconnect_policy(user_configuration.station_auto_connect);
 	
 	if (user_configuration.station.dhcp == 0) {
 		wifi_station_dhcpc_stop();
@@ -156,8 +198,7 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		}
 	}
 	
-	wifi_station_set_reconnect_policy(wifi_station_get_auto_connect());
-	if (wifi_station_get_auto_connect()) {
+	if (user_configuration.station_auto_connect) {
 		uint8 status = wifi_station_get_connect_status();
 		uint16 reconnect_after = 300;
 		
@@ -166,6 +207,10 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		}
 		
 		setTimeout(user_config_station_connect, NULL, reconnect_after);
+	} else {
+		if (wifi_station_get_connect_status() != STATION_IDLE) {
+			user_config_station_disconnect();
+		}
 	}
 }
 
@@ -226,6 +271,11 @@ char ICACHE_FLASH_ATTR *user_config_user() {
 char ICACHE_FLASH_ATTR *user_config_password() {
 	return (char *)&user_configuration.password;
 }
+
+bool ICACHE_FLASH_ATTR user_config_station_auto_connect() {
+	return (bool)user_configuration.station_auto_connect;
+}
+
 
 char ICACHE_FLASH_ATTR *user_config_events_server() {
 	return (char *)&user_configuration.events_server;
@@ -319,6 +369,7 @@ void ICACHE_FLASH_ATTR user_config_load_private_key() {
 	extern unsigned int default_private_key_len;
 	
 	default_private_key_len = user_config_load_ssl("PrivateKey", " PRIVATE KEY-----", default_private_key, SSL_KEY_SIZE);
+	espconn_secure_set_default_private_key(default_private_key, default_private_key_len);
 	debug("PRIVATE KEY: Load %s [%d]\n\n", default_private_key_len > 0 ? "success" : "failure", default_private_key_len);
 }
 
@@ -327,6 +378,7 @@ void ICACHE_FLASH_ATTR user_config_load_certificate() {
 	extern unsigned int default_certificate_len;
 	
 	default_certificate_len = user_config_load_ssl("Certificate", " CERTIFICATE-----", default_certificate, SSL_KEY_SIZE);
+	espconn_secure_set_default_certificate(default_certificate, default_certificate_len);
 	debug("CERTIFICATE: Load %s [%d]\n\n", default_certificate_len > 0 ? "success" : "failure", default_certificate_len);
 }
 #endif
@@ -432,7 +484,7 @@ char ICACHE_FLASH_ATTR *config_wifi_station() {
 	static char client_str[WEBSERVER_MAX_VALUE*3] = "";
 	struct station_config config;
 	
-	wifi_station_get_config(&config);
+	wifi_station_get_config_default(&config);
 	
 	os_sprintf(
 		client_str,
@@ -777,7 +829,7 @@ void ICACHE_FLASH_ATTR config_station_handler(
 		int json_type;
 		
 		struct station_config config;
-		wifi_station_get_config(&config);
+		wifi_station_get_config_default(&config);
 		
 		jsonparse_setup(&parser, data, data_len);
 		while ((json_type = jsonparse_next(&parser)) != 0) {
@@ -793,8 +845,8 @@ void ICACHE_FLASH_ATTR config_station_handler(
 				} else if (jsonparse_strcmp_value(&parser, "AutoConnect") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					int autoconnect = jsonparse_get_value_as_int(&parser);
-					wifi_station_set_auto_connect(autoconnect);
+					user_configuration.station_auto_connect = jsonparse_get_value_as_int(&parser);
+					wifi_station_set_auto_connect(user_configuration.station_auto_connect);
 				} else if (jsonparse_strcmp_value(&parser, "DHCP") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);

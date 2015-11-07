@@ -133,11 +133,11 @@ void ICACHE_FLASH_ATTR rfid_init() {
 	uart_char_in_set(rfid_char_in);
 	
 	if (module == MOD_RFID125 || module == RFID_ANY) {
-		uart_init(BIT_RATE_9600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
+		uart_init(UART0, BIT_RATE_9600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
 	}
 	
 	if (module == MOD_RFID1356) {
-		uart_init(BIT_RATE_57600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
+		uart_init(UART0, BIT_RATE_57600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
 	}
 	
 	setTimeout(rfid_info, NULL, 50);

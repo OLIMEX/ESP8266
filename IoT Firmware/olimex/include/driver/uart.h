@@ -136,11 +136,14 @@
 	typedef void (*uart_char_in_callback)(char c);
 	
 	void uart_init(
+		uint8            uart,
 		UartBaudRate     baud_rate, 
 		UartBitsNum4Char data_bits, 
 		UartParityMode   parity, 
 		UartStopBitsNum  stop_bits
 	);
+	
+	void uart1_write_char(char c);
 	
 	void uart_write_char(char c);
 	void uart_write_char_no_wait(char c);
@@ -148,6 +151,7 @@
 
 	void uart_write_byte(uint8 b);
 	void uart_write_buff(uint8 *buff, uint32 len);
+	void uart_write_buff_direct(uint8 *buff, uint32 len);
 	
 	void uart_char_in_set(uart_char_in_callback func);
 

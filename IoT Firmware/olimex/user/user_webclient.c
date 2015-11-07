@@ -170,6 +170,12 @@ LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_new_request(
 		request != NULL && 
 		(request->state != HTTP || is_websocket(request->connection))
 	) {
+		if (request->ip->addr == 0) {
+#if WEBCLIENT_DEBUG
+			debug("WEBCLIENT: Host not resolved yet!\n");
+#endif
+			return NULL;
+		}
 		webclient_renew_connection(request);
 		webclient_new_element(&request->content, content);
 		return request;
@@ -195,11 +201,29 @@ LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_new_request(
 	request->connection = webclient_new_connection(port);
 	request->ip = (ip_addr_t *)&(request->connection->proto.tcp->remote_ip);
 	
+#if WEBCLIENT_DEBUG
+	debug(
+		"WEBCLIENT: New request %s:%d%s [:%d]\n", 
+		host, 
+		port, 
+		path, 
+		request->connection->proto.tcp->local_port
+	);
+#endif
 	STAILQ_INSERT_TAIL(&webclient_requests, request, entries);
 	return request;
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_free_request(webclient_request *request) {
+#if WEBCLIENT_DEBUG
+	debug(
+		"WEBCLIENT: Free request %s:%d%s [:%d]\n", 
+		request->host, 
+		request->connection->proto.tcp->remote_port,
+		request->path,
+		request->connection->proto.tcp->local_port
+	);
+#endif
 	STAILQ_REMOVE(&webclient_requests, request, _webclient_request_, entries);
 	
 	if (request->user) os_free(request->user);
@@ -220,12 +244,16 @@ LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct 
 			(WEBCLIENT_RETRY_MAX == 0 || request->retry++ < WEBCLIENT_RETRY_MAX) && 
 			connection->state == ESPCONN_CLOSE
 		) {
+			user_event_server_error();
 			webclient_renew_connection(request);
 			
 			char event[WEBSERVER_MAX_VALUE];
 			user_event_build(event, NULL, "{\"Device\" : \"ESP8266\", \"Status\" : \"WebSocket Reconnect\"}");
 			webclient_new_element(&request->content, event);
 			
+		}
+
+		if (wifi_station_get_connect_status() == STATION_GOT_IP) {		
 #if WEBCLIENT_DEBUG
 			debug("WEBCLIENT: Retry [%d] after [%d]\n", request->retry, WEBCLIENT_RETRY_AFTER);
 #endif
@@ -280,6 +308,8 @@ LOCAL void ICACHE_FLASH_ATTR webclient_disconnect(void *arg) {
 
 LOCAL void ICACHE_FLASH_ATTR webclient_sent(void *arg) {
 	struct espconn *connection = arg;
+	
+	user_event_server_ok();
 	
 	if (is_websocket(connection)) {
 		return;
@@ -437,12 +467,6 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 	struct espconn *connection = arg;
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	
-	if (ip == NULL) {
-		debug("WEBCLIENT: Server name [%s] can not be resolved\n", name);
-		webclient_free_connection(connection);
-		return;
-	}
-	
 	if (request == NULL) {
 		debug(
 			"WEBCLIENT: Request can not be found [%d.%d.%d.%d:%d]\n", 
@@ -450,6 +474,12 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 			connection->proto.tcp->local_port
 		);
 		webclient_free_connection(connection);
+		return;
+	}
+	
+	if (ip == NULL) {
+		debug("WEBCLIENT: Server name [%s] can not be resolved\n", name);
+		webclient_error(request, connection);
 		return;
 	}
 	
@@ -482,6 +512,10 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 }
 
 void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {
+	if (request == NULL) {
+		return;
+	}
+	
 	if (request->retry_timer != 0) {
 		clearTimeout(request->retry_timer);
 	}
@@ -494,30 +528,55 @@ void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {
 	}
 	
 	if (ipaddr_aton(request->host, request->ip)) {
+#if WEBCLIENT_DEBUG
+		debug("WEBCLIENT: No DNS needed [%s]...\n", request->host);
+#endif
 		webclient_dns(request->host, request->ip, request->connection);
 	} else {
+#if WEBCLIENT_DEBUG
+		debug("WEBCLIENT: Resolving host [%s]...\n", request->host);
+#endif
 		espconn_gethostbyname(request->connection, request->host, request->ip, webclient_dns);
 	}
 }
 
-void ICACHE_FLASH_ATTR webclient_get(bool ssl, char *user, char *password, char *host, int port, char *path) {
+LOCAL bool webclient_host_check(char *host) {
 	if (host == NULL || *host == '\0') {
+#if WEBCLIENT_DEBUG
+		debug("WEBCLIENT: NULL host request. Request ignored!\n");
+#endif
+		return false;
+	}
+	
+	if (wifi_station_get_connect_status() != STATION_GOT_IP) {
+#if WEBCLIENT_DEBUG
+		debug("WEBCLIENT: Station not connected. Request ignored!\n");
+#endif
+		return false;
+	}
+	return true;
+}
+
+void ICACHE_FLASH_ATTR webclient_get(bool ssl, char *user, char *password, char *host, int port, char *path) {
+	if (!webclient_host_check(host)) {
 		return;
 	}
+	
 	webclient_request *request = webclient_new_request(GET, ssl, user, password, host, port, path, NULL, NULL);
 	webclient_execute(request);
 }
 
 void ICACHE_FLASH_ATTR webclient_post(bool ssl, char *user, char *password, char *host, int port, char *path, char *content) {
-	if (host == NULL || *host == '\0') {
+	if (!webclient_host_check(host)) {
 		return;
 	}
+	
 	webclient_request *request = webclient_new_request(POST, ssl, user, password, host, port, path, NULL, content);
 	webclient_execute(request);
 }
 
 void ICACHE_FLASH_ATTR webclient_socket(bool ssl, char *user, char *password, char *host, int port, char *path, char *content) {
-	if (host == NULL || *host == '\0') {
+	if (!webclient_host_check(host)) {
 		return;
 	}
 	
@@ -546,7 +605,7 @@ void ICACHE_FLASH_ATTR webclient_socket(bool ssl, char *user, char *password, ch
 	);
 	
 	webclient_request *request = webclient_new_request(GET, ssl, user, password, host, port, path, headers, content);
-	if (request->state == HTTP) {
+	if (request != NULL && request->state == HTTP) {
 		request->state = UPGRADE;
 	}
 	webclient_execute(request);

@@ -2,7 +2,7 @@
 	#define __MOD_RGB_MOD_RGB_H__
 
 	#include "user_config.h"
-	#if MOD_RGB_ENABLE
+	#if MOD_RGB_ENABLE & I2C_ENABLE
 
 		#define MOD_RGB_ID           0x64
 		#define MOD_RGB_DEFAULT_ADDR 0x20

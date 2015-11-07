@@ -59,6 +59,11 @@ void ICACHE_FLASH_ATTR mod_led_8x8_rgb_handler(
 	}
 	
 	if (method == POST && data != NULL && data_len != 0) {
+		if (led_8x8_rgb_busy()) {
+			json_error(response, MOD_LED8x8RGB, BUSY_STR, NULL);
+			return;
+		}
+		
 		jsonparse_setup(&parser, data, data_len);
 
 		while ((type = jsonparse_next(&parser)) != 0) {
@@ -104,12 +109,14 @@ void ICACHE_FLASH_ATTR mod_led_8x8_rgb_handler(
 		}
 	
 		if (!led_8x8_rgb_scroll(r, g, b, text, MOD_LED_8x8_RGB_MAX_SPEED - speed + 1, mod_led_8x8_rgb_scroll_done)) {
-			json_error(response, MOD_LED8x8RGB, "Busy", NULL);
+			json_error(response, MOD_LED8x8RGB, BUSY_STR, NULL);
 			return;
 		}
 	}
 	
 	char data_str[WEBSERVER_MAX_VALUE * 2];
+	char *escaped = json_escape_str(text, MOD_LED_8x8_RGB_MAX_TEXT);
+	
 	json_data(
 		response, MOD_LED8x8RGB, OK_STR,
 		json_sprintf(
@@ -127,9 +134,11 @@ void ICACHE_FLASH_ATTR mod_led_8x8_rgb_handler(
 			r,
 			g,
 			b,
-			text
+			escaped
 		),
 		NULL
 	);
+	
+	os_free(escaped);
 }
 #endif

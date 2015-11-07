@@ -2,7 +2,7 @@
 	#define __USER_MOD_TC_MK2_H__
 	
 	#include "user_config.h"
-	#if MOD_TC_MK2_ENABLE
+	#if MOD_TC_MK2_ENABLE & I2C_ENABLE
 
 		#define MOD_TC_MK2_URL      "/mod-tc-mk2"
 		#define MOD_TC_MK2_URL_ANY  "/mod-tc-mk2/*"

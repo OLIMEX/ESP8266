@@ -1,28 +1,5 @@
-/*
- * 
- * mod_tc-mk2.c is part of esp_olimex.
- *
- *  esp_olimex is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  esp_olimex is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with esp_olimex.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Created on: May 22, 2015
- *      Author: Peter Valkov
- *	   Company: Olimex LTD.
- *     Contact: support@olimex.com 
- */
-
 #include "user_config.h"
-#if MOD_TC_MK2_ENABLE
+#if MOD_TC_MK2_ENABLE & I2C_ENABLE
 
 #include "ets_sys.h"
 #include "osapi.h"

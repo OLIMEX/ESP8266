@@ -10,17 +10,13 @@
 
 #include "user_json.h"
 #include "user_webserver.h"
+#include "user_events.h"
 #include "user_relay.h"
 #include "user_devices.h"
+#include "user_switch.h"
 
 LOCAL uint8  relay_state = 0;
 LOCAL uint32 relay_timer = 0;
-
-void ICACHE_FLASH_ATTR user_relay_init() {
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
-	webserver_register_handler_callback(RELAY_URL, relay_handler);
-	device_register(NATIVE, 0, RELAY_URL, NULL, NULL);
-}
 
 LOCAL void ICACHE_FLASH_ATTR user_relay_state(char *response) {
 	char data_str[WEBSERVER_MAX_VALUE];
@@ -35,10 +31,17 @@ LOCAL void ICACHE_FLASH_ATTR user_relay_state(char *response) {
 	);
 }
 
+uint8 ICACHE_FLASH_ATTR user_relay_get() {
+	return relay_state;
+}
+
 LOCAL void ICACHE_FLASH_ATTR user_relay_set(uint8 state) {
 	if (relay_timer == 0) {
 		GPIO_OUTPUT_SET(GPIO_ID_PIN(5), state);
 		relay_state = state;
+#if DEVICE == SWITCH		
+		switch_led(SWITCH_LED2, relay_state);
+#endif
 	}
 }
 
@@ -96,4 +99,11 @@ void ICACHE_FLASH_ATTR relay_handler(
 	
 	user_relay_state(response);
 }
+
+void ICACHE_FLASH_ATTR user_relay_init() {
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
+	webserver_register_handler_callback(RELAY_URL, relay_handler);
+	device_register(NATIVE, 0, RELAY_URL, NULL, NULL);
+}
+
 #endif

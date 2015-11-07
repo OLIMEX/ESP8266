@@ -2,7 +2,7 @@
 	#define __USER_MOD_IO2_H__
 	
 	#include "user_config.h"
-	#if MOD_IO2_ENABLE
+	#if MOD_IO2_ENABLE & I2C_ENABLE
 
 		#define MOD_IO2_URL      "/mod-io2"
 		#define MOD_IO2_URL_ANY  "/mod-io2/*"

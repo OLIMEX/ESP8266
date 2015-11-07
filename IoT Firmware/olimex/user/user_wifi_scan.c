@@ -12,28 +12,80 @@
 
 #include "user_wifi_scan.h"
 
-bool wifi_scan_in_progress = false;
+LOCAL bool   wifi_scan_in_progress = false;
+LOCAL bool   wifi_auto_connect     = false;
+LOCAL sint8  wifi_auto_rssi        = -127;
 
-typedef struct {
-	char ssid[32];
-    sint8 rssi;
-	AUTH_MODE authmode;
-} ap_info;
+LOCAL uint32 wifi_clean_timeout    = 0;
+LOCAL uint32 wifi_detect_timeout   = 0;
 
-ap_info **wifi_scan_result = NULL;
-uint8 wifi_scan_ap_count = 0;
+LOCAL ap_info **wifi_scan_result = NULL;
+LOCAL uint8 wifi_scan_ap_count = 0;
 
-void wifi_scan_done(void *arg, STATUS status);
+LOCAL struct station_config wifi_auto_config;
 
-bool ICACHE_FLASH_ATTR wifi_scan_start() {
-	if (!wifi_scan_in_progress) {
-		wifi_scan_in_progress = wifi_station_scan(NULL, wifi_scan_done);
-		return wifi_scan_in_progress;
+LOCAL void wifi_scan_done(void *arg, STATUS status);
+
+LOCAL void ICACHE_FLASH_ATTR wifi_scan_clean()  {
+	uint8 i=0;
+
+	// clear stored AP data
+	if (wifi_scan_ap_count != 0 && wifi_scan_result != NULL) {
+		for (i=0; i<wifi_scan_ap_count; i++) {
+			os_free(wifi_scan_result[i]);
+		}
+		os_free(wifi_scan_result);
 	}
-	return true;
+	wifi_scan_result = NULL;
+	wifi_scan_ap_count = 0;
+#if WIFI_SCAN_DEBUG	
+	debug("WiFi Scan: Cache Cleaned\n");
+#endif
 }
 
-void ICACHE_FLASH_ATTR wifi_scan_get_result(char *response) {
+LOCAL bool ICACHE_FLASH_ATTR wifi_scan_start() {
+	if (wifi_scan_in_progress) {
+		return true;
+	}
+	
+#if WIFI_SCAN_DEBUG	
+	debug("WiFi Scan: Start...\n");
+	debug("\tMode: %s\n", wifi_op_mode_str(wifi_get_opmode()));
+	debug("\tPHY Mode: %d\n", wifi_get_phy_mode());
+	debug("\tSleep Type: %d\n", wifi_get_sleep_type());
+#endif
+	clearTimeout(wifi_clean_timeout);
+	wifi_scan_clean();
+	
+	wifi_scan_in_progress = wifi_station_scan(NULL, wifi_scan_done);
+	return wifi_scan_in_progress;
+}
+
+void ICACHE_FLASH_ATTR wifi_auto_detect() {
+	if (user_config_station_auto_connect() == 0) {
+		return;
+	}
+	
+#if WIFI_SCAN_DEBUG	
+	debug("WiFi Scan: Auto Detect...\n");
+#endif
+	clearTimeout(wifi_detect_timeout);
+	wifi_station_get_config_default(&wifi_auto_config);
+	if (wifi_auto_config.ssid[0] == '\0') {
+		wifi_auto_connect   = true;
+		wifi_auto_rssi      = -127;
+		
+		wifi_auto_config.ssid[0]     = '\0';
+		wifi_auto_config.password[0] = '\0';
+		wifi_auto_config.bssid[0]    = '\0';
+		wifi_auto_config.bssid_set   = 0;
+		
+		wifi_station_set_reconnect_policy(0);
+		wifi_scan_start();
+	}
+}
+
+LOCAL void ICACHE_FLASH_ATTR wifi_scan_get_result(char *response) {
 	if (wifi_scan_in_progress) {
 		webserver_set_status(0);
 		return;
@@ -79,25 +131,24 @@ void ICACHE_FLASH_ATTR wifi_scan_get_result(char *response) {
 	);
 }
 
-void ICACHE_FLASH_ATTR wifi_scan_clean(void)  {
-	uint8 i=0;
-	
-	// clear stored AP data
-	if (wifi_scan_ap_count != 0 && wifi_scan_result != NULL) {
-		for (i=0; i<wifi_scan_ap_count; i++) {
-			os_free(wifi_scan_result[i]);
-		}
-		os_free(wifi_scan_result);
-	}
-	wifi_scan_result = NULL;
-	wifi_scan_ap_count = 0;
-}
-
-void ICACHE_FLASH_ATTR wifi_scan_done(void *arg, STATUS status) {
+LOCAL void ICACHE_FLASH_ATTR wifi_scan_done(void *arg, STATUS status) {
 	wifi_scan_in_progress = false;
-	wifi_scan_clean();
 	
-	if (status != OK) {
+	if (status != OK || arg == NULL) {
+#if WIFI_SCAN_DEBUG	
+		debug("WiFi Scan: Failed [%d].\n", status);
+#endif
+		if (wifi_auto_connect) {
+			setTimeout(wifi_auto_detect, NULL, WIFI_SCAN_RESULT_CACHE / 2);
+		}
+		return;
+	}
+	
+#if WIFI_SCAN_DEBUG	
+	debug("WiFi Scan: Done...\n");
+#endif
+	if (wifi_scan_ap_count != 0 || wifi_scan_result != NULL) {
+		debug("WiFi Scan: Cache Not Clean.\n");
 		return;
 	}
 	
@@ -105,27 +156,65 @@ void ICACHE_FLASH_ATTR wifi_scan_done(void *arg, STATUS status) {
 	struct bss_info *ap = (struct bss_info *)arg;
 	while (ap = ap->next.stqe_next) {
 		wifi_scan_ap_count++;
-		debug("SSID: [%s] Strength [%d] Mode: [%d]\n", ap->ssid, ap->rssi, ap->authmode);
+		if (ap->ssid_len != 0 && ap->ssid_len < 32) {
+			ap->ssid[ap->ssid_len] = '\0';
+		}
+#if WIFI_SCAN_DEBUG	
+		debug("\tSSID: [%s] Channel: [%d] Strength: [%d] Mode: [%d]\n", ap->ssid, ap->channel, ap->rssi, ap->authmode);
+#endif
+	}
+#if WIFI_SCAN_DEBUG	
+	debug("WiFi Scan: %d APs found.\n", wifi_scan_ap_count);
+#endif
+	
+	char response[WEBSERVER_MAX_RESPONSE_LEN] = "";
+	
+	if (wifi_scan_ap_count == 0) {
+		json_data(
+			response, ESP8266, OK_STR,
+			"\"WiFi\" : []",
+			NULL
+		);
+	} else {
+		// Store AP data
+		wifi_scan_result = (ap_info **)os_malloc(sizeof(ap_info *) * wifi_scan_ap_count);
+		
+		uint8 i=0;
+		ap = (struct bss_info *)arg;
+		while (ap = ap->next.stqe_next) {
+			wifi_scan_result[i] = (ap_info *)os_malloc(sizeof(ap_info));
+			
+			os_memcpy(wifi_scan_result[i]->ssid, ap->ssid, 32);
+			
+			wifi_scan_result[i]->rssi = ap->rssi;
+			wifi_scan_result[i]->authmode = ap->authmode;
+			if (
+				wifi_auto_connect && 
+				ap->authmode == AUTH_OPEN &&
+				ap->rssi > wifi_auto_rssi
+			) {
+				os_memcpy(&(wifi_auto_config.ssid), ap->ssid, 32);
+			}
+			i++;
+		}
+		
+		wifi_clean_timeout = setTimeout(wifi_scan_clean, NULL, WIFI_SCAN_RESULT_CACHE);
+		wifi_scan_get_result(response);
 	}
 	
-	// Store AP data
-	wifi_scan_result = (ap_info **)os_malloc(sizeof(ap_info *) * wifi_scan_ap_count);
-	
-	uint8 i=0;
-	ap = (struct bss_info *)arg;
-	while (ap = ap->next.stqe_next) {
-		wifi_scan_result[i] = (ap_info *)os_malloc(sizeof(ap_info));
-		os_memcpy(wifi_scan_result[i]->ssid, ap->ssid, 32);
-		wifi_scan_result[i]->rssi = ap->rssi;
-		wifi_scan_result[i]->authmode = ap->authmode;
-		i++;
+	if (wifi_auto_connect) {
+		if (wifi_auto_config.ssid[0] != '\0')  {
+			wifi_auto_connect = false;
+			wifi_station_set_config_current(&wifi_auto_config);
+			wifi_station_connect();
+		} else {
+			wifi_detect_timeout = setTimeout(wifi_auto_detect, NULL, WIFI_SCAN_RESULT_CACHE / 2);
+		}
 	}
 	
-	setTimeout(wifi_scan_clean, NULL, 30000);
-	
-	char response[WEBSERVER_MAX_RESPONSE_LEN];
-	
-	wifi_scan_get_result(response);
+#if WIFI_SCAN_DEBUG	
+	debug("WiFi Scan: Event Raise.\n");
+#endif
 	user_event_raise(WIFI_SCAN_URL, response);
 }
 

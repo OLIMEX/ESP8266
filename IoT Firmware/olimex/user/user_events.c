@@ -15,6 +15,22 @@
 #include "user_webclient.h"
 #include "user_long_poll.h"
 
+#include "user_badge.h"
+
+void ICACHE_FLASH_ATTR user_event_server_error() {
+// TODO - register callbacks to break module/device dependency
+#if DEVICE == BADGE
+	badge_server_animation_start();
+#endif
+}
+
+void ICACHE_FLASH_ATTR user_event_server_ok() {
+// TODO - register callbacks to break module/device dependency
+#if DEVICE == BADGE
+	badge_server_animation_stop();
+#endif
+}
+
 void ICACHE_FLASH_ATTR user_event_reboot() {
 #if EVENTS_DEBUG
 	debug("EVENTS: Reboot\n");
@@ -28,7 +44,7 @@ void ICACHE_FLASH_ATTR user_event_reboot() {
 void ICACHE_FLASH_ATTR user_event_connect() {
 #if EVENTS_DEBUG
 	debug("EVENTS: Station connected\n");
-	memory_info();
+	// memory_info();
 #endif
 	char status[WEBSERVER_MAX_RESPONSE_LEN];
 	user_event_raise(
@@ -53,12 +69,30 @@ LOCAL void ICACHE_FLASH_ATTR user_event_wifi(System_Event_t *evt) {
 		break;
 		
 		case EVENT_STAMODE_DISCONNECTED:
+// TODO - register callbacks to break module/device dependency
+#if DEVICE == BADGE
+			badge_wifi_animation_start();
+#endif
+#if DEVICE == SWITCH
+			switch_wifi_blink_start();
+#endif
+			wifi_auto_detect();
 		break;
 		
 		case EVENT_STAMODE_AUTHMODE_CHANGE:
 		break;
 		
+		case EVENT_STAMODE_DHCP_TIMEOUT:
+		break;
+		
 		case EVENT_STAMODE_GOT_IP:
+// TODO - register callbacks to break module/device dependency
+#if DEVICE == BADGE
+			badge_wifi_animation_stop();
+#endif
+#if DEVICE == SWITCH
+			switch_wifi_blink_stop();
+#endif
 			user_event_connect();
 		break;
 		
@@ -119,10 +153,14 @@ void ICACHE_FLASH_ATTR user_websocket_event(char *url, char *data, struct espcon
 }
 
 void ICACHE_FLASH_ATTR user_event_raise(char *url, char *data) {
+	if (data == NULL || os_strlen(data) == 0) {
+		return;
+	}
+	
 	uint16 event_size = 
 		WEBSERVER_MAX_VALUE + 
 		(url == NULL ? 0 : os_strlen(url)) + 
-		(data == NULL ? 0 : os_strlen(data))
+		os_strlen(data)
 	;
 	
 	char event[event_size];
