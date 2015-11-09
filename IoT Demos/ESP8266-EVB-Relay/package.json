@@ -1,0 +1,18 @@
+{
+  "name": "esp8266-evb-relay",
+  "version": "1.0.0",
+  "description": "Simple Demo of using esp8266-iotjs package",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OLIMEX/ESP8266/tree/master/IoT%20Demos"
+  },
+  "author": "Dimitar Manovski",
+  "license": "ISC",
+  "dependencies": {
+    "esp8266-iotjs": "0.0.1"
+  }
+}
