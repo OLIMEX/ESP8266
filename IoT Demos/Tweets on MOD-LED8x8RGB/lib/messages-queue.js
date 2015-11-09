@@ -8,6 +8,7 @@ const MESSAGES_DEF_TIMEOUT =  5000;  // 5 seconds
  * Message Queue
  ****************************************************************************/
 function MessagesQueue(node, url, rows, cols, speed) {
+	this._token = node;
 	this._connection = null;
 	
 	this._queue = [];
@@ -19,13 +20,13 @@ function MessagesQueue(node, url, rows, cols, speed) {
 	this._cols = cols;
 	this._speed = speed;
 	
-	this.connect(node);
-	
 	this._default = null;
 	this._default_timeout = null;
 	
 	this._current = null;
 	this._triggers = [];
+	
+	this.connect();
 }
 
 MessagesQueue.prototype.addTrigger = function (trigger) {
@@ -34,24 +35,25 @@ MessagesQueue.prototype.addTrigger = function (trigger) {
 }
 
 MessagesQueue.prototype.removeTriggers = function () {
+	// remove global registered triggers
 	this._triggers.forEach(
 		function (trigger) {
 			Triggers.remove(trigger);
 		}
 	);
 	
+	// clear local references
 	this._triggers = [];
 	return this;
 }
 
-MessagesQueue.prototype.connect = function (node) {
-	if (typeof node != 'undefined') {
-		this._connection = node;
-	}
-	
-	var connection = Connections.get(this._connection);
-	if (connection !== null) {
-		this._connection = connection;
+MessagesQueue.prototype.connect = function () {
+	if (this._connection === null) {
+		var connection = Connections.get(this._token);
+		if (connection !== null) {
+			this._connection = connection;
+			this._token = connection.node.Token;
+		}
 	}
 	
 	return this;
@@ -62,12 +64,7 @@ MessagesQueue.prototype.url = function () {
 }
 
 MessagesQueue.prototype.token = function () {
-	this.connect();
-	return (typeof this._connection == 'object' ?
-		this._connection.node.Token
-		:
-		this._connection
-	);
+	return this._token;
 };
 
 MessagesQueue.prototype.rows = function (rows) {
@@ -92,6 +89,7 @@ MessagesQueue.prototype.defaultMsg = function (msg) {
 
 MessagesQueue.prototype.display = function (message) {
 	this._queue.push(message);
+	console.log('MessagesQueue.length@'+this.token()+'['+this._queue.length+']');
 	this.next();
 	return this;
 };
@@ -109,6 +107,7 @@ MessagesQueue.prototype.next = function() {
 		// display default message after timeout
 		this._default_timeout = setTimeout(
 			function () {
+				console.log('MessagesQueue.displayDefault()');
 				self.display(self._default);
 			},
 			MESSAGES_DEF_TIMEOUT
@@ -131,8 +130,8 @@ MessagesQueue.prototype.next = function() {
 	this.setTimeout();
 	
 	this._current = this._queue.shift();
-	console.log('MessagesQueue.length@'+this.token()+'['+this._queue.length+']');
 	console.log('MessagesQueue.display@'+this.token()+'['+this._current.text+']');
+	console.log('MessagesQueue.length@'+this.token()+'['+this._queue.length+']');
 	
 	this._connection.sendUTF(
 		JSON.stringify(
@@ -211,6 +210,8 @@ MessagesQueue.prototype.busy = function () {
 	if (this._current !== null) {
 		if (this._current.text != this._default.text) {
 			this._queue.unshift(this._current);
+			console.log('MessagesQueue.busy("'+this._current.text+'")');
+			console.log('MessagesQueue.length@'+this.token()+'['+this._queue.length+']');
 		}
 		this._current = null;
 	}

@@ -1,6 +1,6 @@
 var Messages = require('./messages');
 
-const CLOCK_INTERVAL = 1000 * 60 * 2; // 2 minutes
+const CLOCK_INTERVAL = 1000 * 60 * 1; // 1 minutes
 
 function dateTimePad(n) {
 	if (n < 10) {

@@ -69,21 +69,25 @@ module.exports = Messages = {
 			connection.node.Token
 		;
 		
-		var removed = 0;
+		console.log('Messages.remove("'+token+'", "'+url+'").totalBefore('+this._queues.length+')');
 		
-		for (var index in this._queues) {
+		var removed = 0;
+		var index = 0;
+		while (this._queues.length > index) {
 			var current = this._queues[index];
 			if (
 				current.token() === token && 
 				(url === null || current.url() === url)
 			) {
-				console.log('Messages.remove("'+token+'", "'+url+'")');
 				current.removeTriggers();
 				this._queues.splice(index, 1);
 				removed++;
+			} else {
+				index++;
 			}
 		}
 		
+		console.log('Messages.removed('+removed+').remainingAfter('+this._queues.length+')');
 		return removed;
 	},
 	

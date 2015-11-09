@@ -317,3 +317,18 @@ Triggers.register(
 		parameter('b', 1)
 );
 
+/*
+setInterval(
+	function () {
+		Messages.display(
+			{
+				node: '*',
+				text: 'Test broadcast message from Olimex Development Team. Sorry for flooding!',
+				r: 1, g: 0, b: 0
+			}
+		);
+	},
+	
+	5000
+);
+*/

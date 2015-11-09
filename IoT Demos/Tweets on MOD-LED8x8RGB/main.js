@@ -31,6 +31,7 @@ app.options('*',
 
 app.get('/nodes', 
 	function(request, response) {
+		console.log('GET ['+request.url+'] ['+request.ip+']');
 		responseHeaders(response);
 		response.send(Connections.getNodes());
 	}
@@ -38,7 +39,7 @@ app.get('/nodes',
 
 app.get('*', 
 	function(request, response) {
-		console.log('GET ['+request.url+']');
+		console.log('GET ['+request.url+'] ['+request.ip+']');
 		responseHeaders(response);
 		response.send('{"Status" : "OK"}');
 	}
@@ -46,7 +47,7 @@ app.get('*',
 
 app.post('*', jsonParser, 
 	function(request, response) {
-		console.log('POST ['+request.url+']');
+		console.log('POST ['+request.url+'] ['+request.ip+']');
 		if (!request.body) {
 			return response.sendStatus(400);
 		}

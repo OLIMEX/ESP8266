@@ -57,10 +57,6 @@ module.exports = {
 			}
 		}
 		
-		// if (connection === null) {
-		//	console.log('CONNECTIONS: '+node+' - Not found!');
-		//}
-		
 		return connection;
 	},
 	
