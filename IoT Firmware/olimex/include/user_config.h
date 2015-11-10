@@ -4,6 +4,7 @@
 	#define USE_OPTIMIZE_PRINTF
 	
 	#define CONNECTIONS_DEBUG                  1
+	#define WIFI_DEBUG_ENABLE                  0
 	
 	#define SSL_ENABLE                       SSL
 	#if SSL_ENABLE
@@ -139,7 +140,7 @@
 	#endif
 /***********************************************/
 
-	#if UART1_ENABLE || (DEVICE == SWITCH2)
+	#if UART1_ENABLE || (DEVICE == SWITCH) || (DEVICE == SWITCH2)
 		#define I2C_ENABLE                     0
 	#else
 		#define I2C_ENABLE                     1

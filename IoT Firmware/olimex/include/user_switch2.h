@@ -15,11 +15,14 @@
 		} switch2_type;
 		
 		typedef struct _switch2_config_ {
+			uint8     id;
 			uint8     type;
 			uint8     gpio_id;
 			uint32    gpio_name;
 			uint8     gpio_func;
 			void_func handler;
+			uint8     state;
+			uint8     state_buf;
 		} switch2_config;
 		
 		void switch2_handler(

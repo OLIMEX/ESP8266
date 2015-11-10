@@ -70,7 +70,9 @@ LOCAL void ICACHE_FLASH_ATTR devices_init_done() {
 	if (device_get_uart() == UART_NONE) {
 		stdout_init(UART0);
 	} else {
+		#if WIFI_DEBUG_ENABLE
 		stdout_wifi_debug();
+		#endif
 	}
 #endif
 }
