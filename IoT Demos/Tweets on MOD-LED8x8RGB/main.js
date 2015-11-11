@@ -86,15 +86,6 @@ websocket.on(
 		Connections.add(connection);
 		console.log('WEBSOCKET: Connection accepted');
 		
-		connection.sendUTF(
-			JSON.stringify(
-				{
-					URL: '/devices',
-					Method: 'GET'
-				}
-			)
-		);
-		
 		var time = new Date().getTime();
 		
 		connection.on(
@@ -105,12 +96,19 @@ websocket.on(
 					try {
 						data = JSON.parse(message.utf8Data);
 						
-						if (typeof data.Name != 'undefined') {
+						if (JSONPath(data, '$[?($.Name)][?($.Token)]')) {
+							// Node identification
 							Connections.setName(connection, data.Name);
-						}
-						
-						if (typeof data.Token != 'undefined') {
 							Connections.setToken(connection, data.Token);
+							
+							connection.sendUTF(
+								JSON.stringify(
+									{
+										URL: '/devices',
+										Method: 'GET'
+									}
+								)
+							);
 						}
 						
 						data.EventNode = {
@@ -122,15 +120,7 @@ websocket.on(
 						var devices = JSONPath(data, '$[?($.EventURL == "/devices")].EventData.Data.Devices[?(@.Found == 1)]');
 						if (devices !== false) {
 							console.log('REGISTER DEVICES:');
-							if (devices instanceof Array) {
-								devices.forEach(
-									function (device) {
-										connection.node.Devices.push(device);
-									}
-								);
-							} else {
-								connection.node.Devices.push(devices);
-							}
+							connection.node.Devices = connection.node.Devices.concat(devices);
 						}
 					} catch (err) {
 						console.log('ERROR@'+connection.node.Token+' ['+err+']');
