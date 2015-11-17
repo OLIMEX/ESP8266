@@ -313,7 +313,7 @@
 							var onTop  = $this.hasClass('on-top');
 							$this.removeClass();
 							
-							if (css != 'activity' && css != 'error') {
+							if (typeof css != 'undefined' && css != 'activity' && css != 'error') {
 								$this.show();
 								if (onTop) {
 									$this.click();
@@ -436,10 +436,12 @@
 							}
 							reset = true;
 							data = data.EventData;
-						}
-						
-						if (typeof data.Device != 'undefined') {
-							if (data.Device == 'ESP8266' && $this.hasClass('module')) {
+						} else {
+							if (
+								typeof data.Device != 'undefined' && 
+								typeof data.Error == 'undefined' &&
+								data.Device == 'ESP8266'
+							) {
 								return;
 							}
 						}
@@ -459,7 +461,7 @@
 						
 						if ($this.is('.esp:not(.long-poll)')) {
 							if (typeof data.Status != 'undefined') {
-								$this.get(0).message(data.Status);
+								$this.get(0).message(data.Status, 'event');
 							}
 							return;
 						}

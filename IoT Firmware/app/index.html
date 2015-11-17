@@ -226,7 +226,7 @@
 			<div class="status"></div>
 		</form>
 		
-		<form id="battery" class="esp event" action="/battery" method="POST">
+		<form id="battery" class="esp event module" action="/battery" method="POST">
 			<fieldset name="Battery">
 				<legend>Battery</legend>
 				<label>State</label>   <input type="text" name="State"   disabled="disabled" /> <br/>
@@ -237,7 +237,7 @@
 			<div class="status"></div>
 		</form>
 		
-		<form id="relay" class="esp event" action="/relay" method="POST">
+		<form id="relay" class="esp event module" action="/relay" method="POST">
 			<fieldset>
 				<legend>Relay</legend>
 				<label>State</label><input type="checkbox" name="Relay" value="1" onchange="$(this).submit();"/> <br/>
@@ -246,7 +246,7 @@
 			<div class="status"></div>
 		</form>
 		
-		<form id="adc" class="esp event" action="/adc" method="POST">
+		<form id="adc" class="esp event module" action="/adc" method="POST">
 			<fieldset name="ADC">
 				<legend>Analog to Digital</legend>
 				<label>Value</label> <input type="text"  name="Value" value="" disabled="disabled"/> <br/>
@@ -318,21 +318,21 @@
 					<button type="button" id="emtr-reset">Reset</button> 
 				<br/>
 				<label>Counter Apparent, [kWh]</label> <input  type="text" name="CounterApparent" disabled="disabled" class="kWh"/><br/>
-				<label>Read Interval</label>    <input type="range" name="ReadInterval" min="10" max="1000" step="10" /> <br/>
+				<label>Read Interval</label>    <input type="range" name="ReadInterval" min="500" max="2000" step="10" /> <br/>
 				<label></label>                 <input type="text"  name="ReadInterval" disabled="disabled" /> <br/>
 				
 				<div class="emtr-mode log">
 					<label>Interval</label>           <input type="text" name="Interval"          disabled="disabled" /> <br/>
 					
-					<label>Current RMS, [A]</label>        <input type="text" name="CurrentRMS"        disabled="disabled" class="milli" /> <br/>
-					<label>Voltage RMS, [V]</label>        <input type="text" name="VoltageRMS"        disabled="disabled" class="deci" /> <br/>
-					<label>Active Power, [W]</label>       <input type="text" name="ActivePower"       disabled="disabled" /> <br/>
-					<label>Reactive Power, [W]</label>     <input type="text" name="ReactivePower"     disabled="disabled" /> <br/>
-					<label>Apparent Power, [W]</label>     <input type="text" name="ApparentPower"     disabled="disabled" /> <br/>
-					<label>Power Factor</label>       <input type="text" name="PowerFactor"       disabled="disabled" class="normalize"/> <br/>
-					<label>Line Frequency, [Hz]</label>     <input type="text" name="LineFrequency"     disabled="disabled" class="milli"/> <br/>
-					<label>Thermistor Voltage</label> <input type="text" name="ThermistorVoltage" disabled="disabled" /> <br/>
-					<label>System Status</label>      <input type="text" name="SystemStatus"      disabled="disabled" /> <br/>
+					<label>Current RMS, [A]</label>      <input type="text" name="CurrentRMS"        disabled="disabled" class="milli" /> <br/>
+					<label>Voltage RMS, [V]</label>      <input type="text" name="VoltageRMS"        disabled="disabled" class="deci" /> <br/>
+					<label>Active Power, [W]</label>     <input type="text" name="ActivePower"       disabled="disabled" /> <br/>
+					<label>Reactive Power, [W]</label>   <input type="text" name="ReactivePower"     disabled="disabled" /> <br/>
+					<label>Apparent Power, [W]</label>   <input type="text" name="ApparentPower"     disabled="disabled" /> <br/>
+					<label>Power Factor</label>          <input type="text" name="PowerFactor"       disabled="disabled" class="normalize"/> <br/>
+					<label>Line Frequency, [Hz]</label>  <input type="text" name="LineFrequency"     disabled="disabled" class="milli"/> <br/>
+					<label>Thermistor Voltage</label>    <input type="text" name="ThermistorVoltage" disabled="disabled" /> <br/>
+					<label>System Status</label>         <input type="text" name="SystemStatus"      disabled="disabled" /> <br/>
 					<label>Event Flag</label>
 						<input type="hidden" name="EventFlag" disabled="disabled" /> 
 						<div class="bits">
