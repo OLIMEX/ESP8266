@@ -197,6 +197,7 @@ LOCAL void ICACHE_FLASH_ATTR websocket_sent(void *arg) {
 				data_send(pConnection, message->data, message->data_len);
 				os_free(message->data);
 				os_free(message);
+				return;
 			} else {
 				extra->sending = false;
 			}

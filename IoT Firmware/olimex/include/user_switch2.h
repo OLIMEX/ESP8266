@@ -7,7 +7,8 @@
 		#include "user_webserver.h"
 		#include "user_devices.h"
 		
-		#define SWITCH2_URL "/switch2"
+		#define SWITCH2_URL             "/switch2"
+		#define SWITCH2_EMTR_RESET_PIN  15
 		
 		typedef enum {
 			SWITCH2_RELAY = 1,

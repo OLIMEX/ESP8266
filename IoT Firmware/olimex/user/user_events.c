@@ -73,8 +73,8 @@ LOCAL void ICACHE_FLASH_ATTR user_event_wifi(System_Event_t *evt) {
 #if DEVICE == BADGE
 			badge_wifi_animation_start();
 #endif
-#if DEVICE == SWITCH
-			switch_wifi_blink_start();
+#if DEVICE == PLUG
+			plug_wifi_blink_start();
 #endif
 			wifi_auto_detect();
 		break;
@@ -90,8 +90,8 @@ LOCAL void ICACHE_FLASH_ATTR user_event_wifi(System_Event_t *evt) {
 #if DEVICE == BADGE
 			badge_wifi_animation_stop();
 #endif
-#if DEVICE == SWITCH
-			switch_wifi_blink_stop();
+#if DEVICE == PLUG
+			plug_wifi_blink_stop();
 #endif
 			user_event_connect();
 		break;

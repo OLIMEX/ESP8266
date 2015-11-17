@@ -328,7 +328,10 @@ void ICACHE_FLASH_ATTR emtr_handler(
 			}
 		}
 		
-		emtr_set_event(emtr_registers.event, NULL);
+		if (mode == EMTR_CONFIGURE) {
+			emtr_set_event(emtr_registers.event, NULL);
+		}
+		
 		if (set_counter) {
 			emtr_set_counter(counter_active, counter_apparent, NULL);
 		}

@@ -444,8 +444,8 @@ void ICACHE_FLASH_ATTR emtr_set_event(emtr_event_registers *registers, emtr_call
 	emtr_set_int(registers->event_test,                 packet->data, 50+5, 2);
 	emtr_set_int(registers->event_clear,                packet->data, 52+5, 2);
 	
-	packet->data[EMTR_EVENTS_LEN+5] = 0x53;           // Save registers to flash
-	packet->data[EMTR_EVENTS_LEN+6] = emtr_address(); // Device address
+	packet->data[EMTR_EVENTS_LEN+5] = EMTR_SAVE_REGISTERS;  // Save registers to flash
+	packet->data[EMTR_EVENTS_LEN+6] = emtr_address();       // Device address
 	
 	packet->ask_only = true;
 	packet->callback = command_done;

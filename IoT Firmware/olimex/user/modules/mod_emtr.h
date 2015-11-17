@@ -24,6 +24,8 @@
 		#define EMTR_WRITE_16         0x57
 		#define EMTR_WRITE_32         0x45
 		
+		#define EMTR_SAVE_REGISTERS   0x53
+		
 		#define EMTR_FLASH_READ       0x42
 		#define EMTR_FLASH_WRITE      0x50
 		

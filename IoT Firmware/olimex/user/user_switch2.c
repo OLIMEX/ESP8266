@@ -168,6 +168,17 @@ void ICACHE_FLASH_ATTR switch2_handler(
 	user_switch2_state(response);
 }
 
+LOCAL void ICACHE_FLASH_ATTR switch2_init() {
+	// MOD_EMTR enable
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15);
+	GPIO_OUTPUT_SET(GPIO_ID_PIN(SWITCH2_EMTR_RESET_PIN), 1);
+}
+
+LOCAL void ICACHE_FLASH_ATTR switch2_down() {
+	// MOD_EMTR reset
+	GPIO_OUTPUT_SET(GPIO_ID_PIN(SWITCH2_EMTR_RESET_PIN), 0);
+}
+
 void ICACHE_FLASH_ATTR user_switch2_init() {
 	uint8 i;
 	
@@ -182,7 +193,6 @@ void ICACHE_FLASH_ATTR user_switch2_init() {
 	}
 	
 	webserver_register_handler_callback(SWITCH2_URL, switch2_handler);
-	device_register(NATIVE, 0, SWITCH2_URL, NULL, NULL);
+	device_register(NATIVE, 0, SWITCH2_URL, switch2_init, switch2_down);
 }
-
 #endif

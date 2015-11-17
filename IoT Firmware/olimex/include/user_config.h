@@ -15,14 +15,14 @@
  * Devices
  ***********************************************/
 	#define EVB_ONLY                           1
-	#define SWITCH                             2
+	#define PLUG                               2
 	#define SWITCH2                            3
 	#define BADGE                              4
 	
 /***********************************************
  * Modules conditional compiling
  ***********************************************/
-	#if DEVICE == SWITCH
+	#if DEVICE == PLUG
 		#define UART0_SWAP                     0
 		#define UART1_ENABLE                   0
 		
@@ -140,7 +140,7 @@
 	#endif
 /***********************************************/
 
-	#if UART1_ENABLE || (DEVICE == SWITCH) || (DEVICE == SWITCH2)
+	#if UART1_ENABLE || (DEVICE == PLUG) || (DEVICE == SWITCH2)
 		#define I2C_ENABLE                     0
 	#else
 		#define I2C_ENABLE                     1
@@ -181,8 +181,8 @@
 	
 	#if DEVICE == BADGE
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_BADGE"
-	#elif  DEVICE == SWITCH
-		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_SWITCH"
+	#elif  DEVICE == PLUG
+		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_PLUG"
 	#elif  DEVICE == SWITCH2
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_SWITCH2"
 	#else

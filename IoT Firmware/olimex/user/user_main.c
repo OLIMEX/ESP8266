@@ -35,7 +35,7 @@
 #include "user_adc.h"
 #include "user_battery.h"
 
-#include "user_switch.h"
+#include "user_plug.h"
 #include "user_switch2.h"
 #include "user_badge.h"
 
@@ -81,8 +81,14 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #if UART1_ENABLE
 	stdout_init(UART1);
 #endif
-	
+
 	// UART Devices
+#if DEVICE == PLUG
+	user_plug_init();
+#endif
+#if DEVICE == SWITCH2
+	user_switch2_init();
+#endif
 #if MOD_RFID_ENABLE
 	mod_rfid_init();
 #endif
@@ -123,12 +129,6 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #endif
 #if BATTERY_ENABLE
 	user_battery_init();
-#endif
-#if DEVICE == SWITCH
-	user_switch_init();
-#endif
-#if DEVICE == SWITCH2
-	user_switch2_init();
 #endif
 	
 #if I2C_ENABLE	
