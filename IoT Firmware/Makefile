@@ -4,6 +4,18 @@ ifndef PDIR
 
 endif
 
+DEVICE?=0
+SSL?=0
+DEFINES+= -DDEVICE=$(DEVICE) -DSSL=$(SSL)
+
+export COMPILE?=gcc
+
+BOOT?=new
+APP?=0
+SPI_SPEED?=40
+SPI_MODE?=QIO
+SPI_SIZE_MAP?=3
+
 ifeq ($(COMPILE), gcc)
 	AR = xtensa-lx106-elf-ar
 	CC = xtensa-lx106-elf-gcc
@@ -19,12 +31,6 @@ else
 	OBJCOPY = xt-objcopy
 	OBJDUMP = xt-objdump
 endif
-
-BOOT?=none
-APP?=0
-SPI_SPEED?=40
-SPI_MODE?=QIO
-SPI_SIZE_MAP?=0
 
 ifeq ($(BOOT), new)
     boot = new
