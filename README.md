@@ -1,7 +1,7 @@
 README
 ======
 
-This apps accomplishes the following:
+These apps accomplish the following:
 
 -- ESP8266-EVB-blinkLED : Blink by green LED on ESP8266-EVB
 
