@@ -79,6 +79,7 @@
 		return this.each(
 			function (i, e) {
 				var $this = $(e);
+				var $form = $this.closest('form');
 				var timeout = null;
 				var value;
 				var $text = $this.closest('form').find('input[type=text][name='+$this.attr('name')+']:disabled');
@@ -104,7 +105,11 @@
 						timeout = setTimeout(
 							function () {
 								$this.val(value);
-								$this.submit();
+								
+								var data = {};
+								data[$this.attr('name')] = parseInt($this.val());
+								$form.trigger('post8266', data);
+								
 								$this.data('refresh', true);
 								timeout = null;
 							},
@@ -186,11 +191,12 @@
 				if ($e.is(':input')) {
 					$e.trigger('toJSON');
 					var val = $e.data('JSON') ? $e.data('JSON') : $e.val();
+					$e.data('JSON', null);
 					json[$e.attr('name')] = $e.is(':not(:checkbox)') || $e.is(':checked') ?
 						(val === null ?
 							null
 							:
-							(typeof val == 'string' && val.match(/^\d+$/) ?
+							(typeof val == 'string' && val.match(/^-?\d+$/) ?
 								parseInt(val)
 								:
 								val
@@ -291,6 +297,7 @@
 					}
 					i.trigger('fromJSON', [json[name]]);
 					i.val(i.data('JSON') ? i.data('JSON') : json[name]);
+					i.data('JSON', null);
 				}
 				i.trigger('refresh');
 			} else if (typeof json[name] === 'object') {

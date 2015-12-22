@@ -17,11 +17,17 @@
 	void  jsonparse_object_str(struct jsonparse_state *parser, char *dst, int dst_len);
 	
 	extern const char ESP8266[];
+	#if DEVICE == SWITCH1
+	extern const char SWITCH1_STR[];
+	#endif
 	#if DEVICE == SWITCH2
 	extern const char SWITCH2_STR[];
 	#endif
 	#if DEVICE == BADGE
 	extern const char BADGE_STR[];
+	#endif
+	#if DEVICE == DIMMER
+	extern const char DIMMER_STR[];
 	#endif
 	
 	#if MOD_IO2_ENABLE

@@ -6,7 +6,9 @@
 
 		#include "user_webserver.h"
 		
-		#define EMTR_URL       "/mod-emtr"
+		#define EMTR_URL                    "/mod-emtr"
+		#define EMTR_DEFAULT_READ_INTERVAL  1000
+		#define EMTR_RESET_TIMEOUT          500
 		
 		typedef enum {
 			EMTR_LOG = 1,

@@ -3,15 +3,22 @@
 #include "os_type.h"
 #include "stdarg.h"
 #include "mem.h"
+#include "stdout.h"
 
 #include "user_json.h"
 
 const char ESP8266[]           = "ESP8266";
+#if DEVICE == SWITCH1
+const char SWITCH1_STR[]       = "ESP-SWITCH1";
+#endif
 #if DEVICE == SWITCH2
 const char SWITCH2_STR[]       = "ESP-SWITCH2";
 #endif
 #if DEVICE == BADGE
 const char BADGE_STR[]         = "ESP-BADGE";
+#endif
+#if DEVICE == DIMMER
+const char DIMMER_STR[]        = "ESP-DIMMER";
 #endif
 
 #if MOD_IO2_ENABLE
@@ -164,7 +171,7 @@ void ICACHE_FLASH_ATTR jsonparse_object_str(struct jsonparse_state *parser, char
 	
 	int json_type = jsonparse_get_type(parser);
 	
-	while (json_type != 0 && json_type != '}' && parser->depth != depth-1) {
+	while (json_type != '}' && parser->depth != depth-1) {
 		json_type = jsonparse_next(parser);
 	}
 	
@@ -175,4 +182,17 @@ void ICACHE_FLASH_ATTR jsonparse_object_str(struct jsonparse_state *parser, char
 			dst[len] = '\0';
 		}
 	}
+}
+
+/******************************************************************************
+ * FunctionName : jsonparse_get_value_as_sint
+ * Description  : 
+ * Parameters   : 
+*******************************************************************************/
+int ICACHE_FLASH_ATTR jsonparse_get_value_as_sint(struct jsonparse_state *parser) {
+	if (parser->vtype == JSON_TYPE_ERROR) {
+		jsonparse_next(parser);
+		return -jsonparse_get_value_as_int(parser);
+	}
+	return jsonparse_get_value_as_int(parser);
 }

@@ -4,7 +4,7 @@
 	#include "user_config.h"
 	#if MOD_EMTR_ENABLE
 
-		#define EMTR_DEBUG            0
+		#define EMTR_DEBUG            1
 		#define EMTR_VERBOSE_OUTPUT   0
 		
 		#define EMTR_TIMEOUT          500
@@ -14,6 +14,10 @@
 		#define EMTR_ERROR_NAK        0x15
 		#define EMTR_ERROR_CRC        0x51
 
+		#define EMTR_SINGLE_WIRE_01   0xAB
+		#define EMTR_SINGLE_WIRE_02   0xCD
+		#define EMTR_SINGLE_WIRE_03   0xEF
+		
 		#define EMTR_SET_ADDRESS      0x41
 		
 		#define EMTR_READ             0x4E
@@ -33,6 +37,8 @@
 		
 		typedef enum {
 			EMTR_STATE_IDLE = 0,
+			
+			EMTR_STATE_SINGLE_WIRE,
 			
 			EMTR_STATE_LEN,
 			EMTR_STATE_DATA,
@@ -82,6 +88,7 @@
 			sint16 dc_offset_current;
 			sint16 phase_compensation;
 			uint16 apparent_power_divisor;
+			
 			uint32 system_configuration;
 			uint16 dio_configuration;
 			uint32 range;
@@ -142,6 +149,8 @@
 
 		void   emtr_parse_calibration(emtr_packet *packet, emtr_calibration_registers *registers);
 		void   emtr_get_calibration(emtr_callback command_done);
+		void   emtr_calibration_calc(emtr_calibration_registers *registers, uint8 range_shift, uint32 expected, uint32 measured);
+		
 		
 		void   emtr_parse_event(emtr_packet *packet, emtr_event_registers *registers);
 		void   emtr_get_event(emtr_callback command_done);
@@ -150,6 +159,12 @@
 		void   emtr_get_output(emtr_callback command_done);
 		
 		void   emtr_clear_event(uint16 event, emtr_callback command_done);
+		
+		void   emtr_set_system_configuration(uint32 system_configuration, uint16 interval, emtr_callback command_done);
+		
+		void   emtr_parse_single_wire(emtr_packet *packet, emtr_output_registers *registers);
+		void   emtr_single_wire_start(uint32 system_configuration, emtr_callback command_done);
+		void   emtr_single_wire_stop(uint32 system_configuration);
 		
 		void   emtr_init();
 		void   emtr_down();

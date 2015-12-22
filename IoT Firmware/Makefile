@@ -260,7 +260,7 @@ endif
 	@echo "!!!"
 	
 ifeq ($(app), 0)
-	@$(PYTHON) ../tools/gen_appbin.py $< 0 $(mode) $(freqdiv) $(size_map)
+	@$(PYTHON) ../tools/gen_appbin.py $< 0 $(mode) $(freqdiv) $(size_map) $(app)
 	@mv eagle.app.flash.bin ../bin/eagle.flash.bin
 	@mv eagle.app.v6.irom0text.bin ../bin/eagle.irom0text.bin
 	@rm eagle.app.v6.*
@@ -270,10 +270,10 @@ ifeq ($(app), 0)
 	@echo "eagle.irom0text.bin---->0x40000"
 else
     ifneq ($(boot), new)
-		@$(PYTHON) ../tools/gen_appbin.py $< 1 $(mode) $(freqdiv) $(size_map)
+		@$(PYTHON) ../tools/gen_appbin.py $< 1 $(mode) $(freqdiv) $(size_map) $(app)
 		@echo "Support boot_v1.1 and +"
     else
-		@$(PYTHON) ../tools/gen_appbin.py $< 2 $(mode) $(freqdiv) $(size_map)
+		@$(PYTHON) ../tools/gen_appbin.py $< 2 $(mode) $(freqdiv) $(size_map) $(app)
 
     	ifeq ($(size_map), 6)
 		@echo "Support boot_v1.4 and +"

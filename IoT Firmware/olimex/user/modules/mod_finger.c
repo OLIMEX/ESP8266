@@ -517,8 +517,7 @@ void ICACHE_FLASH_ATTR finger_init() {
 		return;
 	}
 	
-	stdout_disable();
-	
+	// stdout_disable();
 	uart_char_in_set(finger_char_in);
 	uart_init(UART0, BIT_RATE_57600, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
 	

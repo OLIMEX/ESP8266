@@ -47,9 +47,10 @@
 					$('#irda select[name=Mode]').irdaMode();
 					$('#finger select[name=Mode]').fingerMode();
 					
-					$('#emtr').emtr();
-					$('#emtr select[name=Mode]').emtrMode();
-					$('#emtr-reset').emtrReset();
+					$('.emtr').emtr();
+					$('.emtr select[name=Mode]').emtrMode();
+					$('.emtr-reset').emtrReset();
+					$('.emtr button.calibrate').emtrCalibrate();
 					
 					$('.bits').bits();
 					
@@ -300,7 +301,7 @@
 			<div class="status"></div>
 		</form>
 		
-		<form id="emtr" class="esp event module no-reset" action="/mod-emtr" method="POST">
+		<form id="emtr" class="esp emtr event module no-reset" action="/mod-emtr" method="POST">
 			<fieldset>
 				<legend>MOD-EMTR</legend>
 				<label>Address</label>            <input type="text" name="Address"           disabled="disabled" /> <br/>
@@ -314,18 +315,18 @@
 				<br/>
 				
 				<label>Counter Active, [kWh]</label>
-					<input  type="text" name="CounterActive" disabled="disabled" class="kWh"/> 
-					<button type="button" id="emtr-reset">Reset</button> 
+					<input  type="text" name="CounterActive" disabled="disabled" class="kWh counter"/> 
+					<button type="button" class="emtr-reset">Reset</button> 
 				<br/>
-				<label>Counter Apparent, [kWh]</label> <input  type="text" name="CounterApparent" disabled="disabled" class="kWh"/><br/>
+				<label>Counter Apparent, [kWh]</label> <input  type="text" name="CounterApparent" disabled="disabled" class="kWh counter"/><br/>
 				<label>Read Interval</label>    <input type="range" name="ReadInterval" min="500" max="2000" step="10" /> <br/>
 				<label></label>                 <input type="text"  name="ReadInterval" disabled="disabled" /> <br/>
 				
 				<div class="emtr-mode log">
 					<label>Interval</label>           <input type="text" name="Interval"          disabled="disabled" /> <br/>
 					
-					<label>Current RMS, [A]</label>      <input type="text" name="CurrentRMS"        disabled="disabled" class="milli" /> <br/>
 					<label>Voltage RMS, [V]</label>      <input type="text" name="VoltageRMS"        disabled="disabled" class="deci" /> <br/>
+					<label>Current RMS, [A]</label>      <input type="text" name="CurrentRMS"        disabled="disabled" class="milli" /> <br/>
 					<label>Active Power, [W]</label>     <input type="text" name="ActivePower"       disabled="disabled" /> <br/>
 					<label>Reactive Power, [W]</label>   <input type="text" name="ReactivePower"     disabled="disabled" /> <br/>
 					<label>Apparent Power, [W]</label>   <input type="text" name="ApparentPower"     disabled="disabled" /> <br/>
@@ -381,20 +382,20 @@
 				</div>
 				
 				<div class="emtr-mode configure">
-					<label>Over Current Limit, [A]</label>      <input type="text" name="OverCurrentLimit" class="milli"/> <br/>
-					<label>Over Power Limit, [W]</label>        <input type="text" name="OverPowerLimit" /> <br/>
-					<label>Over Frequency Limit, [Hz]</label>    <input type="text" name="OverFrequencyLimit" class="milli"/> <br/>
-					<label>Under Frequency Limit, [Hz]</label>   <input type="text" name="UnderFrequencyLimit" class="milli" /> <br/>
-					<label>Over Temperature Limit</label>  <input type="text" name="OverTemperatureLimit" /> <br/>
-					<label>Under Temperature Limit</label> <input type="text" name="UnderTemperatureLimit" /> <br/>
-					<label>Voltage Sag Limit, [V]</label>       <input type="text" name="VoltageSagLimit" class="deci" /> <br/>
-					<label>Voltage Surge Limit, [V]</label>     <input type="text" name="VoltageSurgeLimit" class="deci" /> <br/>
-					<label>Over Current Hold</label>       <input type="text" name="OverCurrentHold" /> <br/>
-					<label>Over Power Hold</label>         <input type="text" name="OverPowerHold" /> <br/>
-					<label>Over Frequency Hold</label>     <input type="text" name="OverFrequencyHold" /> <br/>
-					<label>Under Frequency Hold</label>    <input type="text" name="UnderFrequencyHold" /> <br/>
-					<label>Over Temperature Hold</label>   <input type="text" name="OverTemperatureHold" /> <br/>
-					<label>Under Temperature Hold</label>  <input type="text" name="UnderTemperatureHold" /> <br/>
+					<label>Over Current Limit, [A]</label>     <input type="text" name="OverCurrentLimit" class="milli"/> <br/>
+					<label>Over Power Limit, [W]</label>       <input type="text" name="OverPowerLimit" /> <br/>
+					<label>Over Frequency Limit, [Hz]</label>  <input type="text" name="OverFrequencyLimit" class="milli"/> <br/>
+					<label>Under Frequency Limit, [Hz]</label> <input type="text" name="UnderFrequencyLimit" class="milli" /> <br/>
+					<label>Over Temperature Limit</label>      <input type="text" name="OverTemperatureLimit" /> <br/>
+					<label>Under Temperature Limit</label>     <input type="text" name="UnderTemperatureLimit" /> <br/>
+					<label>Voltage Sag Limit, [V]</label>      <input type="text" name="VoltageSagLimit" class="deci" /> <br/>
+					<label>Voltage Surge Limit, [V]</label>    <input type="text" name="VoltageSurgeLimit" class="deci" /> <br/>
+					<label>Over Current Hold</label>           <input type="text" name="OverCurrentHold" /> <br/>
+					<label>Over Power Hold</label>             <input type="text" name="OverPowerHold" /> <br/>
+					<label>Over Frequency Hold</label>         <input type="text" name="OverFrequencyHold" /> <br/>
+					<label>Under Frequency Hold</label>        <input type="text" name="UnderFrequencyHold" /> <br/>
+					<label>Over Temperature Hold</label>       <input type="text" name="OverTemperatureHold" /> <br/>
+					<label>Under Temperature Hold</label>      <input type="text" name="UnderTemperatureHold" /> <br/>
 					<label>Event Enable</label>            
 						<input type="hidden" name="EventEnable" /> 
 						<div class="bits">
@@ -623,25 +624,31 @@
 				</div>
 				
 				<div class="emtr-mode calibration">
-					<label>Gain Current RMS</label>        <input type="text" name="GainCurrentRMS"         disabled="disabled"/> <br/>
-					<label>Gain Voltage RMS</label>        <input type="text" name="GainVoltageRMS"         disabled="disabled"/> <br/>
-					<label>Gain Active Power</label>       <input type="text" name="GainActivePower"        disabled="disabled"/> <br/>
-					<label>Gain Reactive Power</label>     <input type="text" name="GainReactivePower"      disabled="disabled"/> <br/>
-					<label>Offset Current RMS</label>      <input type="text" name="OffsetCurrentRMS"       disabled="disabled"/> <br/>
-					<label>Offset Active Power</label>     <input type="text" name="OffsetActivePower"      disabled="disabled"/> <br/>
-					<label>Offset Reactive Power</label>   <input type="text" name="OffsetReactivePower"    disabled="disabled"/> <br/>
-					<label>DC Offset Current</label>       <input type="text" name="DCOffsetCurrent"        disabled="disabled"/> <br/>
-					<label>Phase Compensation</label>      <input type="text" name="PhaseCompensation"      disabled="disabled"/> <br/>
-					<label>Apparent Power Divisor</label>  <input type="text" name="ApparentPowerDivisor"   disabled="disabled"/> <br/>
-					<label>System Configuration</label>    <input type="text" name="SystemConfiguration"    disabled="disabled"/> <br/>
-					<label>DIO Configuration</label>       <input type="text" name="DIOConfiguration"       disabled="disabled"/> <br/>
-					<label>Range</label>                   <input type="text" name="Range"                  disabled="disabled"/> <br/>
+					<label>Gain Voltage RMS</label>        <input type="text" name="GainVoltageRMS"       class="integer"/> <br/>
+					<label>Gain Current RMS</label>        <input type="text" name="GainCurrentRMS"       class="integer"/> <br/>
+					<label>Gain Active Power</label>       <input type="text" name="GainActivePower"      class="integer"/> <br/>
+					<label>Gain Reactive Power</label>     <input type="text" name="GainReactivePower"    class="integer"/> <br/>
+					<label>Offset Current RMS</label>      <input type="text" name="OffsetCurrentRMS"     class="integer"/> <br/>
+					<label>Offset Active Power</label>     <input type="text" name="OffsetActivePower"    class="integer"/> <br/>
+					<label>Offset Reactive Power</label>   <input type="text" name="OffsetReactivePower"  class="integer"/> <br/>
+					<label>DC Offset Current</label>       <input type="text" name="DCOffsetCurrent"      class="integer"/> <br/>
+					<label>Phase Compensation</label>      <input type="text" name="PhaseCompensation"    class="integer"/> <br/>
+					<label>Apparent Power Divisor</label>  <input type="text" name="ApparentPowerDivisor" class="integer"/> <br/>
+					<label>System Configuration</label>    <input type="text" name="SystemConfiguration"  class="integer"/> <br/>
+					<label>DIO Configuration</label>       <input type="text" name="DIOConfiguration"     class="integer"/> <br/>
+					<label>Range</label>                   <input type="text" name="Range"                class="integer"/> <br/>
 					
-					<label>Calibration Current, [A]</label>        <input type="text" name="CalibrationCurrent"       disabled="disabled" class="milli"/> <br/>
-					<label>Calibration Voltage, [V]</label>        <input type="text" name="CalibrationVoltage"       disabled="disabled" class="deci"/> <br/>
-					<label>Calibration Active Power, [W]</label>   <input type="text" name="CalibrationActivePower"   disabled="disabled"/> <br/>
-					<label>Calibration Reactive Power, [W]</label> <input type="text" name="CalibrationReactivePower" disabled="disabled"/> <br/>
-					<label>Accumulation Interval</label>      <input type="text" name="AccumulationInterval"     disabled="disabled"/> <br/>
+					<label>Calibration Voltage, [V]</label>        <input type="text" name="CalibrationVoltage" class="deci calibrate"/> 
+						<button type="button" class="calibrate CalibrationVoltage">Go</button> 
+					<br/>
+					<label>Calibration Current, [A]</label>        <input type="text" name="CalibrationCurrent" class="milli calibrate"/> 
+						<button type="button" class="calibrate CalibrationCurrent">Go</button> 
+					<br/>
+					<label>Calibration Active Power, [W]</label>   <input type="text" name="CalibrationActivePower" class="calibrate" /> 
+						<button type="button" class="calibrate CalibrationActivePower">Go</button> 
+					<br/>
+					<label>Calibration Reactive Power, [W]</label> <input type="text" name="CalibrationReactivePower" class="integer"/> <br/>
+					<label>Accumulation Interval</label>           <input type="text" name="AccumulationInterval" /> <br/>
 				</div>
 				
 				<button type="submit">Submit</button>
@@ -755,6 +762,18 @@
 			<div class="status"></div>
 		</form>
 		
+		<form id="switch1" class="esp event module" action="/switch1" method="POST">
+			<fieldset>
+				<legend>ESP-SWITCH1</legend>
+				<label>Relay</label>  <input type="checkbox" name="Relay"  value="1" onchange="$(this).submit();"/> <br/>
+				<label>Switch</label> <input type="checkbox" name="Switch" value="1" disabled="disabled" /> <br/>
+				
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
 		<form id="switch2" class="esp event module" action="/switch2" method="POST">
 			<fieldset>
 				<legend>ESP-SWITCH2</legend>
@@ -774,6 +793,26 @@
 				<legend>ESP-BADGE</legend>
 				<label>Speed</label>   <input type="range"    name="Speed" min="0" max="100" step="1"/> <br/>
 				<label>Text</label>    <input type="text"     name="Text" value="" /> <br/>
+				
+				<button type="submit">Submit</button>
+				<button type="button">Refresh</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="dimmer" class="esp emtr event module no-reset" action="/dimmer" method="POST">
+			<fieldset>
+				<legend>ESP-DIMMER</legend>
+				<label>On</label>            <input type="checkbox" name="Relay" value="1" onchange="$(this).submit();"/> <br/>
+				<label>Brightness</label>    <input type="range"    name="Brightness" min="0" max="255" step="1"/> <br/>
+				<label>Current, A</label>    <input type="text"     name="Current" class="milli" disabled="disabled"  /> <br/>
+				
+				<fieldset name="Poll">
+					<legend>Poll</legend>
+					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> <br/>
+					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> <br/>
+					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> <br/>
+				</fieldset>
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>

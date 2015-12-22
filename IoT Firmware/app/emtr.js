@@ -3,6 +3,16 @@
 		return this.each(
 			function (i, e) {
 				var $this = $(e);
+				$this.find('.integer').
+					bind(
+						'toJSON',
+						function () {
+							var $this = $(this);
+							$this.data('JSON', parseInt($this.val()));
+						}
+					)
+				;
+				
 				$this.find('.milli, .deci, .normalize, .kWh').
 					each(
 						function (i, e) {
@@ -16,7 +26,7 @@
 								$e.data('factor', 10);
 								$e.data('precision', 1);
 							} else if ($e.is('.normalize')) {
-								$e.data('factor', 32768);
+								$e.data('factor', 32767);
 								$e.data('precision', 5);
 							} else if ($e.is('.kWh')) {
 								$e.data('factor', 3600000);
@@ -64,8 +74,10 @@
 				
 				$this.change(
 					function () {
+						var data = {};
+						data[$this.attr('name')] = $this.val();
 						$this.trigger('refresh');
-						$this.submit();
+						$form.trigger('post8266', data);
 					}
 				);
 				
@@ -80,17 +92,47 @@
 		return this.each(
 			function (i, e) {
 				var $this = $(e);
-				var $counterActive = $this.closest('form').find('input[name=CounterActive]');
-				var $counterApparent = $this.closest('form').find('input[name=CounterApparent]');
+				var $form = $this.closest('form');
+				var $counters = $form.find('input.counter');
 				
 				$this.click(
 					function () {
 						if (confirm('Do you really want to reset counters?')) {
-							$counterActive.prop('disabled', false).val(0);
-							$counterApparent.prop('disabled', false).val(0);
-							$this.submit();
-							$counterActive.prop('disabled', true);
-							$counterApparent.prop('disabled', true);
+							var data = {};
+							$counters.each(
+								function (i, e) {
+									data[e.name] = 0;
+								}
+							);
+							$form.trigger('post8266', data);
+						}
+					}
+				);
+			}
+		);
+	}
+})(jQuery);
+
+(function ($) {
+	$.fn.emtrCalibrate = function () {
+		return this.each(
+			function (i, e) {
+				var $this = $(e);
+				var $form = $this.closest('form');
+				
+				$this.click(
+					function () {
+						if (confirm('Do you really want to calibrate?')) {
+							var names = $this.attr('class').split(/\s+/);
+							var data = {CalcCalibration: 1};
+							$form.find('[name='+names.join('],[name=')+']').each(
+								function (i, e) {
+									var $e = $(e);
+									$e.trigger('toJSON');
+									data[e.name] = $e.data('JSON') ? $e.data('JSON') : $e.val();
+								}
+							);
+							$form.trigger('post8266', data);
 						}
 					}
 				);

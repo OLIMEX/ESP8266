@@ -68,7 +68,9 @@ LOCAL void ICACHE_FLASH_ATTR devices_init_done() {
 	stdout_init(UART1);
 #else
 	if (device_get_uart() == UART_NONE) {
+		#ifndef DIMMER_REV_A // DIMMER - Revision A
 		stdout_init(UART0);
+		#endif
 	} else {
 		#if WIFI_DEBUG_ENABLE
 		stdout_wifi_debug();
@@ -100,6 +102,9 @@ void ICACHE_FLASH_ATTR devices_down() {
 			timeout += DEVICES_TIMEOUT;
 		}
 	}
+#if UART0_SWAP
+	setTimeout(system_uart_de_swap, NULL, timeout);
+#endif
 }
 
 void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url, void_func init, void_func down) {

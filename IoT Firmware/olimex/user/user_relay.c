@@ -5,6 +5,7 @@
 #include "osapi.h"
 #include "stdout.h"
 #include "gpio.h"
+#include "gpio_config.h"
 
 #include "json/jsonparse.h"
 
@@ -17,6 +18,12 @@
 
 LOCAL uint8  relay_state = 0;
 LOCAL uint32 relay_timer = 0;
+
+LOCAL gpio_config relay_hardware = {
+	.gpio_id    = 5,
+	.gpio_name  = PERIPHS_IO_MUX_GPIO5_U,
+	.gpio_func  = FUNC_GPIO5
+};
 
 LOCAL void ICACHE_FLASH_ATTR user_relay_state(char *response) {
 	char data_str[WEBSERVER_MAX_VALUE];
@@ -37,7 +44,7 @@ uint8 ICACHE_FLASH_ATTR user_relay_get() {
 
 LOCAL void ICACHE_FLASH_ATTR user_relay_set(uint8 state) {
 	if (relay_timer == 0) {
-		GPIO_OUTPUT_SET(GPIO_ID_PIN(5), state);
+		GPIO_OUTPUT_SET(GPIO_ID_PIN(relay_hardware.gpio_id), state);
 		relay_state = state;
 #if DEVICE == PLUG		
 		plug_led(PLUG_LED2, relay_state);
@@ -101,7 +108,8 @@ void ICACHE_FLASH_ATTR relay_handler(
 }
 
 void ICACHE_FLASH_ATTR user_relay_init() {
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
+	PIN_FUNC_SELECT(relay_hardware.gpio_name, relay_hardware.gpio_func);
+	relay_state = GPIO_INPUT_GET(GPIO_ID_PIN(relay_hardware.gpio_id));
 	webserver_register_handler_callback(RELAY_URL, relay_handler);
 	device_register(NATIVE, 0, RELAY_URL, NULL, NULL);
 }

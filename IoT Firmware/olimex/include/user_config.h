@@ -16,19 +16,44 @@
  ***********************************************/
 	#define EVB_ONLY                           1
 	#define PLUG                               2
-	#define SWITCH2                            3
-	#define BADGE                              4
+	#define SWITCH1                            3
+	#define SWITCH2                            4
+	#define BADGE                              5
+	#define DIMMER                             6
 	
 /***********************************************
  * Modules conditional compiling
  ***********************************************/
 	#if DEVICE == PLUG
 		#define UART0_SWAP                     0
-		#define UART1_ENABLE                   0
+		#define UART1_ENABLE                   1
+		
+		// ESP8266-EVB native
+		#define BUTTON_ENABLE                  1
+		#define RELAY_ENABLE                   1
+		#define ADC_ENABLE                     0
+		// ESP8266-EVB-BAT native
+		#define BATTERY_ENABLE                 0
+		
+		// UEXT modules
+		// UART
+		#define MOD_RFID_ENABLE                0
+		#define MOD_FINGER_ENABLE              0
+		#define MOD_EMTR_ENABLE                1
+		// I2C
+		#define MOD_RGB_ENABLE                 0
+		#define MOD_TC_MK2_ENABLE              0
+		#define MOD_IO2_ENABLE                 0
+		#define MOD_IRDA_ENABLE                0
+		// SPI
+		#define MOD_LED_8x8_RGB_ENABLE         0
+	#elif DEVICE == SWITCH1
+		#define UART0_SWAP                     0
+		#define UART1_ENABLE                   1
 		
 		// ESP8266-EVB native
 		#define BUTTON_ENABLE                  0
-		#define RELAY_ENABLE                   1
+		#define RELAY_ENABLE                   0
 		#define ADC_ENABLE                     0
 		// ESP8266-EVB-BAT native
 		#define BATTERY_ENABLE                 0
@@ -47,7 +72,7 @@
 		#define MOD_LED_8x8_RGB_ENABLE         0
 	#elif DEVICE == SWITCH2
 		#define UART0_SWAP                     0
-		#define UART1_ENABLE                   0
+		#define UART1_ENABLE                   1
 		
 		// ESP8266-EVB native
 		#define BUTTON_ENABLE                  0
@@ -78,6 +103,31 @@
 		#define ADC_ENABLE                     0
 		// ESP8266-EVB-BAT native
 		#define BATTERY_ENABLE                 1
+		
+		// UEXT modules
+		// UART
+		#define MOD_RFID_ENABLE                0
+		#define MOD_FINGER_ENABLE              0
+		#define MOD_EMTR_ENABLE                0
+		// I2C
+		#define MOD_RGB_ENABLE                 0
+		#define MOD_TC_MK2_ENABLE              0
+		#define MOD_IO2_ENABLE                 0
+		#define MOD_IRDA_ENABLE                0
+		// SPI
+		#define MOD_LED_8x8_RGB_ENABLE         0
+	#elif DEVICE == DIMMER
+		#define DIMMER_REV_A                   1
+		
+		#define UART0_SWAP                     0
+		#define UART1_ENABLE                   0
+		
+		// ESP8266-EVB native
+		#define BUTTON_ENABLE                  0
+		#define RELAY_ENABLE                   0
+		#define ADC_ENABLE                     0
+		// ESP8266-EVB-BAT native
+		#define BATTERY_ENABLE                 0
 		
 		// UEXT modules
 		// UART
@@ -183,8 +233,12 @@
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_BADGE"
 	#elif  DEVICE == PLUG
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_PLUG"
+	#elif  DEVICE == SWITCH1
+		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_SWITCH1"
 	#elif  DEVICE == SWITCH2
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_SWITCH2"
+	#elif  DEVICE == DIMMER
+		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_DIMMER"
 	#else
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_OLIMEX"
 	#endif

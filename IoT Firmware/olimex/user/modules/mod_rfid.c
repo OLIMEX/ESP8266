@@ -129,7 +129,7 @@ void ICACHE_FLASH_ATTR rfid_init() {
 	
 	rfid_module module = MOD_RFID125;
 	
-	stdout_disable();
+	// stdout_disable();
 	uart_char_in_set(rfid_char_in);
 	
 	if (module == MOD_RFID125 || module == RFID_ANY) {

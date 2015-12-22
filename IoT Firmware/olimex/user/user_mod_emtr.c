@@ -16,15 +16,20 @@
 #include "user_devices.h"
 
 #include "user_mod_emtr.h"
+#include "user_plug.h"
+#include "user_switch1.h"
+#include "user_switch2.h"
 #include "modules/mod_emtr.h"
 
 LOCAL struct {
 	emtr_calibration_registers *calibration;
 	emtr_event_registers       *event;
-} emtr_registers = {NULL, NULL};
+	emtr_output_registers      *output;
+} emtr_registers = {NULL, NULL, NULL};
 
-LOCAL emtr_mode emtr_current_mode  = EMTR_LOG;
-LOCAL uint32    emtr_read_interval = 1000;
+LOCAL emtr_mode emtr_current_mode     = EMTR_LOG;
+LOCAL uint32    emtr_read_interval    = EMTR_DEFAULT_READ_INTERVAL;
+LOCAL uint32    emtr_single_wire_read = false;
 
 LOCAL const char ICACHE_FLASH_ATTR *emtr_mode_str(uint8 mode) {
 	switch (mode) {
@@ -47,6 +52,57 @@ LOCAL void ICACHE_FLASH_ATTR emtr_calibration_done(emtr_packet *packet) {
 	}
 	
 	emtr_parse_calibration(packet, emtr_registers.calibration);
+	
+	char response[WEBSERVER_MAX_RESPONSE_LEN];
+	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
+	json_data(
+		response, MOD_EMTR, OK_STR,
+		json_sprintf(
+			data_str,
+			"\"GainCurrentRMS\" : %d, "
+			"\"GainVoltageRMS\" : %d, "
+			"\"GainActivePower\" : %d, "
+			"\"GainReactivePower\" : %d, "
+			"\"OffsetCurrentRMS\" : %d, "
+			"\"OffsetActivePower\" : %d, "
+			"\"OffsetReactivePower\" : %d, "
+			"\"DCOffsetCurrent\" : %d, "
+			"\"PhaseCompensation\" : %d, "
+			"\"ApparentPowerDivisor\" : %d, "
+			"\"SystemConfiguration\" : \"0x%08X\", "
+			"\"DIOConfiguration\" : \"0x%04X\", "
+			"\"Range\" : \"0x%08X\", "
+			
+			"\"CalibrationCurrent\" : %d, "
+			"\"CalibrationVoltage\" : %d, "
+			"\"CalibrationActivePower\" : %d, "
+			"\"CalibrationReactivePower\" : %d, "
+			"\"AccumulationInterval\" : %d",
+			
+			emtr_registers.calibration->gain_current_rms,
+			emtr_registers.calibration->gain_voltage_rms,
+			emtr_registers.calibration->gain_active_power,
+			emtr_registers.calibration->gain_reactive_power,
+			emtr_registers.calibration->offset_current_rms,
+			emtr_registers.calibration->offset_active_power,
+			emtr_registers.calibration->offset_reactive_power,
+			emtr_registers.calibration->dc_offset_current,
+			emtr_registers.calibration->phase_compensation,
+			emtr_registers.calibration->apparent_power_divisor,
+			emtr_registers.calibration->system_configuration,
+			emtr_registers.calibration->dio_configuration,
+			emtr_registers.calibration->range,
+			
+			emtr_registers.calibration->calibration_current,
+			emtr_registers.calibration->calibration_voltage,
+			emtr_registers.calibration->calibration_active_power,
+			emtr_registers.calibration->calibration_reactive_power,
+			emtr_registers.calibration->accumulation_interval
+		),
+		NULL
+	);
+	
+	user_event_raise(EMTR_URL, response);
 }
 
 LOCAL void ICACHE_FLASH_ATTR emtr_event_done(emtr_packet *packet) {
@@ -62,12 +118,66 @@ LOCAL void ICACHE_FLASH_ATTR emtr_event_done(emtr_packet *packet) {
 	}
 	
 	emtr_parse_event(packet, emtr_registers.event);
+	
+	char response[WEBSERVER_MAX_RESPONSE_LEN];
+	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
+	json_data(
+		response, MOD_EMTR, OK_STR,
+		json_sprintf(
+			data_str,
+			"\"OverCurrentLimit\" : %d, "
+			"\"OverPowerLimit\" : %d, "
+			"\"OverFrequencyLimit\" : %d, "
+			"\"UnderFrequencyLimit\" : %d, "
+			"\"OverTemperatureLimit\" : %d, "
+			"\"UnderTemperatureLimit\" : %d, "
+			"\"VoltageSagLimit\" : %d, "
+			"\"VoltageSurgeLimit\" : %d, "
+			"\"OverCurrentHold\" : %d, "
+			"\"OverPowerHold\" : %d, "
+			"\"OverFrequencyHold\" : %d, "
+			"\"UnderFrequencyHold\" : %d, "
+			"\"OverTemperatureHold\" : %d, "
+			"\"UnderTemperatureHold\" : %d, "
+			"\"EventEnable\" : %d, "
+			"\"EventMaskCritical\" : %d, "
+			"\"EventMaskStandard\" : %d, "
+			"\"EventTest\" : %d, "
+			"\"EventClear\" : %d",
+			
+			emtr_registers.event->over_current_limit,
+			emtr_registers.event->over_power_limit,
+			emtr_registers.event->over_frequency_limit,
+			emtr_registers.event->under_frequency_limit,
+			emtr_registers.event->over_temperature_limit,
+			emtr_registers.event->under_temperature_limit,
+			emtr_registers.event->voltage_sag_limit,
+			emtr_registers.event->voltage_surge_limit,
+			emtr_registers.event->over_current_hold,
+			emtr_registers.event->over_power_hold,
+			emtr_registers.event->over_frequency_hold,
+			emtr_registers.event->under_frequency_hold,
+			emtr_registers.event->over_temperature_hold,
+			emtr_registers.event->under_temperature_hold,
+			emtr_registers.event->event_enable,
+			emtr_registers.event->event_mask_critical,
+			emtr_registers.event->event_mask_standard,
+			emtr_registers.event->event_test,
+			emtr_registers.event->event_clear
+		),
+		NULL
+	);
+	
+	user_event_raise(EMTR_URL, response);
 }
 
 LOCAL void emtr_start_read();
 
 LOCAL void ICACHE_FLASH_ATTR emtr_timeout() {
 	char response[WEBSERVER_MAX_VALUE];
+	
+	debug("EMTR: %s\n", TIMEOUT);
+	
 	json_error(response, MOD_EMTR, TIMEOUT, NULL);
 	user_event_raise(EMTR_URL, response);
 	
@@ -76,7 +186,6 @@ LOCAL void ICACHE_FLASH_ATTR emtr_timeout() {
 }
 
 LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
-	LOCAL emtr_output_registers *registers = NULL;
 	LOCAL uint32 time = 0;
 	LOCAL uint32 interval = 0;
 	LOCAL uint32 now = 0;
@@ -89,14 +198,15 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 	;
 	time = now;
 	
-	if (registers == NULL) {
-		registers = (emtr_output_registers *)os_zalloc(sizeof(emtr_output_registers));
+	if (emtr_registers.output == NULL) {
+		emtr_registers.output = (emtr_output_registers *)os_zalloc(sizeof(emtr_output_registers));
 	}
 	
-	emtr_parse_output(packet, registers);
-	
-	char event_str[20];
-	os_memset(event_str, 0, sizeof(event_str));
+	if (emtr_single_wire_read) {
+		emtr_parse_single_wire(packet, emtr_registers.output);
+	} else {
+		emtr_parse_output(packet, emtr_registers.output);
+	}
 	
 	char response[WEBSERVER_MAX_RESPONSE_LEN];
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
@@ -124,30 +234,30 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 			emtr_counter_apparent(),
 			interval,
 			
-			registers->current_rms,
-			registers->voltage_rms,
-			registers->active_power,
-			registers->reactive_power,
-			registers->apparent_power,
-			registers->power_factor,
-			registers->line_frequency,
-			registers->thermistor_voltage,
-			registers->event_flag,
-			registers->system_status
+			emtr_registers.output->current_rms,
+			emtr_registers.output->voltage_rms,
+			emtr_registers.output->active_power,
+			emtr_registers.output->reactive_power,
+			emtr_registers.output->apparent_power,
+			emtr_registers.output->power_factor,
+			emtr_registers.output->line_frequency,
+			emtr_registers.output->thermistor_voltage,
+			emtr_registers.output->event_flag,
+			emtr_registers.output->system_status
 		),
 		NULL
 	);
 	
 	emtr_counter_add(
-		registers->active_power * interval / 1000, 
-		registers->apparent_power * interval / 1000
+		emtr_registers.output->active_power   * interval / 1000, 
+		emtr_registers.output->apparent_power * interval / 1000
 	);
 	
 	user_event_raise(EMTR_URL, response);
 	emtr_start_read();
 	
-	if (registers->event_flag != 0) {
-		emtr_clear_event(registers->event_flag, NULL);
+	if (emtr_registers.output->event_flag != 0) {
+		emtr_clear_event(emtr_registers.output->event_flag, NULL);
 	}
 }
 
@@ -173,6 +283,9 @@ LOCAL void ICACHE_FLASH_ATTR emtr_events_read() {
 
 LOCAL void ICACHE_FLASH_ATTR emtr_start_read() {
 LOCAL uint32  emtr_read_timer = 0;
+// FIXME initial system_configuration
+LOCAL uint32  system_configuration = 0x03000000;
+	
 	if (device_get_uart() != UART_EMTR) {
 #if EMTR_DEBUG
 		debug("EMTR: %s\n", DEVICE_NOT_FOUND);
@@ -181,9 +294,28 @@ LOCAL uint32  emtr_read_timer = 0;
 	}
 	
 	clearTimeout(emtr_read_timer);
-	emtr_read_timer = setTimeout(emtr_get_output, emtr_read_done, emtr_read_interval);
+	if (emtr_single_wire_read) {
+		emtr_single_wire_start(system_configuration, emtr_read_done);
+		system_configuration = system_configuration | 0x00000100;
+	} else {
+		emtr_read_timer = setTimeout(emtr_get_output, emtr_read_done, emtr_read_interval);
+	}
 }
 
+LOCAL void ICACHE_FLASH_ATTR emtr_reset(emtr_packet *packet) {
+#if DEVICE == PLUG
+	plug_down();
+	setTimeout(plug_init, NULL, EMTR_RESET_TIMEOUT);
+#endif
+#if DEVICE == SWITCH1
+	switch1_down();
+	setTimeout(switch1_init, NULL, EMTR_RESET_TIMEOUT);
+#endif
+#if DEVICE == SWITCH2
+	switch2_down();
+	setTimeout(switch1_init, NULL, EMTR_RESET_TIMEOUT);
+#endif
+}
 
 void ICACHE_FLASH_ATTR emtr_handler(
 	struct espconn *pConnection, 
@@ -207,10 +339,18 @@ void ICACHE_FLASH_ATTR emtr_handler(
 	if (emtr_registers.event == NULL) {
 		emtr_registers.event = (emtr_event_registers *)os_zalloc(sizeof(emtr_event_registers));
 	}
-		
+	
+	if (emtr_registers.output == NULL) {
+		emtr_registers.output = (emtr_output_registers *)os_zalloc(sizeof(emtr_output_registers));
+	}
+	
 	struct jsonparse_state parser;
 	int type;
+	
 	bool set_counter = false;
+	bool set_calibration = false;
+	bool calc_calibration = false;
+	
 	emtr_mode mode = emtr_current_mode;
 	_uint64_ counter_active = emtr_counter_active();
 	_uint64_ counter_apparent = emtr_counter_apparent();
@@ -324,6 +464,154 @@ void ICACHE_FLASH_ATTR emtr_handler(
 						jsonparse_next(&parser);
 						emtr_registers.event->event_clear = jsonparse_get_value_as_int(&parser);
 					}
+				} else if (mode == EMTR_CALIBRATION) {
+					if (jsonparse_strcmp_value(&parser, "CalcCalibration") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						calc_calibration = jsonparse_get_value_as_int(&parser);
+					} else if (jsonparse_strcmp_value(&parser, "GainCurrentRMS") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint32 value = jsonparse_get_value_as_int(&parser);
+						if (value) {
+							emtr_registers.calibration->gain_current_rms = value;
+							set_calibration = true;
+						}
+					} else if (jsonparse_strcmp_value(&parser, "GainVoltageRMS") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint32 value = jsonparse_get_value_as_int(&parser);
+						if (value) {
+							emtr_registers.calibration->gain_voltage_rms = value;
+							set_calibration = true;
+						}
+					} else if (jsonparse_strcmp_value(&parser, "GainActivePower") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint32 value = jsonparse_get_value_as_int(&parser);
+						if (value) {
+							emtr_registers.calibration->gain_active_power = value;
+							set_calibration = true;
+						}
+					} else if (jsonparse_strcmp_value(&parser, "GainReactivePower") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint32 value = jsonparse_get_value_as_int(&parser);
+						if (value) {
+							emtr_registers.calibration->gain_reactive_power = value;
+							set_calibration = true;
+						}
+					} else if (jsonparse_strcmp_value(&parser, "OffsetCurrentRMS") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						sint32 value = jsonparse_get_value_as_sint(&parser);
+						emtr_registers.calibration->offset_current_rms = value;
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "OffsetActivePower") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						sint32 value = jsonparse_get_value_as_sint(&parser);
+						emtr_registers.calibration->offset_active_power = value;
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "OffsetReactivePower") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						sint32 value = jsonparse_get_value_as_sint(&parser);
+						emtr_registers.calibration->offset_reactive_power = value;
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "DCOffsetCurrent") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						sint16 value = jsonparse_get_value_as_sint(&parser);
+						emtr_registers.calibration->dc_offset_current = value;
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "PhaseCompensation") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						sint16 value = jsonparse_get_value_as_sint(&parser);
+						emtr_registers.calibration->phase_compensation = value;
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "ApparentPowerDivisor") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint16 value = jsonparse_get_value_as_int(&parser);
+						emtr_registers.calibration->apparent_power_divisor = value;
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "SystemConfiguration") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint32 value = jsonparse_get_value_as_int(&parser);
+						emtr_registers.calibration->system_configuration = value;
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "DIOConfiguration") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint32 value = jsonparse_get_value_as_int(&parser);
+						if (value) {
+							emtr_registers.calibration->dio_configuration = value;
+							set_calibration = true;
+						}
+					} else if (jsonparse_strcmp_value(&parser, "Range") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint32 value = jsonparse_get_value_as_int(&parser);
+						if (value) {
+							emtr_registers.calibration->range = value;
+							set_calibration = true;
+						}
+					} else if (jsonparse_strcmp_value(&parser, "AccumulationInterval") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						uint32 value = jsonparse_get_value_as_int(&parser);
+						if (value) {
+							emtr_registers.calibration->accumulation_interval = value;
+							set_calibration = true;
+						}
+					} else if (jsonparse_strcmp_value(&parser, "CalibrationCurrent") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						emtr_registers.calibration->calibration_current = jsonparse_get_value_as_int(&parser);
+						if (calc_calibration) {
+							emtr_calibration_calc(
+								emtr_registers.calibration,
+								8,
+								emtr_registers.calibration->calibration_current,
+								emtr_registers.output->current_rms
+							);
+						}
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "CalibrationVoltage") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						emtr_registers.calibration->calibration_voltage = jsonparse_get_value_as_int(&parser);
+						if (calc_calibration) {
+							emtr_calibration_calc(
+								emtr_registers.calibration,
+								0,
+								emtr_registers.calibration->calibration_voltage,
+								emtr_registers.output->voltage_rms
+							);
+						}
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "CalibrationActivePower") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						emtr_registers.calibration->calibration_active_power = jsonparse_get_value_as_int(&parser);
+						if (calc_calibration) {
+							emtr_calibration_calc(
+								emtr_registers.calibration,
+								16,
+								emtr_registers.calibration->calibration_active_power,
+								emtr_registers.output->active_power
+							);
+						}
+						set_calibration = true;
+					} else if (jsonparse_strcmp_value(&parser, "CalibrationReactivePower") == 0) {
+						jsonparse_next(&parser);
+						jsonparse_next(&parser);
+						emtr_registers.calibration->calibration_reactive_power = jsonparse_get_value_as_int(&parser);
+						set_calibration = true;
+					}
 				}
 			}
 		}
@@ -333,148 +621,41 @@ void ICACHE_FLASH_ATTR emtr_handler(
 		}
 		
 		if (set_counter) {
-			emtr_set_counter(counter_active, counter_apparent, NULL);
+			emtr_set_counter(counter_active, counter_apparent, emtr_reset);
+		}
+		
+		if (set_calibration) {
+			emtr_set_calibration(emtr_registers.calibration, emtr_reset);
 		}
 	}
 	
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
-	if (emtr_current_mode == EMTR_CALIBRATION) {
-		json_data(
-			response, MOD_EMTR, OK_STR,
-			json_sprintf(
-				data_str,
-				"\"Address\" : \"0x%04X\", "
-				"\"Mode\" : \"%s\", "
-				"\"CounterActive\" : %d, "
-				"\"CounterApparent\" : %d, "
-				"\"ReadInterval\" : %d, "
-				
-				"\"GainCurrentRMS\" : %d, "
-				"\"GainVoltageRMS\" : %d, "
-				"\"GainActivePower\" : %d, "
-				"\"GainReactivePower\" : %d, "
-				"\"OffsetCurrentRMS\" : %d, "
-				"\"OffsetActivePower\" : %d, "
-				"\"OffsetReactivePower\" : %d, "
-				"\"DCOffsetCurrent\" : %d, "
-				"\"PhaseCompensation\" : %d, "
-				"\"ApparentPowerDivisor\" : %d, "
-				"\"SystemConfiguration\" : \"0x%08X\", "
-				"\"DIOConfiguration\" : \"0x%04X\", "
-				"\"Range\" : \"0x%08X\", "
-				
-				"\"CalibrationCurrent\" : %d, "
-				"\"CalibrationVoltage\" : %d, "
-				"\"CalibrationActivePower\" : %d, "
-				"\"CalibrationReactivePower\" : %d, "
-				"\"AccumulationInterval\" : %d",
-				emtr_address(),
-				emtr_mode_str(emtr_current_mode),
-				emtr_counter_active(),
-				emtr_counter_apparent(),
-				emtr_read_interval,
-				
-				emtr_registers.calibration->gain_current_rms,
-				emtr_registers.calibration->gain_voltage_rms,
-				emtr_registers.calibration->gain_active_power,
-				emtr_registers.calibration->gain_reactive_power,
-				emtr_registers.calibration->offset_current_rms,
-				emtr_registers.calibration->offset_active_power,
-				emtr_registers.calibration->offset_reactive_power,
-				emtr_registers.calibration->dc_offset_current,
-				emtr_registers.calibration->phase_compensation,
-				emtr_registers.calibration->apparent_power_divisor,
-				emtr_registers.calibration->system_configuration,
-				emtr_registers.calibration->dio_configuration,
-				emtr_registers.calibration->range,
-				
-				emtr_registers.calibration->calibration_current,
-				emtr_registers.calibration->calibration_voltage,
-				emtr_registers.calibration->calibration_active_power,
-				emtr_registers.calibration->calibration_reactive_power,
-				emtr_registers.calibration->accumulation_interval
-			),
-			NULL
-		);
-		setTimeout(emtr_calibration_read, NULL, 1500);
-	} else if (emtr_current_mode == EMTR_CONFIGURE) {
-		json_data(
-			response, MOD_EMTR, OK_STR,
-			json_sprintf(
-				data_str,
-				"\"Address\" : \"0x%04X\", "
-				"\"Mode\" : \"%s\", "
-				"\"CounterActive\" : %d, "
-				"\"CounterApparent\" : %d, "
-				"\"ReadInterval\" : %d, "
-				
-				"\"OverCurrentLimit\" : %d, "
-				"\"OverPowerLimit\" : %d, "
-				"\"OverFrequencyLimit\" : %d, "
-				"\"UnderFrequencyLimit\" : %d, "
-				"\"OverTemperatureLimit\" : %d, "
-				"\"UnderTemperatureLimit\" : %d, "
-				"\"VoltageSagLimit\" : %d, "
-				"\"VoltageSurgeLimit\" : %d, "
-				"\"OverCurrentHold\" : %d, "
-				"\"OverPowerHold\" : %d, "
-				"\"OverFrequencyHold\" : %d, "
-				"\"UnderFrequencyHold\" : %d, "
-				"\"OverTemperatureHold\" : %d, "
-				"\"UnderTemperatureHold\" : %d, "
-				"\"EventEnable\" : %d, "
-				"\"EventMaskCritical\" : %d, "
-				"\"EventMaskStandard\" : %d, "
-				"\"EventTest\" : %d, "
-				"\"EventClear\" : %d",
-				emtr_address(),
-				emtr_mode_str(emtr_current_mode),
-				emtr_counter_active(),
-				emtr_counter_apparent(),
-				emtr_read_interval,
-				
-				emtr_registers.event->over_current_limit,
-				emtr_registers.event->over_power_limit,
-				emtr_registers.event->over_frequency_limit,
-				emtr_registers.event->under_frequency_limit,
-				emtr_registers.event->over_temperature_limit,
-				emtr_registers.event->under_temperature_limit,
-				emtr_registers.event->voltage_sag_limit,
-				emtr_registers.event->voltage_surge_limit,
-				emtr_registers.event->over_current_hold,
-				emtr_registers.event->over_power_hold,
-				emtr_registers.event->over_frequency_hold,
-				emtr_registers.event->under_frequency_hold,
-				emtr_registers.event->over_temperature_hold,
-				emtr_registers.event->under_temperature_hold,
-				emtr_registers.event->event_enable,
-				emtr_registers.event->event_mask_critical,
-				emtr_registers.event->event_mask_standard,
-				emtr_registers.event->event_test,
-				emtr_registers.event->event_clear
-			),
-			NULL
-		);
-		setTimeout(emtr_events_read, NULL, 1500);
-	} else {
-		json_data(
-			response, MOD_EMTR, OK_STR,
-			json_sprintf(
-				data_str,
-				"\"Address\" : \"0x%04X\", "
-				"\"Mode\" : \"%s\", "
-				"\"CounterActive\" : %d, "
-				"\"CounterApparent\" : %d, "
-				"\"ReadInterval\" : %d",
-				emtr_address(),
-				emtr_mode_str(emtr_current_mode),
-				emtr_counter_active(),
-				emtr_counter_apparent(),
-				emtr_read_interval
-			),
-			NULL
-		);
+	
+	if (emtr_current_mode == EMTR_CONFIGURE) {
+		setTimeout(emtr_events_read, NULL, 1000);
 	}
+	
+	if (emtr_current_mode == EMTR_CALIBRATION) {
+		setTimeout(emtr_calibration_read, NULL, 1000);
+	}
+	
+	json_data(
+		response, MOD_EMTR, OK_STR,
+		json_sprintf(
+			data_str,
+			"\"Address\" : \"0x%04X\", "
+			"\"Mode\" : \"%s\", "
+			"\"CounterActive\" : %d, "
+			"\"CounterApparent\" : %d, "
+			"\"ReadInterval\" : %d",
+			emtr_address(),
+			emtr_mode_str(emtr_current_mode),
+			emtr_counter_active(),
+			emtr_counter_apparent(),
+			emtr_read_interval
+		),
+		NULL
+	);
 	
 	emtr_start_read();
 }

@@ -433,6 +433,15 @@ typedef void (*dns_found_callback)(const char *name, ip_addr_t *ipaddr, void *ca
 err_t espconn_gethostbyname(struct espconn *pespconn, const char *hostname, ip_addr_t *addr, dns_found_callback found);
 
 /******************************************************************************
+ * FunctionName : espconn_abort
+ * Description  : Forcely abort with host
+ * Parameters   : espconn -- the espconn used to connect with the host
+ * Returns      : result
+*******************************************************************************/
+
+sint8 espconn_abort(struct espconn *espconn);
+
+/******************************************************************************
  * FunctionName : espconn_encry_connect
  * Description  : The function given as connection
  * Parameters   : espconn -- the espconn used to connect with the host
@@ -564,10 +573,19 @@ bool espconn_secure_set_default_private_key(const uint8* private_key, uint16 len
  * FunctionName : espconn_secure_accept
  * Description  : The function given as the listen
  * Parameters   : espconn -- the espconn used to listen the connection
- * Returns      : none
+ * Returns      : result
 *******************************************************************************/
 
 sint8 espconn_secure_accept(struct espconn *espconn);
+
+/******************************************************************************
+ * FunctionName : espconn_secure_accepts
+ * Description  : delete the secure server host
+ * Parameters   : espconn -- the espconn used to listen the connection
+ * Returns      : result
+*******************************************************************************/
+
+sint8 espconn_secure_delete(struct espconn *espconn);
 
 /******************************************************************************
  * FunctionName : espconn_igmp_join

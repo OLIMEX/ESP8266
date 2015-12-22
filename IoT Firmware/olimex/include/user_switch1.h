@@ -1,22 +1,22 @@
-#ifndef __USER_SWITCH2_H__
-	#define __USER_SWITCH2_H__
+#ifndef __USER_SWITCH1_H__
+	#define __USER_SWITCH1_H__
 	
 	#include "user_config.h"
-	#if DEVICE == SWITCH2
+	#if DEVICE == SWITCH1
 
 		#include "user_webserver.h"
 		#include "user_devices.h"
 		#include "gpio_config.h"
 		
-		#define SWITCH2_URL              "/switch2"
-		#define SWITCH2_DEBUG            1
+		#define SWITCH1_URL              "/switch1"
+		#define SWITCH1_DEBUG            1
 		
 		typedef enum {
-			SWITCH2_RELAY = 1,
-			SWITCH2_SWITCH
-		} switch2_type;
+			SWITCH1_RELAY = 1,
+			SWITCH1_SWITCH
+		} switch1_type;
 		
-		typedef struct _switch2_config_ {
+		typedef struct _switch1_config_ {
 			uint8       id;
 			uint8       type;
 			
@@ -25,9 +25,9 @@
 			void_func   handler;
 			uint8       state;
 			uint8       state_buf;
-		} switch2_config;
+		} switch1_config;
 		
-		void switch2_handler(
+		void switch1_handler(
 			struct espconn *pConnection, 
 			request_method method, 
 			char *url, 
@@ -38,9 +38,9 @@
 			uint16 response_len
 		);
 		
-		void switch2_init();
-		void switch2_down();
+		void switch1_init();
+		void switch1_down();
 		
-		void user_switch2_init();
+		void user_switch1_init();
 	#endif
 #endif

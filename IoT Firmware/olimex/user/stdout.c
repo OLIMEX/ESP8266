@@ -62,8 +62,6 @@ void ICACHE_FLASH_ATTR stdout_init(uint8 uart) {
 	uart_init(uart, BIT_RATE_115200, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
 	if (uart == UART0) {
 		uart_char_in_set(uart_write_char);
-	} else {
-		uart_char_in_set(NULL);
 	}
 	stdout_uart_debug(uart);
 }

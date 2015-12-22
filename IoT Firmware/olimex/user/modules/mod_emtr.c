@@ -17,9 +17,10 @@ LOCAL emtr_packet *emtr_receive_packet = NULL;
 
 LOCAL bool emtr_ask_only = false;
 
-LOCAL emtr_callback emtr_command_done    = NULL;
-LOCAL void_func     emtr_command_timeout = NULL;
-LOCAL emtr_callback emtr_user_callback   = NULL;
+LOCAL emtr_callback emtr_command_done     = NULL;
+LOCAL emtr_callback emtr_single_wire_done = NULL;
+LOCAL void_func     emtr_command_timeout  = NULL;
+LOCAL emtr_callback emtr_user_callback    = NULL;
 
 LOCAL uint32 emtr_timeout = 0;
 
@@ -30,7 +31,6 @@ LOCAL emtr_sys_params emtr_params = {
 };
 
 void ICACHE_FLASH_ATTR emtr_clear_timeout() {
-	debug("EMTR: %s\n", TIMEOUT);
 	emtr_timeout = 0;
 }
 
@@ -43,12 +43,22 @@ LOCAL uint8 ICACHE_FLASH_ATTR emtr_check_sum(emtr_packet *packet) {
 		return 0;
 	}
 	
-	uint8 check_sum = packet->header + packet->len;
+	uint8 check_sum = 0;
+	if (packet->header == EMTR_SINGLE_WIRE_01) {
+		check_sum = 0;
+	} else {
+		check_sum = packet->header + packet->len;
+	}
+	
 	uint8 i;
 	for (i=0; i<packet->len-3; i++) {
 		check_sum += packet->data[i];
 	}
-	return check_sum;
+	return (packet->header == EMTR_SINGLE_WIRE_01 ? 
+		~check_sum 
+		:
+		check_sum
+	);
 }
 
 LOCAL void ICACHE_FLASH_ATTR emtr_packet_init(emtr_packet **packet, uint8 header, uint8 len) {
@@ -84,7 +94,7 @@ LOCAL void ICACHE_FLASH_ATTR emtr_receive(emtr_packet *packet) {
 	}
 	
 	if (packet->header == EMTR_ERROR_CRC) {
-		debug("EMTR: Wrong checksum sent\n");
+		debug("EMTR: Wrong checksum\n");
 		goto clear;
 	}
 	
@@ -130,15 +140,52 @@ LOCAL void ICACHE_FLASH_ATTR emtr_receive(emtr_packet *packet) {
 	
 clear:	
 	clearTimeout(emtr_timeout);
-	emtr_timeout = 0;
+	emtr_clear_timeout();
+}
+
+LOCAL void ICACHE_FLASH_ATTR emtr_single_wire(emtr_packet *packet) {
+	if (packet->check_sum != emtr_check_sum(packet)) {
+		debug("EMTR: Single wire checksum not match [0x%02X] [0x%02X]\n", packet->check_sum, emtr_check_sum(packet));
+#if EMTR_DEBUG
+#if EMTR_VERBOSE_OUTPUT
+		debug("\nEMTR: Received packet\n");
+		debug("Header: 0x%02X\n", packet->header);
+		debug("Len: 0x%02X\n", packet->len);
+		debug("ASK only: 0x%02X\n", packet->ask_only);
+		if (packet->len > 0) {
+			debug("Data: ");
+			uint16 j;
+			for (j=0; j<packet->len-2; j++) {
+				debug("0x%02X ", packet->data[j]);
+			}
+		}
+		debug("\n\n");
+#endif
+#endif
+		return;
+	}
+	if (emtr_single_wire_done != NULL) {
+		(*emtr_single_wire_done)(packet);
+	}
 }
 
 LOCAL void ICACHE_FLASH_ATTR emtr_char_in(char c) {
 LOCAL emtr_state state = EMTR_STATE_IDLE;
 LOCAL uint8 count = 0;
+LOCAL bool  single_wire = false;
 	
 	if (state == EMTR_STATE_IDLE || state == EMTR_STATE_ERROR) {
+		single_wire = false;
 		emtr_packet_init(&emtr_receive_packet, EMTR_ACK_FRAME, 0);
+		
+		if (c == EMTR_SINGLE_WIRE_01) {
+			count = 0;
+			single_wire = true;
+			emtr_receive_packet->header = c;
+			state = EMTR_STATE_SINGLE_WIRE;
+			return;
+		}
+		
 		if (c == EMTR_ACK_FRAME) {
 			count = 1;
 			if (emtr_ask_only) {
@@ -160,6 +207,20 @@ LOCAL uint8 count = 0;
 		count = 0;
 		state = EMTR_STATE_ERROR;
 		return;
+	}
+	
+	if (state == EMTR_STATE_SINGLE_WIRE) {
+		count++;
+		
+		if (c == EMTR_SINGLE_WIRE_02) {
+			return;
+		}
+		
+		if (c == EMTR_SINGLE_WIRE_03) {
+			emtr_receive_packet->len = 15;
+			state = EMTR_STATE_DATA;
+			return;
+		}
 	}
 	
 	if (state == EMTR_STATE_LEN) {
@@ -185,7 +246,11 @@ LOCAL uint8 count = 0;
 			emtr_receive_packet->check_sum = (uint8)c;
 			state = EMTR_STATE_IDLE;
 			count = 0;
-			emtr_receive(emtr_receive_packet);
+			if (single_wire) {
+				emtr_single_wire(emtr_receive_packet);
+			} else {
+				emtr_receive(emtr_receive_packet);
+			}
 		}
 		return;
 	}
@@ -249,11 +314,29 @@ LOCAL _uint64_ emtr_extract_int(uint8 *data, uint8 offset, uint8 size) {
 	return result;
 }
 
-LOCAL emtr_set_int(_uint64_ value, uint8 *data, uint8 offset, uint8 size) {
+LOCAL void ICACHE_FLASH_ATTR emtr_set_int(_uint64_ value, uint8 *data, uint8 offset, uint8 size) {
 	uint8 i;
 	for (i=0; i<size; i++) {
 		data[offset+i] = ((value >> (i * 8)) & 0xFF);
 	}
+}
+
+void ICACHE_FLASH_ATTR emtr_parse_single_wire(emtr_packet *packet, emtr_output_registers *registers) {
+#if EMTR_DEBUG
+	debug("emtr_parse_single_wire()\n");
+#endif
+	if (packet->len != 15) {
+		os_memset(registers, 0, sizeof(emtr_output_registers));
+#if EMTR_DEBUG
+		debug("EMTR: clear output registers\n");
+#endif
+		return;
+	}
+	
+	registers->current_rms    = emtr_extract_int(packet->data,  0, 4);
+	registers->voltage_rms    = emtr_extract_int(packet->data,  4, 2);
+	registers->active_power   = emtr_extract_int(packet->data,  6, 4);
+	registers->line_frequency = emtr_extract_int(packet->data, 10, 2);
 }
 
 void ICACHE_FLASH_ATTR emtr_parse_output(emtr_packet *packet, emtr_output_registers *registers) {
@@ -261,6 +344,9 @@ void ICACHE_FLASH_ATTR emtr_parse_output(emtr_packet *packet, emtr_output_regist
 	debug("emtr_parse_output()\n");
 #endif
 	if (packet->len != EMTR_OUT_LEN+3) {
+#if EMTR_DEBUG
+		debug("EMTR: clear output registers\n");
+#endif
 		os_memset(registers, 0, sizeof(emtr_output_registers));
 		return;
 	}
@@ -345,6 +431,108 @@ void ICACHE_FLASH_ATTR emtr_get_calibration(emtr_callback command_done) {
 	packet->callback = command_done;
 	
 	emtr_send(packet);
+}
+
+void ICACHE_FLASH_ATTR emtr_set_calibration(emtr_calibration_registers *registers, emtr_callback command_done) {
+#if EMTR_DEBUG
+	debug("emtr_set_calibration()\n");
+#endif
+	emtr_packet *packet = NULL;
+	emtr_packet_init(&packet, EMTR_START_FRAME, 2+5+EMTR_CALIBRATION_LEN+2+1);
+	
+	packet->data[0] = EMTR_SET_ADDRESS;                    // Set address pointer
+	packet->data[1] = (EMTR_CALIBRATION_BASE >> 8) & 0xFF; // address
+	packet->data[2] = (EMTR_CALIBRATION_BASE >> 0) & 0xFF; // address
+	
+	packet->data[3] = EMTR_WRITE;                          // Write N bytes
+	packet->data[4] = EMTR_CALIBRATION_LEN;
+	
+	emtr_set_int(registers->gain_current_rms,            packet->data,  0+5, 2);
+	emtr_set_int(registers->gain_voltage_rms,            packet->data,  2+5, 2);
+	emtr_set_int(registers->gain_active_power,           packet->data,  4+5, 2);
+	emtr_set_int(registers->gain_reactive_power,         packet->data,  6+5, 2);
+	emtr_set_int(registers->offset_current_rms,          packet->data,  8+5, 4);
+	emtr_set_int(registers->offset_active_power,         packet->data, 12+5, 4);
+	emtr_set_int(registers->offset_reactive_power,       packet->data, 16+5, 4);
+	emtr_set_int(registers->dc_offset_current,           packet->data, 20+5, 2);
+	emtr_set_int(registers->phase_compensation,          packet->data, 22+5, 2);
+	emtr_set_int(registers->apparent_power_divisor,      packet->data, 24+5, 2);
+	
+	emtr_set_int(registers->system_configuration,        packet->data, 26+5, 4);
+	emtr_set_int(registers->dio_configuration,           packet->data, 30+5, 2);
+	emtr_set_int(registers->range,                       packet->data, 32+5, 4);
+	
+	emtr_set_int(registers->calibration_current,         packet->data, 36+5, 4);
+	emtr_set_int(registers->calibration_voltage,         packet->data, 40+5, 2);
+	emtr_set_int(registers->calibration_active_power,    packet->data, 42+5, 4);
+	emtr_set_int(registers->calibration_reactive_power,  packet->data, 46+5, 4);
+	emtr_set_int(registers->accumulation_interval,       packet->data, 50+5, 2);
+	
+	packet->data[EMTR_CALIBRATION_LEN+5] = EMTR_SAVE_REGISTERS;  // Save registers to flash
+	packet->data[EMTR_CALIBRATION_LEN+6] = emtr_address();       // Device address
+	
+	packet->ask_only = true;
+	packet->callback = command_done;
+	
+	emtr_send(packet);
+}
+
+LOCAL uint32 ICACHE_FLASH_ATTR emtr_get_range(emtr_calibration_registers *registers, uint8 shift) {
+	return (registers->range >> shift) & 0xFF;
+}
+
+LOCAL void ICACHE_FLASH_ATTR emtr_set_range(emtr_calibration_registers *registers, uint8 shift, uint32 range) {
+	uint32 old_range = emtr_get_range(registers, shift);
+	registers->range = registers->range ^ (old_range << shift);
+	registers->range = registers->range | (range << shift);
+}
+
+void ICACHE_FLASH_ATTR emtr_calibration_calc(emtr_calibration_registers *registers, uint8 range_shift, uint32 expected, uint32 measured) {
+	uint16 gain;
+	uint16 new_gain;
+	
+	if (measured == 0) {
+		return;
+	}
+	
+	gain = (range_shift == 0 ?
+		registers->gain_voltage_rms
+		:
+		(range_shift == 8 ?
+			registers->gain_current_rms
+			:
+			registers->gain_active_power
+		)
+	);
+	
+	uint32 range = emtr_get_range(registers, range_shift);
+	
+calc:
+	new_gain = gain * expected / measured;
+	
+	if (new_gain < 25000) {
+		range++;
+		if (measured > 6) {
+			measured = measured / 2;
+			goto calc;
+		}
+	}
+	
+	if (new_gain > 50000) {
+		range--;
+		measured = measured * 2;
+		goto calc;
+	}
+	
+	if (range_shift == 0) {
+		registers->gain_voltage_rms = new_gain;
+	} else if (range_shift == 8) {
+		registers->gain_current_rms = new_gain;
+	} else {
+		registers->gain_active_power = new_gain;
+	}
+	
+	emtr_set_range(registers, range_shift, range);
 }
 
 void ICACHE_FLASH_ATTR emtr_parse_event(emtr_packet *packet, emtr_event_registers *registers) {
@@ -495,7 +683,7 @@ void ICACHE_FLASH_ATTR emtr_get_address(emtr_callback command_done) {
 	emtr_packet *packet = NULL;
 	emtr_packet_init(&packet, EMTR_START_FRAME, 7);
 	
-	packet->data[0] = EMTR_SET_ADDRESS; // Set adress pointer
+	packet->data[0] = EMTR_SET_ADDRESS; // Set address pointer
 	packet->data[1] = 0x00;             // address
 	packet->data[2] = 0x26;             // address
 	packet->data[3] = EMTR_READ_16;     // Read 2 bytes
@@ -551,7 +739,7 @@ void ICACHE_FLASH_ATTR emtr_clear_event(uint16 event, emtr_callback command_done
 	emtr_packet *packet = NULL;
 	emtr_packet_init(&packet, EMTR_START_FRAME, 9);
 	
-	packet->data[0] = EMTR_SET_ADDRESS;    // Set adress pointer
+	packet->data[0] = EMTR_SET_ADDRESS;    // Set address pointer
 	packet->data[1] = 0x00;                // address
 	packet->data[2] = 0x92;                // address
 	packet->data[3] = EMTR_WRITE_16;       // Write 2 bytes
@@ -564,14 +752,70 @@ void ICACHE_FLASH_ATTR emtr_clear_event(uint16 event, emtr_callback command_done
 	emtr_send(packet);
 }
 
+void ICACHE_FLASH_ATTR emtr_set_system_configuration(uint32 system_configuration, uint16 interval, emtr_callback command_done) {
+#if EMTR_DEBUG
+	debug("emtr_set_system_configuration()\n");
+#endif
+	emtr_packet *packet = NULL;
+	emtr_packet_init(&packet, EMTR_START_FRAME, 17);
+	
+	packet->data[ 0] = EMTR_SET_ADDRESS;    // Set address pointer
+	packet->data[ 1] = 0x00;                // address
+	packet->data[ 2] = 0x42;                // address
+	packet->data[ 3] = EMTR_WRITE_32;       // Write 4 bytes
+	packet->data[ 4] = (system_configuration >> 24) & 0xFF; // system_configuration
+	packet->data[ 5] = (system_configuration >> 16) & 0xFF; // system_configuration
+	packet->data[ 6] = (system_configuration >>  8) & 0xFF; // system_configuration
+	packet->data[ 7] = (system_configuration >>  0) & 0xFF; // system_configuration
+	
+	packet->data[ 8] = EMTR_SET_ADDRESS;    // Set address pointer
+	packet->data[ 9] = 0x00;                // address
+	packet->data[10] = 0x5A;                // address
+	packet->data[11] = EMTR_WRITE_16;       // Write 2 bytes
+	packet->data[12] = (interval >>  8) & 0xFF; // interval
+	packet->data[13] = (interval >>  0) & 0xFF; // interval
+	
+	packet->ask_only = true;
+	packet->callback = command_done;
+	
+	emtr_send(packet);
+}
+
+void ICACHE_FLASH_ATTR emtr_single_wire_start(uint32 system_configuration, emtr_callback command_done) {
+#if EMTR_DEBUG
+	debug("emtr_single_wire_start()\n");
+#endif
+	
+	emtr_single_wire_done = command_done;
+	if ((system_configuration & (1 << 8)) != 0) {
+		return;
+	}
+	
+	system_configuration = system_configuration | (1 << 8);
+	emtr_set_system_configuration(system_configuration, 6, NULL);
+}
+
+void ICACHE_FLASH_ATTR emtr_single_wire_stop(uint32 system_configuration) {
+#if EMTR_DEBUG
+	debug("emtr_set_system_configuration()\n");
+#endif
+	
+	emtr_single_wire_done = NULL;
+	if ((system_configuration & (1 << 8)) == 0) {
+		return;
+	}
+	
+	system_configuration = system_configuration | (~(1 << 8));
+	emtr_set_system_configuration(system_configuration, 2, NULL);
+}
+
 void ICACHE_FLASH_ATTR emtr_init() {
 	if (device_get_uart() != UART_NONE) {
 		return;
 	}
 	
-	stdout_disable();
+	// stdout_disable();
 	uart_char_in_set(emtr_char_in);
-	
 	uart_init(UART0, BIT_RATE_4800, EIGHT_BITS, NONE_BITS, ONE_STOP_BIT);
 	
 	// Get address

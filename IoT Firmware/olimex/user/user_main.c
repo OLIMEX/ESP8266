@@ -36,8 +36,10 @@
 #include "user_battery.h"
 
 #include "user_plug.h"
+#include "user_switch1.h"
 #include "user_switch2.h"
 #include "user_badge.h"
+#include "user_dimmer.h"
 
 #include "user_events.h"
 #include "user_webserver.h"
@@ -76,6 +78,7 @@ void ICACHE_FLASH_ATTR user_init(void) {
 //	wifi_set_sleep_type(MODEM_SLEEP_T);
 	
 #if UART0_SWAP
+	stdout_disable();
 	system_uart_swap();
 #endif
 #if UART1_ENABLE
@@ -85,6 +88,9 @@ void ICACHE_FLASH_ATTR user_init(void) {
 	// UART Devices
 #if DEVICE == PLUG
 	user_plug_init();
+#endif
+#if DEVICE == SWITCH1
+	user_switch1_init();
 #endif
 #if DEVICE == SWITCH2
 	user_switch2_init();
@@ -145,6 +151,9 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #endif
 #if MOD_IRDA_ENABLE
 	mod_irda_init();
+#endif
+#if DEVICE == DIMMER
+	user_dimmer_init();
 #endif
 #endif
 	

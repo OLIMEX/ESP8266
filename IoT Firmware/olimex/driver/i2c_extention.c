@@ -2,6 +2,7 @@
 #include "osapi.h"
 #include "gpio.h"
 #include "mem.h"
+#include "../user/stdout.h"
 
 #include "driver/i2c_master.h"
 #include "driver/i2c_extention.h"

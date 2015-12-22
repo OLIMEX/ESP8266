@@ -208,24 +208,28 @@ input[type=file],
 	display: none;
 }
 
-#emtr input[name=CounterActive],
-#emtr input[name=CounterApparent] {
+.emtr input[type=text].counter {
 	width: 70px;
 	margin-left: 20px;
 }
-#emtr #emtr-reset {
+
+.emtr input[type=text].calibrate {
 	width: 50px;
 }
 
-#emtr input[type=range]	{
+.emtr .emtr-reset {
+	width: 50px;
+}
+
+.emtr input[type=range]	{
 	width: 150px;
 }
 
-#emtr label {
+.emtr label {
 	width: 140px;
 }
 
-#emtr input[name=ReadInterval][type=text]{
+.emtr input[name=ReadInterval][type=text]{
 	text-align: center;
 }
 
@@ -237,7 +241,7 @@ input[type=file],
 	width: 90px;
 }
 
-#emtr .emtr-mode label {
+.emtr .emtr-mode label {
 	width: 200px;
 }
 
