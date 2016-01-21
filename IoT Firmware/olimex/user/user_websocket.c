@@ -357,6 +357,10 @@ LOCAL bool ICACHE_FLASH_ATTR websocket_authentication(char *msg) {
 LOCAL void ICACHE_FLASH_ATTR websocket_handle_message(connections_queue *request, struct espconn *pConnection, char *msg, uint16 msg_len, uint32 content_len, uint16 chunkID, bool isLast) {
 	websocket_extra *extra = request->extra;
 	
+	if (msg == NULL || msg_len == 0) {
+		return;
+	}
+	
 	if (!extra->authorized) {
 		if (websocket_authentication(msg)) {
 			char status[WEBSERVER_MAX_VALUE];

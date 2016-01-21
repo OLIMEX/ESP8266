@@ -263,16 +263,15 @@ LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct 
 #if WEBCLIENT_DEBUG
 				debug("WEBCLIENT: Retry [%d] after [%d] of [%d]\n", request->retry, WEBCLIENT_RETRY_AFTER, WEBCLIENT_RETRY_MAX);
 #endif
-			request->retry_timer = setTimeout(
-				(os_timer_func_t *)webclient_execute, 
-				request, 
-				WEBCLIENT_RETRY_AFTER
-			);
+				request->retry_timer = setTimeout(
+					(os_timer_func_t *)webclient_execute, 
+					request, 
+					WEBCLIENT_RETRY_AFTER
+				);
+			} else {
+				webclient_free_request(request);
+			}
 		} else {
-			webclient_free_request(request);
-		}
-		}
-		else {
 			webclient_free_request(request);
 		}
 	} else {
@@ -280,7 +279,6 @@ LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct 
 	}
 }
 
-/*  */
 LOCAL void ICACHE_FLASH_ATTR webclient_timeout(struct espconn *connection) {
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	int8 ret_stat = 0;
@@ -429,12 +427,10 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 		if ((char *)os_strstr(pData, "0\r\n") == pData) {
 			is_close_conn = true;
 		}
-	}
-	else {
+	} else {
 		if (os_strstr(pData, "Transfer-Encoding: chunked") > 0) {
 			request->response_state = WEBCLIENT_RESP_STATE_WAITCHUNK;
-		}
-		else {
+		} else {
 			request->response_state = WEBCLIENT_RESP_STATE_OK;
 			is_close_conn = true;
 		}
@@ -442,18 +438,18 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 	
 	// close if we are happy with data
 	if (is_close_conn) {
-	setTimeout(
+		setTimeout(
 #if SSL_ENABLE	
-		connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl ?
-			(os_timer_func_t *)espconn_secure_disconnect
-			:
+			connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl ?
+				(os_timer_func_t *)espconn_secure_disconnect
+				:
 #endif
-			(os_timer_func_t *)espconn_disconnect
-		, 
-		arg,
-		100
-	);
-}
+				(os_timer_func_t *)espconn_disconnect
+			, 
+			arg,
+			100
+		);
+	}
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_connect(void *arg) {
@@ -606,10 +602,12 @@ void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {
 		return;
 	}
 	
-	request->disconnect_timer = setTimeout(			// we want to be sure to clear request if timeout occurs
+	// we want to be sure to clear request if timeout occurs
+	request->disconnect_timer = setTimeout(
 		(os_timer_func_t *)webclient_timeout,
 		request->connection,
-		WEBCLIENT_TIMEOUT);
+		WEBCLIENT_TIMEOUT
+	);
 		
 	if (ipaddr_aton(request->host, request->ip)) {
 #if WEBCLIENT_DEBUG
