@@ -383,7 +383,7 @@
 				$this.bind(
 					'event8266',
 					function (event, data) {
-						$status.message('OK');
+						$status.message('OK', 'event');
 					}
 				);
 				
@@ -555,15 +555,16 @@
 					}
 					
 					if (typeof data.Status != 'undefined') {
-						$status.message(data.Status);
+						$status.message(data.Status, 'event');
 						if (data.Status == 'Rebooting') {
 							Commands.abort('Rebooting');
 							return;
 						}
 					} else {
-						$status.message('OK');
+						$status.message('OK', 'event');
 					}
 					
+					$('#esp').trigger('event8266');
 					if (longPoll) {
 						$('form').trigger('event8266', data);
 						$this.trigger('init8266');
@@ -618,7 +619,9 @@
 						if ($tab) {
 							$tab.hide();
 						}
-						$this.hide();
+						if (!longPoll) {
+							$this.hide();
+						}
 						Commands.abort();
 					}
 				);
@@ -1025,6 +1028,10 @@
 					if (status == 'abort') {
 						request.status = 'done';
 						return;
+					}
+					
+					if (error == 'Not Found') {
+						error = 'URL Not Found';
 					}
 					
 					if (xhr.status != 0 || status == 'timeout') {
