@@ -246,6 +246,7 @@ ifeq ($(APP), 0)
 	@$(OBJDUMP) -x -s $< > ../bin/eagle.dump
 	@$(OBJDUMP) -S $< > ../bin/eagle.S
 else
+	mkdir -p ../bin/upgrade
 	@$(RM) -r ../bin/upgrade/$(BIN_NAME).S ../bin/upgrade/$(BIN_NAME).dump
 	@$(OBJDUMP) -x -s $< > ../bin/upgrade/$(BIN_NAME).dump
 	@$(OBJDUMP) -S $< > ../bin/upgrade/$(BIN_NAME).S
