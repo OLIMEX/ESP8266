@@ -594,6 +594,9 @@ void ICACHE_FLASH_ATTR config_handler(
 		user_config_load();
 	}
 	
+	struct rst_info* rst;
+	rst = system_get_rst_info();
+	
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
 	config_response(
 		response,
@@ -602,6 +605,7 @@ void ICACHE_FLASH_ATTR config_handler(
 			data_str,
 			"\"Config\" : {"
 				"\"SDKVersion\" : \"%s\", "
+				"\"ResetInfo\" : \"%d:%d\", "
 				"\"AccessPointMAC\" : \"%s\", "
 				"\"StationMAC\" : \"%s\", "
 				"\"User\" : \"%s\", "
@@ -611,6 +615,7 @@ void ICACHE_FLASH_ATTR config_handler(
 				"\"SSL\" : %d"
 			"}",
 			system_get_sdk_version(),
+			rst->reason, rst->exccause,
 			config_mac(SOFTAP_IF),
 			config_mac(STATION_IF),
 			user_config_user(),
