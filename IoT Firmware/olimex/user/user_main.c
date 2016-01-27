@@ -74,8 +74,9 @@ void ICACHE_FLASH_ATTR user_init_done() {
 void ICACHE_FLASH_ATTR user_init(void) {
 	system_init_done_cb(user_init_done);
 	
-//	wifi_set_phy_mode(PHY_MODE_11N);
-//	wifi_set_sleep_type(MODEM_SLEEP_T);
+	// Force 802.11g mode to prevent random 
+	// hardware WDT resets on some routers
+	wifi_set_phy_mode(PHY_MODE_11G);
 	
 #if UART0_SWAP
 	stdout_disable();
