@@ -163,7 +163,14 @@ void ICACHE_FLASH_ATTR user_event_raise(char *url, char *data) {
 		os_strlen(data)
 	;
 	
-	char event[event_size];
+	char *event = (char *)os_malloc(event_size);
+	if (event == NULL) {
+#if EVENTS_DEBUG
+		debug("EVENTS: Cannot allocate memory\n");
+#endif
+		return;
+	}
+	
 	user_event_build(event, url, data);
 	
 	if (url == NULL) {
@@ -209,6 +216,7 @@ void ICACHE_FLASH_ATTR user_event_raise(char *url, char *data) {
 			event
 		);
 	}
+	os_free(event);
 }
 
 void ICACHE_FLASH_ATTR events_handler(
