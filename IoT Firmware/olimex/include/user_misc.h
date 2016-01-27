@@ -16,6 +16,7 @@
 	
 	const char *wifi_auth_mode_str(AUTH_MODE mode);
 	const char *wifi_op_mode_str(uint8 mode);
+	const char *wifi_phy_mode_str(uint8 mode);
 	
 	/**************************************************************************
 	 * SHA1 declarations 

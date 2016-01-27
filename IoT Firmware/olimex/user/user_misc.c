@@ -152,6 +152,19 @@ const char ICACHE_FLASH_ATTR *wifi_op_mode_str(uint8 mode) {
 }
 
 /******************************************************************************
+ * FunctionName : wifi_phy_mode_str
+ * Description  : convert wifi phy_mode to string
+ * Parameters   : mode
+*******************************************************************************/
+const char ICACHE_FLASH_ATTR *wifi_phy_mode_str(uint8 mode) {
+	switch (mode) {
+		case PHY_MODE_11B : return "802.11b";
+		case PHY_MODE_11G : return "802.11g";
+		case PHY_MODE_11N : return "802.11n";
+	}
+}
+
+/******************************************************************************
  * FunctionName : sha1
  * Description  : 
  * Parameters   : 
