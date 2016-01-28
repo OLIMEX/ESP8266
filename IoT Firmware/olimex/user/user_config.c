@@ -186,6 +186,7 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		}
 	}
 	
+	wifi_station_set_hostname(USER_CONFIG_DEFAULT_AP_SSID);
 	wifi_station_set_auto_connect(user_configuration.station_auto_connect);
 	wifi_station_set_reconnect_policy(user_configuration.station_auto_connect);
 	
