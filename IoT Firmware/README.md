@@ -315,7 +315,9 @@ Sample Response:
 		"Status" : "OK", 
 		"Data"   : {
 			"Config" : {
-				"SDKVersion"     : "1.1.2", 
+				"SDKVersion" : "1.5.1(e67da894)", 
+				"ResetInfo" : "4:0:00000000", 
+				"PHYMode" : "802.11g", 
 				"AccessPointMAC" : "1A:FE:34:9C:61:DE", 
 				"StationMAC"     : "18:FE:34:9C:61:DE", 
 				"User"           : "olimex", 
@@ -330,6 +332,8 @@ Sample Response:
 Data fields description:
 	
 	SDKVersion     : <read-only>, 
+	ResetInfo      : <read-only>, 
+	PHYMode        : <read-only>, 
 	AccessPointMAC : <read-only>, 
 	StationMAC     : <read-only>, 
 	
