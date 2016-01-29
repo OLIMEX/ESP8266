@@ -9,6 +9,7 @@
 	typedef struct {
 		char ssid[32];
 		sint8 rssi;
+		uint8 channel;
 		AUTH_MODE authmode;
 	} ap_info;
 

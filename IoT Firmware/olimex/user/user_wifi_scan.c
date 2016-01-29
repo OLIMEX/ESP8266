@@ -111,9 +111,10 @@ LOCAL void ICACHE_FLASH_ATTR wifi_scan_get_result(char *response) {
 	for (i=0; i<wifi_scan_ap_count; i++) {
 		os_sprintf(
 			result + os_strlen(result), 
-			"%s{\"SSID\" : \"%s\", \"Strength\" : %d, \"Mode\" : \"%s\"}", 
+			"%s{\"SSID\" : \"%s\", \"Channel\" : %d, \"Strength\" : %d, \"Mode\" : \"%s\"}", 
 			i > 0 ? ", " : "",
 			wifi_scan_result[i]->ssid, 
+			wifi_scan_result[i]->channel, 
 			wifi_scan_result[i]->rssi, 
 			wifi_auth_mode_str(wifi_scan_result[i]->authmode)
 		);
@@ -187,6 +188,7 @@ LOCAL void ICACHE_FLASH_ATTR wifi_scan_done(void *arg, STATUS status) {
 			os_memcpy(wifi_scan_result[i]->ssid, ap->ssid, 32);
 			
 			wifi_scan_result[i]->rssi = ap->rssi;
+			wifi_scan_result[i]->channel = ap->channel;
 			wifi_scan_result[i]->authmode = ap->authmode;
 			if (
 				wifi_auto_connect && 

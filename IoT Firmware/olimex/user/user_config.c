@@ -607,7 +607,7 @@ void ICACHE_FLASH_ATTR config_handler(
 			"\"Config\" : {"
 				"\"SDKVersion\" : \"%s\", "
 				"\"ResetInfo\" : \"%d:%d:%08x\", "
-				"\"PHYMode\" : \"%s\", "
+				"\"PHYMode\" : \"%s Channel %d\", "
 				"\"AccessPointMAC\" : \"%s\", "
 				"\"StationMAC\" : \"%s\", "
 				"\"User\" : \"%s\", "
@@ -618,7 +618,7 @@ void ICACHE_FLASH_ATTR config_handler(
 			"}",
 			system_get_sdk_version(),
 			rst->reason, rst->exccause, rst->epc1,
-			wifi_phy_mode_str(wifi_get_phy_mode()),
+			wifi_phy_mode_str(wifi_get_phy_mode()), wifi_get_channel(),
 			config_mac(SOFTAP_IF),
 			config_mac(STATION_IF),
 			user_config_user(),
