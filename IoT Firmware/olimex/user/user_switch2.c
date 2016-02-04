@@ -138,8 +138,9 @@ LOCAL void ICACHE_FLASH_ATTR switch2_toggle(void *arg) {
 		}
 	}
 	
-	if (event) {
-		config->state = (config->state_buf == SWITCH_STATE_FILTER);
+	uint8 state = (config->state_buf == SWITCH_STATE_FILTER);
+	if (event && config->state != state) {
+		config->state = state;
 		user_switch2_set(config->id - 2, 2);
 		user_switch2_event();
 	}
@@ -207,6 +208,7 @@ void ICACHE_FLASH_ATTR user_switch2_init() {
 	for (i=0; i<SWITCH_COUNT; i++) {
 		switch2_hardware[i].id = i;
 		PIN_FUNC_SELECT(switch2_hardware[i].gpio.gpio_name, switch2_hardware[i].gpio.gpio_func);
+		switch2_hardware[i].state = GPIO_INPUT_GET(GPIO_ID_PIN(switch2_hardware[i].gpio.gpio_id));
 		
 		if (switch2_hardware[i].type == SWITCH2_SWITCH) {
 			gpio_output_set(0, 0, 0, GPIO_ID_PIN(switch2_hardware[i].gpio.gpio_id));

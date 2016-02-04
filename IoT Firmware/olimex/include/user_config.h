@@ -75,7 +75,7 @@
 		#define UART1_ENABLE                   1
 		
 		// ESP8266-EVB native
-		#define BUTTON_ENABLE                  0
+		#define BUTTON_ENABLE                  1
 		#define RELAY_ENABLE                   0
 		#define ADC_ENABLE                     0
 		// ESP8266-EVB-BAT native
@@ -85,7 +85,7 @@
 		// UART
 		#define MOD_RFID_ENABLE                0
 		#define MOD_FINGER_ENABLE              0
-		#define MOD_EMTR_ENABLE                0
+		#define MOD_EMTR_ENABLE                1
 		// I2C
 		#define MOD_RGB_ENABLE                 0
 		#define MOD_TC_MK2_ENABLE              0

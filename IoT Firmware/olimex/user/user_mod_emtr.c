@@ -313,7 +313,7 @@ LOCAL void ICACHE_FLASH_ATTR emtr_reset(emtr_packet *packet) {
 #endif
 #if DEVICE == SWITCH2
 	switch2_down();
-	setTimeout(switch1_init, NULL, EMTR_RESET_TIMEOUT);
+	setTimeout(switch2_init, NULL, EMTR_RESET_TIMEOUT);
 #endif
 }
 
