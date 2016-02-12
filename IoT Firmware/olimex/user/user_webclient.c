@@ -332,16 +332,16 @@ LOCAL void ICACHE_FLASH_ATTR webclient_disconnect(void *arg) {
 #endif
 	
 	// after closing HTTP; and received data OK
-	if (request->state == HTTP 
-			&& connection->state == ESPCONN_CLOSE
-			&& request != NULL
-			&& request->response_state == WEBCLIENT_RESP_STATE_OK
+	if (
+		request != NULL &&
+		request->state == HTTP &&
+		connection->state == ESPCONN_CLOSE && 
+		request->response_state == WEBCLIENT_RESP_STATE_OK
 	) {
 		webclient_free_request(request);
+	} else {
+		webclient_error(request, connection);
 	}
-	else {
-	webclient_error(request, connection);
-}
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_sent(void *arg) {
