@@ -884,7 +884,7 @@ void ICACHE_FLASH_ATTR config_station_handler(
 					user_configuration.station.ip.gw.addr = ip4_addr_parse(gw);
 				} else if (jsonparse_strcmp_value(&parser, "Hostname") == 0) {
 					jsonparse_next(&parser);jsonparse_next(&parser);
-					jsonparse_copy_value(&parser, user_configuration.station_hostname, USER_CONFIG_USER_SIZE);
+					jsonparse_copy_value(&parser, user_configuration.station_hostname, USER_CONFIG_HOSTNAME_SIZE);
 				}
 
 			}

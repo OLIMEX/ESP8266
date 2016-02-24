@@ -210,6 +210,7 @@
 	#define USER_CONFIG_EVENTS_SIZE          128
 	#define USER_CONFIG_PATH_SIZE            256
 	#define USER_CONFIG_TOKEN_SIZE            64
+	#define USER_CONFIG_HOSTNAME_SIZE         32
 	                                             
 	#define MAX_WIFI_STORED_AP_NUMBER          5
 	#define WIFI_STORED_AP_NUMBER              1
