@@ -118,6 +118,8 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	IP4_ADDR(&user_configuration.station.ip.netmask,      255,255,255,0);
 	IP4_ADDR(&user_configuration.station.ip.gw,           192,168, 10,1);
 	
+	os_sprintf(user_configuration.station_hostname,     USER_CONFIG_DEFAULT_AP_SSID);
+	
 	os_sprintf(user_configuration.check, "ESP");
 	user_config_store(NULL);
 	
@@ -144,6 +146,7 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 		.bssid = ""
 	};
 	wifi_station_set_config(&s_config);
+	wifi_station_set_hostname(user_configuration.station_hostname);
 	
 	wifi_station_set_auto_connect(user_configuration.station_auto_connect);
 	wifi_station_set_reconnect_policy(user_configuration.station_auto_connect);
@@ -161,7 +164,7 @@ void ICACHE_FLASH_ATTR user_config_load() {
 	wifi_station_ap_number_set(WIFI_STORED_AP_NUMBER);
 	
 	debug("CONFIG: Loading...\n");
-	debug("CONFIG: Size of user_congig %d\n", sizeof(user_config));
+	debug("CONFIG: Size of user_config %d\n", sizeof(user_config));
 	SpiFlashOpResult result;
 	
 	result = spi_flash_read(
@@ -186,7 +189,7 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		}
 	}
 	
-	wifi_station_set_hostname(USER_CONFIG_DEFAULT_AP_SSID);
+	wifi_station_set_hostname(user_configuration.station_hostname);
 	wifi_station_set_auto_connect(user_configuration.station_auto_connect);
 	wifi_station_set_reconnect_policy(user_configuration.station_auto_connect);
 	
@@ -221,7 +224,7 @@ LOCAL const char ERASE_ERR[]   = "Can not erase user_config sector";
 LOCAL const char WRITE_ERR[]   = "Can not write user_config sector";
 
 	debug("CONFIG: Storing...\n");
-	debug("CONFIG: Size of user_congig %d\n", sizeof(user_config));
+	debug("CONFIG: Size of user_config %d\n", sizeof(user_config));
 	if (sizeof(user_config) % 4 != 0) {
 		debug("CONFIG: %s\n", NOT_ALIGNED);
 		if (error != NULL) {
@@ -496,7 +499,8 @@ char ICACHE_FLASH_ATTR *config_wifi_station() {
 			"\"Password\" : \"%s\", "
 			"\"AutoConnect\" : %d, "
 			"\"DHCP\" : %d, "
-			"\"IP\" : %s"
+			"\"IP\" : %s, "
+			"\"Hostname\" : \"%s\""
 		"}",
 		config_wifi_stored_ap(),
 		wifi_station_get_current_ap_id(),
@@ -504,7 +508,8 @@ char ICACHE_FLASH_ATTR *config_wifi_station() {
 		config.password,
 		wifi_station_get_auto_connect(),
 		wifi_station_dhcpc_status(),
-		config_ip_info(STATION_IF)
+		config_ip_info(STATION_IF),
+		wifi_station_get_hostname()
 	);
 	
 	return client_str;
@@ -877,7 +882,11 @@ void ICACHE_FLASH_ATTR config_station_handler(
 					char gw[20];
 					jsonparse_copy_value(&parser, gw, 20);
 					user_configuration.station.ip.gw.addr = ip4_addr_parse(gw);
+				} else if (jsonparse_strcmp_value(&parser, "Hostname") == 0) {
+					jsonparse_next(&parser);jsonparse_next(&parser);
+					jsonparse_copy_value(&parser, user_configuration.station_hostname, USER_CONFIG_USER_SIZE);
 				}
+
 			}
 		}
 		
