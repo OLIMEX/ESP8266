@@ -210,6 +210,7 @@
 	#define USER_CONFIG_EVENTS_SIZE          128
 	#define USER_CONFIG_PATH_SIZE            256
 	#define USER_CONFIG_TOKEN_SIZE            64
+	#define USER_CONFIG_HOSTNAME_SIZE         32
 	                                             
 	#define MAX_WIFI_STORED_AP_NUMBER          5
 	#define WIFI_STORED_AP_NUMBER              1
@@ -280,6 +281,7 @@
 		char      events_path[USER_CONFIG_PATH_SIZE];
 		char      events_name[USER_CONFIG_USER_SIZE];
 		char      events_token[USER_CONFIG_TOKEN_SIZE];
+		char      station_hostname[USER_CONFIG_USER_SIZE];
 		
 		char      check[7];
 	} user_config;
