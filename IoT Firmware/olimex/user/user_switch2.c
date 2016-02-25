@@ -75,7 +75,7 @@ LOCAL gpio_config switch2_reset_hardware = {
 	.gpio_func  = FUNC_GPIO15
 };
 
-LOCAL void ICACHE_FLASH_ATTR user_switch2_state(char *response) {
+LOCAL void ICACHE_FLASH_ATTR user_switch2_state(char *response, int id) {
 	char data_str[WEBSERVER_MAX_VALUE];
 	
 	uint8 i;
@@ -85,26 +85,57 @@ LOCAL void ICACHE_FLASH_ATTR user_switch2_state(char *response) {
 		}
 	}
 	
-	json_data(
-		response, SWITCH2_STR, OK_STR,
-		json_sprintf(
-			data_str,
-			"\"Relay1\" : %d, "
-			"\"Relay2\" : %d, "
-			"\"Switch1\" : %d, "
-			"\"Switch2\" : %d",
-			switch2_hardware[0].state,
-			switch2_hardware[1].state,
-			switch2_hardware[2].state,
-			switch2_hardware[3].state
-		),
-		NULL
-	);
+	switch (id) {
+		case 2:
+			json_data(
+				response, SWITCH2_STR, OK_STR,
+				json_sprintf(
+					data_str,
+					"\"Relay1\" : %d, "
+					"\"Switch1\" : %d",
+					switch2_hardware[0].state,
+					switch2_hardware[2].state
+				),
+				NULL
+			);
+		break;
+		
+		case 3:
+			json_data(
+				response, SWITCH2_STR, OK_STR,
+				json_sprintf(
+					data_str,
+					"\"Relay2\" : %d, "
+					"\"Switch2\" : %d",
+					switch2_hardware[1].state,
+					switch2_hardware[3].state
+				),
+				NULL
+			);
+		break;
+		
+		default:
+			json_data(
+				response, SWITCH2_STR, OK_STR,
+				json_sprintf(
+					data_str,
+					"\"Relay1\" : %d, "
+					"\"Relay2\" : %d, "
+					"\"Switch1\" : %d, "
+					"\"Switch2\" : %d",
+					switch2_hardware[0].state,
+					switch2_hardware[1].state,
+					switch2_hardware[2].state,
+					switch2_hardware[3].state
+				),
+				NULL
+			);
+	}
 }
 
-LOCAL void ICACHE_FLASH_ATTR user_switch2_event() {
+LOCAL void ICACHE_FLASH_ATTR user_switch2_event(int id) {
 	char response[WEBSERVER_MAX_VALUE];
-	user_switch2_state(response);
+	user_switch2_state(response, id);
 	user_event_raise(SWITCH2_URL, response);
 }
 
@@ -142,7 +173,7 @@ LOCAL void ICACHE_FLASH_ATTR switch2_toggle(void *arg) {
 	if (event && config->state != state) {
 		config->state = state;
 		user_switch2_set(config->id - 2, 2);
-		user_switch2_event();
+		user_switch2_event(config->id);
 	}
 }
 
@@ -180,7 +211,7 @@ void ICACHE_FLASH_ATTR switch2_handler(
 		}
 	}
 	
-	user_switch2_state(response);
+	user_switch2_state(response, 0);
 }
 
 void ICACHE_FLASH_ATTR switch2_init() {
