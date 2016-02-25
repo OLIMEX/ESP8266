@@ -150,7 +150,7 @@
 		#define RELAY_ENABLE                   1
 		#define ADC_ENABLE                     0
 		// ESP8266-EVB-BAT native
-		#define BATTERY_ENABLE                 0
+		#define BATTERY_ENABLE                 1
 		
 		// UEXT modules
 		// UART
@@ -281,7 +281,7 @@
 		char      events_path[USER_CONFIG_PATH_SIZE];
 		char      events_name[USER_CONFIG_USER_SIZE];
 		char      events_token[USER_CONFIG_TOKEN_SIZE];
-		char      station_hostname[USER_CONFIG_USER_SIZE];
+		char      station_hostname[USER_CONFIG_HOSTNAME_SIZE];
 		
 		char      check[7];
 	} user_config;
