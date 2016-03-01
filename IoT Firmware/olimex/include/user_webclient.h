@@ -1,7 +1,7 @@
 #ifndef __USER_WEBCLIENT_H__
 	#define __USER_WEBCLIENT_H__
 	
-	#define WEBCLIENT_DEBUG                1
+	#define WEBCLIENT_DEBUG                0
 	#define WEBCLIENT_VERBOSE_OUTPUT       0
 	
 	#define WEBCLIENT_TIMEOUT              5000

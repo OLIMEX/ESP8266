@@ -46,13 +46,13 @@ LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_request_find(char *host, in
 	webclient_request *request;
 	
 #if WEBCLIENT_DEBUG
-//#if WEBCLIENT_VERBOSE_OUTPUT
+#if WEBCLIENT_VERBOSE_OUTPUT
 	uint8 count=0;
 	STAILQ_FOREACH(request, &webclient_requests, entries) {
 		count++;
 	}
-	debug("WEBCLIENT: Requests count: %d\n", count);
-//#endif
+	debug("WEBCLIENT: Requests count %d\n", count);
+#endif
 #endif
 	
 	STAILQ_FOREACH(request, &webclient_requests, entries) {
@@ -77,7 +77,7 @@ LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_request_port_find(int local
 	STAILQ_FOREACH(request, &webclient_requests, entries) {
 		count++;
 	}
-	debug("WEBCLIENT: Requests count: %d\n", count);
+	debug("WEBCLIENT: Requests count %d\n", count);
 #endif
 #endif
 	
@@ -125,6 +125,22 @@ LOCAL void ICACHE_FLASH_ATTR webclient_new_element(char **a, char *b) {
 		os_strcpy(*a, b, os_strlen(b));
 	} else {
 		*a = (char *)os_zalloc(1);
+	}
+}
+
+LOCAL void ICACHE_FLASH_ATTR webclient_reset_timers(webclient_request *request) {
+	if (request == NULL) {
+		return;
+	}
+	
+	if (request->retry_timer != 0) {
+		clearTimeout(request->retry_timer);
+		request->retry_timer = 0;
+	}
+	
+	if (request->disconnect_timer != 0) {
+		clearTimeout(request->disconnect_timer);
+		request->disconnect_timer = 0;
 	}
 }
 
@@ -176,6 +192,7 @@ LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_new_request(
 		}
 		webclient_renew_connection(request);
 		webclient_new_element(&request->content, content);
+		request->retry = 0;
 		return request;
 	}
 	
@@ -225,13 +242,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_free_request(webclient_request *request) 
 	);
 #endif
 	STAILQ_REMOVE(&webclient_requests, request, _webclient_request_, entries);
-	if (request->retry_timer != 0) {	// free timers also
-		clearTimeout(request->retry_timer);
-	}
-	if (request->disconnect_timer != 0) {
-		clearTimeout(request->disconnect_timer);
-	}
-	
+	webclient_reset_timers(request);
 	if (request->user) os_free(request->user);
 	if (request->password) os_free(request->password);
 	if (request->authorization) os_free(request->authorization);
@@ -244,38 +255,47 @@ LOCAL void ICACHE_FLASH_ATTR webclient_free_request(webclient_request *request) 
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct espconn *connection) {
-	if (request != NULL) {
-		if (
-			request->state != HTTP && 
-			(WEBCLIENT_RETRY_MAX == 0 || request->retry++ < WEBCLIENT_RETRY_MAX) && 
-			connection->state == ESPCONN_CLOSE
-		) {
-			user_event_server_error();
-			webclient_renew_connection(request);
-			
-			char event[WEBSERVER_MAX_VALUE];
-			user_event_build(event, NULL, "{\"Device\" : \"ESP8266\", \"Status\" : \"WebSocket Reconnect\"}");
-			webclient_new_element(&request->content, event);
-		}
+	if (request == NULL) {
+		webclient_free_connection(connection);
+		return;
+	}
+	
+	if (
+		request->state != HTTP && 
+		(WEBCLIENT_RETRY_MAX == 0 || request->retry < WEBCLIENT_RETRY_MAX) && 
+		connection->state == ESPCONN_CLOSE
+	) {
+		user_event_server_error();
+		webclient_renew_connection(request);
+		
+		char event[WEBSERVER_MAX_VALUE];
+		user_event_build(event, NULL, "{\"Device\" : \"ESP8266\", \"Status\" : \"WebSocket Reconnect\"}");
+		webclient_new_element(&request->content, event);
+	}
 
-		if (wifi_station_get_connect_status() == STATION_GOT_IP) {		
-			if (request->retry++ < WEBCLIENT_RETRY_MAX) {
-#if WEBCLIENT_DEBUG
-				debug("WEBCLIENT: Retry [%d] after [%d] of [%d]\n", request->retry, WEBCLIENT_RETRY_AFTER, WEBCLIENT_RETRY_MAX);
+	if (wifi_station_get_connect_status() == STATION_GOT_IP) {
+		if (WEBCLIENT_RETRY_MAX == 0 || request->retry < WEBCLIENT_RETRY_MAX) {
+			request->retry++;
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
+			debug("WEBCLIENT: Retry [%d] after [%d] of [%d]\n", request->retry, WEBCLIENT_RETRY_AFTER, WEBCLIENT_RETRY_MAX);
 #endif
-				request->retry_timer = setTimeout(
-					(os_timer_func_t *)webclient_execute, 
-					request, 
-					WEBCLIENT_RETRY_AFTER
-				);
-			} else {
-				webclient_free_request(request);
-			}
+			
+			// Prevent previous retry attempt to be fired
+			webclient_reset_timers(request);
+			
+			request->retry_timer = setTimeout(
+				(os_timer_func_t *)webclient_execute, 
+				request, 
+				WEBCLIENT_RETRY_AFTER
+			);
 		} else {
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
+			debug("WEBCLIENT: Retry limit reached [%d]\n", request->retry);
+#endif
 			webclient_free_request(request);
 		}
 	} else {
-		webclient_free_connection(connection);
+		webclient_free_request(request);
 	}
 }
 
@@ -283,26 +303,34 @@ LOCAL void ICACHE_FLASH_ATTR webclient_timeout(struct espconn *connection) {
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	int8 ret_stat = 0;
 
-#if WEBCLIENT_DEBUG
-	debug("WEBCLIENT: Timeout happened [%d.%d.%d.%d:%d]\n", IP2STR(connection->proto.tcp->remote_ip), connection->proto.tcp->local_port);
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
+	debug(
+		"WEBCLIENT: Timeout [%d.%d.%d.%d:%d]\n", 
+		IP2STR(connection->proto.tcp->remote_ip), 
+		connection->proto.tcp->local_port
+	);
 #endif	
 
 #if SSL_ENABLE
-	if(connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl)
+	if(connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl) {
 		ret_stat = espconn_secure_disconnect(connection);
-	else
-#endif
+	} else {
 		ret_stat = espconn_disconnect(connection);
-
-	if (ret_stat != 0)
+	}
+#else
+	ret_stat = espconn_disconnect(connection);
+#endif
+	
+	if (ret_stat != 0) {
 		webclient_error(request, connection);
+	}
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_reconnect(void *arg, sint8 err) {
 	struct espconn *connection = arg;
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	
-#if WEBCLIENT_DEBUG
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
 		"WEBCLIENT: Reconnect [%d.%d.%d.%d:%d] %d [%s] [%s]\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
@@ -362,7 +390,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_sent(void *arg) {
 #endif
 	}
 	
-#if WEBCLIENT_DEBUG
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
 		"WEBCLIENT: Done [%d.%d.%d.%d:%d].\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
@@ -383,7 +411,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
 #if WEBCLIENT_DEBUG
-		debug("WEBCLIENT: webclient_recv(): No request object found");
+		debug("WEBCLIENT: webclient_recv() No request object found");
 #endif		
 		webclient_error(request, connection);
 		return;
@@ -392,9 +420,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 	request->retry = 0;
 	
 	if (websocket_client_upgrade(connection, EVENTS_URL, pData, request->headers)) {
-		if (request->disconnect_timer != 0) {
-			clearTimeout(request->disconnect_timer);
-		}
+		webclient_reset_timers(request);
 		
 		request->state = WEBSOCKET;
 		if (os_strlen(request->user) + os_strlen(request->password) != 0) {
@@ -553,7 +579,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 	
 	*request->ip = *ip;
 	
-#if WEBCLIENT_DEBUG
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
 		"WEBCLIENT: %s [%s:%d] [%d.%d.%d.%d:%d]\n", 
 		webclient_method_str(request->method), 
@@ -574,9 +600,14 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 	} else {
 		conn_ret = espconn_connect(connection);
 	}
+	
 	if (conn_ret != 0) {
-#if WEBCLIENT_DEBUG
-		debug("WEBCLIENT: Connect failed: %d\n", conn_ret);
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
+		debug(
+			"WEBCLIENT: Connect failed %d [%s]\n", 
+			conn_ret,
+			connection_err_str(conn_ret)
+		);
 #endif
 		webclient_error(request, connection);
 		return;
@@ -588,12 +619,7 @@ void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {
 		return;
 	}
 	
-	if (request->retry_timer != 0) {
-		clearTimeout(request->retry_timer);
-	}
-	if (request->disconnect_timer != 0) {
-		clearTimeout(request->disconnect_timer);
-	}
+	webclient_reset_timers(request);
 	
 	if (is_websocket(request->connection)) {
 		if (request->content != NULL && os_strlen(request->content) > 0) {
@@ -644,6 +670,9 @@ void ICACHE_FLASH_ATTR webclient_get(bool ssl, char *user, char *password, char 
 		return;
 	}
 	
+#if WEBCLIENT_DEBUG
+	debug("WEBCLIENT: New GET request\n");
+#endif
 	webclient_request *request = webclient_new_request(GET, ssl, user, password, host, port, path, NULL, NULL);
 	webclient_execute(request);
 }
@@ -653,6 +682,9 @@ void ICACHE_FLASH_ATTR webclient_post(bool ssl, char *user, char *password, char
 		return;
 	}
 	
+#if WEBCLIENT_DEBUG
+	debug("WEBCLIENT: New POST request\n");
+#endif
 	webclient_request *request = webclient_new_request(POST, ssl, user, password, host, port, path, NULL, content);
 	webclient_execute(request);
 }
@@ -686,6 +718,9 @@ void ICACHE_FLASH_ATTR webclient_socket(bool ssl, char *user, char *password, ch
 		key_str
 	);
 	
+#if WEBCLIENT_DEBUG
+	debug("WEBCLIENT: New WebSocket request\n");
+#endif
 	webclient_request *request = webclient_new_request(GET, ssl, user, password, host, port, path, headers, content);
 	if (request != NULL && request->state == HTTP) {
 		request->state = UPGRADE;
