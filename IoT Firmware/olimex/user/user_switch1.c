@@ -14,7 +14,7 @@
 #include "user_devices.h"
 
 #define SWITCH_COUNT          2
-#define SWITCH_STATE_FILTER  10
+#define SWITCH_STATE_FILTER   5
 
 LOCAL void switch1_toggle();
 LOCAL void switch1_toggle();
@@ -53,14 +53,6 @@ LOCAL gpio_config switch1_reset_hardware = {
 
 LOCAL void ICACHE_FLASH_ATTR user_switch1_state(char *response) {
 	char data_str[WEBSERVER_MAX_VALUE];
-	
-	uint8 i;
-	for (i=0; i<SWITCH_COUNT; i++) {
-		if (switch1_hardware[i].type == SWITCH1_SWITCH) {
-			switch1_hardware[i].state = GPIO_INPUT_GET(GPIO_ID_PIN(switch1_hardware[i].gpio.gpio_id));
-		}
-	}
-	
 	json_data(
 		response, SWITCH1_STR, OK_STR,
 		json_sprintf(
@@ -95,6 +87,7 @@ LOCAL void ICACHE_FLASH_ATTR user_switch1_set(uint8 i, uint8 state) {
 
 	
 LOCAL void ICACHE_FLASH_ATTR switch1_toggle(void *arg) {
+	LOCAL event_timer = 0;
 	switch1_config *config = arg;
 	
 	bool event = false;
@@ -110,11 +103,15 @@ LOCAL void ICACHE_FLASH_ATTR switch1_toggle(void *arg) {
 		}
 	}
 	
-	uint8 state = (config->state_buf == SWITCH_STATE_FILTER);
-	if (event && config->state != state) {
-		config->state = state;
-		user_switch1_set(config->id - 1, 2);
-		user_switch1_event();
+	if (event) {
+		uint8 state = (config->state_buf == SWITCH_STATE_FILTER);
+		if (config->state != state) {
+			config->state = state;
+			user_switch1_set(config->id - 1, 2);
+			
+			clearTimeout(event_timer);
+			event_timer = setTimeout(user_switch1_event, NULL, 50);
+		}
 	}
 }
 

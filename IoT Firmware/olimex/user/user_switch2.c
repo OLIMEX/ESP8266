@@ -14,7 +14,7 @@
 #include "user_devices.h"
 
 #define SWITCH_COUNT          4
-#define SWITCH_STATE_FILTER  10
+#define SWITCH_STATE_FILTER   5
 
 LOCAL void switch1_toggle();
 LOCAL void switch2_toggle();
@@ -75,72 +75,33 @@ LOCAL gpio_config switch2_reset_hardware = {
 	.gpio_func  = FUNC_GPIO15
 };
 
-LOCAL void ICACHE_FLASH_ATTR user_switch2_state(char *response, int id) {
+LOCAL void ICACHE_FLASH_ATTR user_switch2_state(char *response) {
 	char data_str[WEBSERVER_MAX_VALUE];
-	
-	uint8 i;
-	for (i=0; i<SWITCH_COUNT; i++) {
-		if (switch2_hardware[i].type == SWITCH2_SWITCH) {
-			switch2_hardware[i].state = GPIO_INPUT_GET(GPIO_ID_PIN(switch2_hardware[i].gpio.gpio_id));
-		}
-	}
-	
-	switch (id) {
-		case 2:
-			json_data(
-				response, SWITCH2_STR, OK_STR,
-				json_sprintf(
-					data_str,
-					"\"Relay1\" : %d, "
-					"\"Switch1\" : %d",
-					switch2_hardware[0].state,
-					switch2_hardware[2].state
-				),
-				NULL
-			);
-		break;
-		
-		case 3:
-			json_data(
-				response, SWITCH2_STR, OK_STR,
-				json_sprintf(
-					data_str,
-					"\"Relay2\" : %d, "
-					"\"Switch2\" : %d",
-					switch2_hardware[1].state,
-					switch2_hardware[3].state
-				),
-				NULL
-			);
-		break;
-		
-		default:
-			json_data(
-				response, SWITCH2_STR, OK_STR,
-				json_sprintf(
-					data_str,
-					"\"Relay1\" : %d, "
-					"\"Relay2\" : %d, "
-					"\"Switch1\" : %d, "
-					"\"Switch2\" : %d",
-					switch2_hardware[0].state,
-					switch2_hardware[1].state,
-					switch2_hardware[2].state,
-					switch2_hardware[3].state
-				),
-				NULL
-			);
-	}
+	json_data(
+		response, SWITCH2_STR, OK_STR,
+		json_sprintf(
+			data_str,
+			"\"Relay1\" : %d, "
+			"\"Relay2\" : %d, "
+			"\"Switch1\" : %d, "
+			"\"Switch2\" : %d",
+			switch2_hardware[0].state,
+			switch2_hardware[1].state,
+			switch2_hardware[2].state,
+			switch2_hardware[3].state
+		),
+		NULL
+	);
 }
 
 LOCAL void ICACHE_FLASH_ATTR user_switch2_event(int id) {
 	char response[WEBSERVER_MAX_VALUE];
-	user_switch2_state(response, id);
+	user_switch2_state(response);
 	user_event_raise(SWITCH2_URL, response);
 }
 
 LOCAL void ICACHE_FLASH_ATTR user_switch2_set(uint8 i, uint8 state) {
-	if (i > SWITCH_COUNT || switch2_hardware[i].type != SWITCH2_RELAY) {
+	if (i >= SWITCH_COUNT || switch2_hardware[i].type != SWITCH2_RELAY) {
 		return;
 	}
 	
@@ -154,26 +115,31 @@ LOCAL void ICACHE_FLASH_ATTR user_switch2_set(uint8 i, uint8 state) {
 
 	
 LOCAL void ICACHE_FLASH_ATTR switch2_toggle(void *arg) {
+	LOCAL event_timer = 0;
 	switch2_config *config = arg;
 	
 	bool event = false;
 	if (1 == GPIO_INPUT_GET(GPIO_ID_PIN(config->gpio.gpio_id))) {
 		if (config->state_buf < SWITCH_STATE_FILTER) {
 			config->state_buf++;
-			event = (config->state_buf == SWITCH_STATE_FILTER);
+			event = config->state_buf == SWITCH_STATE_FILTER;
 		}
 	} else {
 		if (config->state_buf > 0) {
 			config->state_buf--;
-			event = (config->state_buf == 0);
+			event = config->state_buf == 0;
 		}
 	}
 	
-	uint8 state = (config->state_buf == SWITCH_STATE_FILTER);
-	if (event && config->state != state) {
-		config->state = state;
-		user_switch2_set(config->id - 2, 2);
-		user_switch2_event(config->id);
+	if (event) {
+		uint8 state = (config->state_buf == SWITCH_STATE_FILTER);
+		if (config->state != state) {
+			config->state = state;
+			user_switch2_set(config->id - 2, 2);
+			
+			clearTimeout(event_timer);
+			event_timer = setTimeout(user_switch2_event, NULL, 50);
+		}
 	}
 }
 
@@ -211,7 +177,7 @@ void ICACHE_FLASH_ATTR switch2_handler(
 		}
 	}
 	
-	user_switch2_state(response, 0);
+	user_switch2_state(response);
 }
 
 void ICACHE_FLASH_ATTR switch2_init() {
