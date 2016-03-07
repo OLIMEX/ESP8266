@@ -5,7 +5,7 @@
 	#define WEBCLIENT_VERBOSE_OUTPUT       0
 	
 	#define WEBCLIENT_TIMEOUT              5000
-	#define WEBCLIENT_RETRY_AFTER          15000
+	#define WEBCLIENT_RETRY_AFTER          10000
 	#define WEBCLIENT_RETRY_MAX            0
 	
 	#include "queue.h"
