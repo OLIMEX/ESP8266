@@ -25,6 +25,7 @@
 			void_func   handler;
 			uint8       state;
 			uint8       state_buf;
+			uint32      timer;
 		} switch1_config;
 		
 		void switch1_handler(

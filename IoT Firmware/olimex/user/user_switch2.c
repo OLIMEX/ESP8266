@@ -29,7 +29,8 @@ LOCAL switch2_config switch2_hardware[SWITCH_COUNT] = {
 		},
 		.handler    = NULL,
 		.state      = 1,
-		.state_buf  = 0
+		.state_buf  = 0,
+		.timer      = 0
 	}, 
 	
 	{ 
@@ -41,7 +42,8 @@ LOCAL switch2_config switch2_hardware[SWITCH_COUNT] = {
 		},
 		.handler    = NULL,
 		.state      = 1,
-		.state_buf  = 0
+		.state_buf  = 0,
+		.timer      = 0
 	}, 
 	
 	{
@@ -53,7 +55,8 @@ LOCAL switch2_config switch2_hardware[SWITCH_COUNT] = {
 		},
 		.handler    = switch2_toggle,
 		.state      = 0,
-		.state_buf  = SWITCH_STATE_FILTER / 2
+		.state_buf  = SWITCH_STATE_FILTER / 2,
+		.timer      = 0
 	}, 
 	
 	{
@@ -65,7 +68,8 @@ LOCAL switch2_config switch2_hardware[SWITCH_COUNT] = {
 		},
 		.handler    = switch2_toggle,
 		.state      = 0,
-		.state_buf  = SWITCH_STATE_FILTER / 2
+		.state_buf  = SWITCH_STATE_FILTER / 2,
+		.timer      = 0
 	}
 };
 
@@ -94,18 +98,29 @@ LOCAL void ICACHE_FLASH_ATTR user_switch2_state(char *response) {
 	);
 }
 
-LOCAL void ICACHE_FLASH_ATTR user_switch2_event(int id) {
+LOCAL void ICACHE_FLASH_ATTR user_switch2_event() {
 	char response[WEBSERVER_MAX_VALUE];
 	user_switch2_state(response);
 	user_event_raise(SWITCH2_URL, response);
 }
 
-LOCAL void ICACHE_FLASH_ATTR user_switch2_set(uint8 i, uint8 state) {
+LOCAL void user_switch2_off(void *arg);
+
+LOCAL void ICACHE_FLASH_ATTR user_switch2_set(uint8 i, int state) {
 	if (i >= SWITCH_COUNT || switch2_hardware[i].type != SWITCH2_RELAY) {
 		return;
 	}
 	
-	if (state > 1) {
+	if (switch2_hardware[i].timer != 0 || state == switch2_hardware[i].state) {
+		return;
+	}
+	
+	if (state < 0) {
+		// On for (-state) milliseconds then Off
+		switch2_hardware[i].timer = setTimeout(user_switch2_off, &switch2_hardware[i], -state);
+		state = 1;
+	} else if (state > 1) {
+		// Toggle
 		state = switch2_hardware[i].state == 0 ? 1 : 0;
 	}
 	
@@ -113,6 +128,14 @@ LOCAL void ICACHE_FLASH_ATTR user_switch2_set(uint8 i, uint8 state) {
 	switch2_hardware[i].state = state;
 }
 
+LOCAL void user_switch2_off(void *arg) {
+	switch2_config *config = arg;
+	
+	config->timer = 0;
+	user_switch2_set(config->id, 0);
+	
+	user_switch2_event();
+}
 	
 LOCAL void ICACHE_FLASH_ATTR switch2_toggle(void *arg) {
 	LOCAL event_timer = 0;
@@ -122,12 +145,12 @@ LOCAL void ICACHE_FLASH_ATTR switch2_toggle(void *arg) {
 	if (1 == GPIO_INPUT_GET(GPIO_ID_PIN(config->gpio.gpio_id))) {
 		if (config->state_buf < SWITCH_STATE_FILTER) {
 			config->state_buf++;
-			event = config->state_buf == SWITCH_STATE_FILTER;
+			event = (config->state_buf == SWITCH_STATE_FILTER);
 		}
 	} else {
 		if (config->state_buf > 0) {
 			config->state_buf--;
-			event = config->state_buf == 0;
+			event = (config->state_buf == 0);
 		}
 	}
 	

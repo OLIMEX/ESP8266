@@ -42,14 +42,28 @@ uint8 ICACHE_FLASH_ATTR user_relay_get() {
 	return relay_state;
 }
 
-LOCAL void ICACHE_FLASH_ATTR user_relay_set(uint8 state) {
-	if (relay_timer == 0) {
-		GPIO_OUTPUT_SET(GPIO_ID_PIN(relay_hardware.gpio_id), state);
-		relay_state = state;
-#if DEVICE == PLUG		
-		plug_led(PLUG_LED2, relay_state);
-#endif
+LOCAL void user_relay_off();
+
+LOCAL void ICACHE_FLASH_ATTR user_relay_set(int state) {
+	if (relay_timer != 0 || state == relay_state) {
+		return;
 	}
+	
+	if (state < 0) {
+		// On for (-state) milliseconds then Off
+		relay_timer = setTimeout(user_relay_off, NULL, -state);
+		state = 1;
+	} if (state > 1) {
+		// Toggle
+		state = relay_state ? 0 : 1;
+	}
+	
+	GPIO_OUTPUT_SET(GPIO_ID_PIN(relay_hardware.gpio_id), state);
+	relay_state = state;
+		
+#if DEVICE == PLUG		
+	plug_led(PLUG_LED2, relay_state);
+#endif
 }
 
 LOCAL void ICACHE_FLASH_ATTR user_relay_off() {
@@ -59,13 +73,6 @@ char response[WEBSERVER_MAX_VALUE];
 	
 	user_relay_state(response);
 	user_event_raise(RELAY_URL, response);
-}
-
-LOCAL void ICACHE_FLASH_ATTR user_relay_on_off(uint16 delay) {
-	if (relay_timer == 0) {
-		user_relay_set(1);
-		relay_timer = setTimeout(user_relay_off, NULL, delay);
-	}
 }
 
 void ICACHE_FLASH_ATTR relay_handler(
@@ -80,7 +87,7 @@ void ICACHE_FLASH_ATTR relay_handler(
 ) {
 	struct jsonparse_state parser;
 	int type;
-	uint16 state = relay_state;
+	int state = relay_state;
 	
 	if (method == POST && data != NULL && data_len != 0) {
 		jsonparse_setup(&parser, data, data_len);
@@ -90,18 +97,12 @@ void ICACHE_FLASH_ATTR relay_handler(
 				if (jsonparse_strcmp_value(&parser, "Relay") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					state = jsonparse_get_value_as_int(&parser);
+					state = jsonparse_get_value_as_sint(&parser);
 				}
 			}
 		}
 		
-		if (state == 0) {
-			user_relay_set(0);
-		} else if (state == 1) {
-			user_relay_set(1);
-		} else {
-			user_relay_on_off(state);
-		}
+		user_relay_set(state);
 	}
 	
 	user_relay_state(response);

@@ -17,7 +17,6 @@
 #define SWITCH_STATE_FILTER   5
 
 LOCAL void switch1_toggle();
-LOCAL void switch1_toggle();
 
 LOCAL switch1_config switch1_hardware[SWITCH_COUNT] = {
 	{
@@ -29,7 +28,8 @@ LOCAL switch1_config switch1_hardware[SWITCH_COUNT] = {
 		},
 		.handler    = NULL,
 		.state      = 1,
-		.state_buf  = 0
+		.state_buf  = 0,
+		.timer      = 0
 	}, 
 	
 	{
@@ -41,7 +41,8 @@ LOCAL switch1_config switch1_hardware[SWITCH_COUNT] = {
 		},
 		.handler    = switch1_toggle,
 		.state      = 0,
-		.state_buf  = SWITCH_STATE_FILTER / 2
+		.state_buf  = SWITCH_STATE_FILTER / 2,
+		.timer      = 0
 	}
 };
 
@@ -70,14 +71,26 @@ LOCAL void ICACHE_FLASH_ATTR user_switch1_event() {
 	char response[WEBSERVER_MAX_VALUE];
 	user_switch1_state(response);
 	user_event_raise(SWITCH1_URL, response);
+
 }
 
-LOCAL void ICACHE_FLASH_ATTR user_switch1_set(uint8 i, uint8 state) {
-	if (i > SWITCH_COUNT || switch1_hardware[i].type != SWITCH1_RELAY) {
+LOCAL void user_switch1_off(void *arg);
+
+LOCAL void ICACHE_FLASH_ATTR user_switch1_set(uint8 i, int state) {
+	if (i >= SWITCH_COUNT || switch1_hardware[i].type != SWITCH1_RELAY) {
 		return;
 	}
 	
-	if (state > 1) {
+	if (switch1_hardware[i].timer != 0 || state == switch1_hardware[i].state) {
+		return;
+	}
+	
+	if (state < 0) {
+		// On for (-state) milliseconds then Off
+		switch1_hardware[i].timer = setTimeout(user_switch1_off, &switch1_hardware[i], -state);
+		state = 1;
+	} else if (state > 1) {
+		// Toggle
 		state = switch1_hardware[i].state == 0 ? 1 : 0;
 	}
 	
@@ -85,6 +98,14 @@ LOCAL void ICACHE_FLASH_ATTR user_switch1_set(uint8 i, uint8 state) {
 	switch1_hardware[i].state = state;
 }
 
+LOCAL void user_switch1_off(void *arg) {
+	switch1_config *config = arg;
+	
+	config->timer = 0;
+	user_switch1_set(config->id, 0);
+	
+	user_switch1_event();
+}
 	
 LOCAL void ICACHE_FLASH_ATTR switch1_toggle(void *arg) {
 	LOCAL event_timer = 0;
@@ -127,7 +148,7 @@ void ICACHE_FLASH_ATTR switch1_handler(
 ) {
 	struct jsonparse_state parser;
 	int type;
-	uint16 state = 0;
+	int state = 0;
 	
 	if (method == POST && data != NULL && data_len != 0) {
 		jsonparse_setup(&parser, data, data_len);
@@ -137,7 +158,7 @@ void ICACHE_FLASH_ATTR switch1_handler(
 				if (jsonparse_strcmp_value(&parser, "Relay") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					state = jsonparse_get_value_as_int(&parser);
+					state = jsonparse_get_value_as_sint(&parser);
 					user_switch1_set(0, state);
 				}
 			}
