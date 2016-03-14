@@ -107,7 +107,7 @@ void ICACHE_FLASH_ATTR devices_down() {
 #endif
 }
 
-void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url, void_func init, void_func down) {
+void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, const char *name, char *url, void_func init, void_func down) {
 	device_description *description = device_find(url);
 	
 	if (description != NULL) {
@@ -118,6 +118,7 @@ void ICACHE_FLASH_ATTR device_register(device_type type, uint8 id, char *url, vo
 	description = (device_description *)os_zalloc(sizeof(device_description));
 	
 	description->type = type;
+	description->name = name;
 	description->url  = url;
 	description->id   = id;
 	description->init = init;
@@ -180,11 +181,13 @@ char ICACHE_FLASH_ATTR *devices_scan_result(i2c_devices_queue *i2c, char *device
 			device, 
 			"%s{"
 			"\"Type\" : \"%s\", "
+			"\"Name\" : \"%s\", "
 			"\"URL\" : \"%s\", "
 			"\"Found\" : %d"
 			"%s}", 
 			devices[0] == '\0' ? "" : ", ",
 			device_type_str(description->type),
+			description->name,
 			description->url,
 			found,
 			i2c_str

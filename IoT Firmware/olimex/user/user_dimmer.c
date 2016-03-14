@@ -183,7 +183,7 @@ void ICACHE_FLASH_ATTR user_dimmer_init() {
 		webserver_register_handler_callback(DIMMER_URLs[i], dimmer_handler);
 	}
 	
-	device_register(I2C, DIMMER_ID, DIMMER_URL, NULL, NULL);
+	device_register(I2C, DIMMER_ID, DIMMER_STR, DIMMER_URL, NULL, NULL);
 	
 	if (status == I2C_OK) {
 		dimmer_timer_init();

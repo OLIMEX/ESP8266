@@ -22,6 +22,7 @@
 	
 	typedef struct _device_description_ {
 		device_type type;
+		const char *name;
 		char *url;
 		
 		uint8 id;
@@ -32,7 +33,7 @@
 		STAILQ_ENTRY(_device_description_) entries;
 	} device_description;
 	
-	void  device_register(device_type type, uint8 id, char *url, void_func init, void_func down);
+	void  device_register(device_type type, uint8 id, const char *name, char *url, void_func init, void_func down);
 	char *device_find_url(device_type type, uint8 id);
 	
 	void  devices_init();

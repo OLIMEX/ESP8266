@@ -112,7 +112,7 @@ void ICACHE_FLASH_ATTR user_relay_init() {
 	PIN_FUNC_SELECT(relay_hardware.gpio_name, relay_hardware.gpio_func);
 	relay_state = GPIO_INPUT_GET(GPIO_ID_PIN(relay_hardware.gpio_id));
 	webserver_register_handler_callback(RELAY_URL, relay_handler);
-	device_register(NATIVE, 0, RELAY_URL, NULL, NULL);
+	device_register(NATIVE, 0, ESP8266, RELAY_URL, NULL, NULL);
 }
 
 #endif

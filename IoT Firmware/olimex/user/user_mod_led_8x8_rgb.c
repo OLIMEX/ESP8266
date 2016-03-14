@@ -23,7 +23,7 @@ void ICACHE_FLASH_ATTR mod_led_8x8_rgb_init() {
 	led_8x8_rgb_set_dimensions(1, 1);
 	
 	webserver_register_handler_callback(MOD_LED_8x8_RGB_URL, mod_led_8x8_rgb_handler);
-	device_register(SPI, 0, MOD_LED_8x8_RGB_URL, NULL, NULL);
+	device_register(SPI, 0, MOD_LED8x8RGB, MOD_LED_8x8_RGB_URL, NULL, NULL);
 }
 
 void ICACHE_FLASH_ATTR mod_led_8x8_rgb_scroll_done() {

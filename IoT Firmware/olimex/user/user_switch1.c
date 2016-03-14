@@ -202,6 +202,6 @@ void ICACHE_FLASH_ATTR user_switch1_init() {
 	}
 	
 	webserver_register_handler_callback(SWITCH1_URL, switch1_handler);
-	device_register(NATIVE, 0, SWITCH1_URL, switch1_init, switch1_down);
+	device_register(NATIVE, 0, SWITCH1_STR, SWITCH1_URL, switch1_init, switch1_down);
 }
 #endif

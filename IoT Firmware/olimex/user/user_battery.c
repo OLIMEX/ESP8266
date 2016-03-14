@@ -120,7 +120,7 @@ void ICACHE_FLASH_ATTR user_battery_init() {
 	gpio16_input_conf();
 	
 	webserver_register_handler_callback(BATTERY_URL, battery_handler);
-	device_register(NATIVE, 0, BATTERY_URL, NULL, NULL);
+	device_register(NATIVE, 0, ESP8266, BATTERY_URL, NULL, NULL);
 	
 	setInterval(battery_state_get, NULL, BATTERY_STATE_REFRESH);
 }

@@ -120,7 +120,7 @@ void ICACHE_FLASH_ATTR adc_handler(
 
 void ICACHE_FLASH_ATTR user_adc_init() {
 	webserver_register_handler_callback(ADC_URL, adc_handler);
-	device_register(NATIVE, 0, ADC_URL, NULL, NULL);
+	device_register(NATIVE, 0, ESP8266, ADC_URL, NULL, NULL);
 	user_adc_timer_init();
 }
 #endif

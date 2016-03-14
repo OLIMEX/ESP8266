@@ -74,7 +74,7 @@ void ICACHE_FLASH_ATTR user_button_init() {
 	}
 	
 	webserver_register_handler_callback(BUTTON_URL, button_handler);
-	device_register(NATIVE, 0, BUTTON_URL, NULL, NULL);
+	device_register(NATIVE, 0, ESP8266, BUTTON_URL, NULL, NULL);
 }
 
 void ICACHE_FLASH_ATTR button_handler(

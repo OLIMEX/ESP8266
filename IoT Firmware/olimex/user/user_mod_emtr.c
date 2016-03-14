@@ -663,7 +663,7 @@ void ICACHE_FLASH_ATTR emtr_handler(
 void ICACHE_FLASH_ATTR mod_emtr_init() {
 	emtr_set_timeout_callback(emtr_timeout);
 	webserver_register_handler_callback(EMTR_URL, emtr_handler);
-	device_register(UART, 0, EMTR_URL, emtr_init, emtr_down);
+	device_register(UART, 0, MOD_EMTR, EMTR_URL, emtr_init, emtr_down);
 	
 	setTimeout(emtr_calibration_read, NULL, 1500);
 	setTimeout(emtr_events_read, NULL, 2000);

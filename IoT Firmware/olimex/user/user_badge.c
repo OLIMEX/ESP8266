@@ -454,7 +454,7 @@ void ICACHE_FLASH_ATTR badge_init() {
 	badge_test();
 	
 	webserver_register_handler_callback(BADGE_URL, badge_handler);
-	device_register(SPI, 0, BADGE_URL, NULL, NULL);
+	device_register(SPI, 0, BADGE_STR, BADGE_URL, NULL, NULL);
 }
 
 #endif
