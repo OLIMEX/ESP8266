@@ -451,6 +451,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 	// Check if header && not chunked
 	if (request->response_state == WEBCLIENT_RESP_STATE_WAITCHUNK) {
 		if ((char *)os_strstr(pData, "0\r\n") == pData) {
+			request->response_state = WEBCLIENT_RESP_STATE_OK;
 			is_close_conn = true;
 		}
 	} else {
