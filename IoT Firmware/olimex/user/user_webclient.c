@@ -14,6 +14,8 @@
 
 STAILQ_HEAD(webclient_requests, _webclient_request_) webclient_requests = STAILQ_HEAD_INITIALIZER(webclient_requests);
 
+LOCAL uint16 reconnect_timer = 0;
+
 const char ICACHE_FLASH_ATTR *webclient_method_str(request_method method) {
 	switch (method) {
 		case GET         : return "GET";
@@ -208,7 +210,6 @@ LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_new_request(
 	
 	webclient_new_element(&request->user, user);
 	webclient_new_element(&request->password, password);
-	
 	request->authorization = webclient_authorization(user, password);
 	
 	webclient_new_element(&request->host, host);
@@ -244,13 +245,16 @@ LOCAL void ICACHE_FLASH_ATTR webclient_free_request(webclient_request *request) 
 #endif
 	STAILQ_REMOVE(&webclient_requests, request, _webclient_request_, entries);
 	webclient_reset_timers(request);
+	
 	if (request->user) os_free(request->user);
 	if (request->password) os_free(request->password);
 	if (request->authorization) os_free(request->authorization);
 	
 	if (request->host) os_free(request->host);
 	if (request->path) os_free(request->path);
+	if (request->headers) os_free(request->headers);
 	if (request->content) os_free(request->content);
+	
 	if (request->connection) webclient_free_connection(request->connection);
 	os_free(request);
 }
@@ -261,8 +265,6 @@ LOCAL void ICACHE_FLASH_ATTR webclient_raise_reconnect() {
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct espconn *connection) {
-	LOCAL uint16 reconnect_timer = 0;
-	
 	if (request == NULL) {
 		webclient_free_connection(connection);
 		return;
@@ -270,18 +272,24 @@ LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct 
 	
 	if (
 		request->state != HTTP && 
-		(WEBCLIENT_RETRY_MAX == 0 || request->retry < WEBCLIENT_RETRY_MAX) && 
 		connection->state == ESPCONN_CLOSE
 	) {
+		uint8 retry = request->retry;
+		
 		webclient_free_request(request);
 		user_event_server_error();
 		
-		clearTimeout(reconnect_timer);
-		reconnect_timer = setTimeout(
-			(os_timer_func_t *)webclient_raise_reconnect, 
-			NULL, 
-			WEBCLIENT_RETRY_AFTER
-		);
+		if (WEBCLIENT_RETRY_MAX == 0 || retry < WEBCLIENT_RETRY_MAX) {
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
+			debug("WEBCLIENT: New request after [%d]\n", WEBCLIENT_RETRY_AFTER);
+#endif
+			clearTimeout(reconnect_timer);
+			reconnect_timer = setTimeout(
+				(os_timer_func_t *)webclient_raise_reconnect, 
+				NULL, 
+				WEBCLIENT_RETRY_AFTER
+			);
+		}
 		return;
 	}
 
@@ -312,9 +320,8 @@ LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct 
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_timeout(struct espconn *connection) {
-	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	int8 ret_stat = 0;
-
+	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
 		"WEBCLIENT: Timeout [%d.%d.%d.%d:%d]\n", 
@@ -322,9 +329,14 @@ LOCAL void ICACHE_FLASH_ATTR webclient_timeout(struct espconn *connection) {
 		connection->proto.tcp->local_port
 	);
 #endif	
-
+	
+	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
+	if (request == NULL) {
+		debug("WEBCLIENT: webclient_timeout() request not found");
+	}
+	
 #if SSL_ENABLE
-	if(connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl) {
+	if(connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || (request != NULL && request->ssl)) {
 		ret_stat = espconn_secure_disconnect(connection);
 	} else {
 		ret_stat = espconn_disconnect(connection);
@@ -340,7 +352,6 @@ LOCAL void ICACHE_FLASH_ATTR webclient_timeout(struct espconn *connection) {
 
 LOCAL void ICACHE_FLASH_ATTR webclient_reconnect(void *arg, sint8 err) {
 	struct espconn *connection = arg;
-	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
@@ -353,6 +364,11 @@ LOCAL void ICACHE_FLASH_ATTR webclient_reconnect(void *arg, sint8 err) {
 	);
 #endif
 	
+	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
+	if (request == NULL) {
+		debug("WEBCLIENT: webclient_reconnect() request not found");
+	}
+	
 	if (err != 0) {
 		webclient_error(request, connection);
 	}
@@ -360,7 +376,6 @@ LOCAL void ICACHE_FLASH_ATTR webclient_reconnect(void *arg, sint8 err) {
 
 LOCAL void ICACHE_FLASH_ATTR webclient_disconnect(void *arg) {
 	struct espconn *connection = arg;
-	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
@@ -370,6 +385,11 @@ LOCAL void ICACHE_FLASH_ATTR webclient_disconnect(void *arg) {
 		connection_state_str(connection->state)
 	);
 #endif
+	
+	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
+	if (request == NULL) {
+		debug("WEBCLIENT: webclient_disconnect() request not found");
+	}
 	
 	// after closing HTTP; and received data OK
 	if (
@@ -393,15 +413,6 @@ LOCAL void ICACHE_FLASH_ATTR webclient_sent(void *arg) {
 		return;
 	}
 	
-	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
-	
-	if (request == NULL) {	// should not happen, but ...
-#if WEBCLIENT_DEBUG
-		debug("WEBCLIENT: sentcb; request not found!");
-		return;
-#endif
-	}
-	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
 		"WEBCLIENT: Done [%d.%d.%d.%d:%d].\n", 
@@ -409,6 +420,12 @@ LOCAL void ICACHE_FLASH_ATTR webclient_sent(void *arg) {
 		connection->proto.tcp->local_port
 	);
 #endif
+	
+	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
+	if (request == NULL) {
+		debug("WEBCLIENT: webclient_sent() request not found");
+		return;
+	}
 	
 	request->response_state = WEBCLIENT_RESP_STATE_WAIT;
 }
@@ -420,11 +437,20 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 		return;
 	}
 	
+#if WEBCLIENT_DEBUG
+#if WEBCLIENT_VERBOSE_OUTPUT
+	debug(
+		"WEBCLIENT: Receive [%d.%d.%d.%d:%d]\n", 
+		IP2STR(connection->proto.tcp->remote_ip), 
+		connection->proto.tcp->local_port
+	);
+	debug("WEBCLIENT RESPONSE:\n%s\n\n", pData);
+#endif
+#endif
+	
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
-#if WEBCLIENT_DEBUG
-		debug("WEBCLIENT: webclient_recv() No request object found");
-#endif		
+		debug("WEBCLIENT: webclient_recv() request not found");
 		webclient_error(request, connection);
 		return;
 	}
@@ -446,17 +472,6 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 		webclient_execute(request);
 		return;
 	}
-	
-#if WEBCLIENT_DEBUG
-#if WEBCLIENT_VERBOSE_OUTPUT
-	debug(
-		"WEBCLIENT: Receive [%d.%d.%d.%d:%d]\n", 
-		IP2STR(connection->proto.tcp->remote_ip), 
-		connection->proto.tcp->local_port
-	);
-	debug("WEBCLIENT RESPONSE:\n%s\n\n", pData);
-#endif
-#endif
 	
 	bool is_close_conn = false;
 
@@ -493,7 +508,6 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 
 LOCAL void ICACHE_FLASH_ATTR webclient_connect(void *arg) {
 	struct espconn *connection = arg;
-	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
@@ -503,73 +517,87 @@ LOCAL void ICACHE_FLASH_ATTR webclient_connect(void *arg) {
 	);
 #endif
 	
+	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
+	if (request == NULL) {
+		debug("WEBCLIENT: webclient_connect() request not found!");
+		return;
+	}
+	
 	espconn_regist_sentcb(connection, webclient_sent);
 	espconn_regist_recvcb(connection, webclient_recv);
 	
 	if (connection->state == ESPCONN_CONNECT) {
-		if (request != NULL) {
-			char *content;
-			if (request->method == POST && os_strlen(request->content) != 0) {
-				content = (char *)os_zalloc(os_strlen(request->content)+WEBSERVER_MAX_VALUE);
-				os_sprintf(
-					content,
-					"Content-Type: application/json\r\n"
-					"Content-Length: %d\r\n"
-					"\r\n"
-					"%s",
-					os_strlen(request->content),
-					request->content
-				);
-			} else {
-				content = (char *)os_zalloc(3);
-				os_sprintf(content, "\r\n");
-			}
-			
-			char *request_data;
-			request_data = (char *)os_zalloc(os_strlen(content)+WEBSERVER_MAX_VALUE*2);
-			
+		char *content;
+		if (request->method == POST && os_strlen(request->content) != 0) {
+			content = (char *)os_zalloc(os_strlen(request->content)+WEBSERVER_MAX_VALUE);
 			os_sprintf(
-				request_data,
-				"%s %s HTTP/1.1\r\n"
-				"Host: %s\r\n"
-				"%s"
-				"%s"
+				content,
+				"Content-Type: application/json\r\n"
+				"Content-Length: %d\r\n"
+				"\r\n"
 				"%s",
-				webclient_method_str(request->method),
-				request->path,
-				request->host,
-				request->authorization,
-				request->headers,
-				content
+				os_strlen(request->content),
+				request->content
 			);
-			
-			os_free(content);
+		} else {
+			content = (char *)os_zalloc(3);
+			os_sprintf(content, "\r\n");
+		}
+		
+		char *request_data;
+		request_data = (char *)os_zalloc(os_strlen(content)+WEBSERVER_MAX_VALUE*2);
+		
+		os_sprintf(
+			request_data,
+			"%s %s HTTP/1.1\r\n"
+			"Host: %s\r\n"
+			"%s"
+			"%s"
+			"%s",
+			webclient_method_str(request->method),
+			request->path,
+			request->host,
+			request->authorization,
+			request->headers,
+			content
+		);
+		
+		os_free(content);
 			
 #if WEBCLIENT_DEBUG
 #if WEBCLIENT_VERBOSE_OUTPUT
-			debug("WEBCLIENT REQUEST: \nLength: %d\n%s\n", os_strlen(request_data), request_data);
+		debug(
+			"WEBCLIENT REQUEST \n"
+			"\tHeaders: %d\n" 
+			"\tContent: %d\n" 
+			"\tLength: %d\n\n"
+			"%s\n", 
+			os_strlen(request->headers),
+			os_strlen(request->content),
+			os_strlen(request_data),
+			request_data
+		);
 #endif
 #endif
 
 #if SSL_ENABLE
-			if (connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl) {
-				espconn_secure_send(connection, request_data, os_strlen(request_data));
-			} else {
-				espconn_send(connection, request_data, os_strlen(request_data));
-			}
-#else
+		if (connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || request->ssl) {
+			espconn_secure_send(connection, request_data, os_strlen(request_data));
+		} else {
 			espconn_send(connection, request_data, os_strlen(request_data));
+		}
+#else
+		espconn_send(connection, request_data, os_strlen(request_data));
 #endif
 			
-			os_free(request_data);
-		}
+		os_free(request_data);
 	}
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void *arg) {
 	struct espconn *connection = arg;
-	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	
+	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
 		debug(
 			"WEBCLIENT: Request can not be found [%d.%d.%d.%d:%d]\n", 
@@ -734,6 +762,7 @@ void ICACHE_FLASH_ATTR webclient_socket(bool ssl, char *user, char *password, ch
 #if WEBCLIENT_DEBUG
 	debug("WEBCLIENT: New WebSocket request\n");
 #endif
+	clearTimeout(reconnect_timer);
 	webclient_request *request = webclient_new_request(GET, ssl, user, password, host, port, path, headers, content);
 	if (request != NULL && request->state == HTTP) {
 		request->state = UPGRADE;
