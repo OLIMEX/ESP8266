@@ -10,6 +10,7 @@
 #include "user_websocket.h"
 #include "user_config.h"
 #include "user_events.h"
+#include "user_json.h"
 
 STAILQ_HEAD(webclient_requests, _webclient_request_) webclient_requests = STAILQ_HEAD_INITIALIZER(webclient_requests);
 
@@ -254,7 +255,14 @@ LOCAL void ICACHE_FLASH_ATTR webclient_free_request(webclient_request *request) 
 	os_free(request);
 }
 
+LOCAL void ICACHE_FLASH_ATTR webclient_raise_reconnect() {
+	char status[WEBSERVER_MAX_VALUE];
+	user_event_raise(NULL, json_status(status, ESP8266, "WebSocket Reconnect", NULL));
+}
+
 LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct espconn *connection) {
+	LOCAL uint16 reconnect_timer = 0;
+	
 	if (request == NULL) {
 		webclient_free_connection(connection);
 		return;
@@ -265,12 +273,16 @@ LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct 
 		(WEBCLIENT_RETRY_MAX == 0 || request->retry < WEBCLIENT_RETRY_MAX) && 
 		connection->state == ESPCONN_CLOSE
 	) {
+		webclient_free_request(request);
 		user_event_server_error();
-		webclient_renew_connection(request);
 		
-		char event[WEBSERVER_MAX_VALUE];
-		user_event_build(event, NULL, "{\"Device\" : \"ESP8266\", \"Status\" : \"WebSocket Reconnect\"}");
-		webclient_new_element(&request->content, event);
+		clearTimeout(reconnect_timer);
+		reconnect_timer = setTimeout(
+			(os_timer_func_t *)webclient_raise_reconnect, 
+			NULL, 
+			WEBCLIENT_RETRY_AFTER
+		);
+		return;
 	}
 
 	if (wifi_station_get_connect_status() == STATION_GOT_IP) {
