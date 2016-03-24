@@ -410,11 +410,6 @@ void ICACHE_FLASH_ATTR webserver_connection_clear(named_connection_queue *collec
 		os_free(request->pURL);
 		os_free(request);
 	}
-	
-	sint8 err = espconn_delete(pConnection);
-	if (err != 0) {
-		debug("espconn_delete() %d %s\n", err, connection_err_str(err));
-	}
 }
 
 /******************************************************************************
