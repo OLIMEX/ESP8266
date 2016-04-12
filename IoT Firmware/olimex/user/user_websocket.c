@@ -183,11 +183,14 @@ LOCAL void ICACHE_FLASH_ATTR websocket_send(connections_queue *request, struct e
 	os_free(frame);
 }
 
-LOCAL void ICACHE_FLASH_ATTR websocket_sent(void *arg) {
+void ICACHE_FLASH_ATTR websocket_sent(void *arg) {
 	struct espconn *pConnection = arg;
 	connections_queue *request;
 	websocket_extra *extra;
 	
+#if WEBSOCKET_DEBUG
+	debug("WebSocket: Sent\n");
+#endif
 	STAILQ_FOREACH(request, &(websockets.head), entries) {
 		extra = request->extra;
 		if (webserver_connection_match(pConnection, &(request->footprint))) {
@@ -263,6 +266,7 @@ LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct 
 			debug("WebSocket: State CLOSING\n");
 #endif
 			extra->state = WEBSOCKET_CLOSING;
+			webserver_free_message_queue(request);
 		break;
 		
 		case WEBSOCKET_CLOSING:
@@ -270,16 +274,17 @@ LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct 
 			debug("WebSocket: State CLOSED\n");
 #endif
 			extra->state = WEBSOCKET_CLOSED;
-#if SSL_ENABLE
-			if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
-				espconn_secure_disconnect(pConnection);
-			} else {
-				espconn_disconnect(pConnection);
-			}
-#else
-			espconn_disconnect(pConnection);
+			setTimeout(
+#if SSL_ENABLE	
+				pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT ?
+					(os_timer_func_t *)espconn_secure_disconnect
+					:
 #endif
-			if (extra->type == WEBSOCKET_CLIENT) webserver_discon(pConnection);
+					(os_timer_func_t *)espconn_disconnect
+				, 
+				pConnection,
+				100
+			);
 			return;
 		break;
 		
@@ -802,6 +807,7 @@ char ICACHE_FLASH_ATTR *websocket_accept(char *key) {
 	sha1(accept, os_strlen(accept), digest);
 	base64_encode(digest, sizeof(digest), b64Accept, 30);
 	
+	os_free(accept);
 	return b64Accept;
 }
 

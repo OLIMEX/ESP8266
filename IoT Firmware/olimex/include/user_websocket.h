@@ -53,6 +53,7 @@
 	
 	bool is_websocket(struct espconn *pConnection);
 	bool websocket_switched(struct espconn *pConnection, char *pData, unsigned short length);
+	void websocket_sent(void *arg);
 	
 	void websocket_send_message(char *pURL, char *pData, struct espconn *pConnection);
 	void websocket_debug_message(char *pData);

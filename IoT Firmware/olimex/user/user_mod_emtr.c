@@ -185,28 +185,42 @@ LOCAL void ICACHE_FLASH_ATTR emtr_timeout() {
 	emtr_start_read();
 }
 
-LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
-	LOCAL uint32 time = 0;
-	LOCAL uint32 interval = 0;
-	LOCAL uint32 now = 0;
+LOCAL bool ICACHE_FLASH_ATTR emtr_over_treshold(_sint64_ a, _sint64_ b, uint32 treshold) {
+	return (abs(a - b) > treshold);
+}
+
+LOCAL void ICACHE_FLASH_ATTR emtr_read_event(uint32 interval) {
+	LOCAL emtr_output_registers *last_event = NULL;
 	
-	now = system_get_time();
-	interval = (time != 0) ? 
-		(now - time) / 1000
-		: 
-		0
-	;
-	time = now;
-	
-	if (emtr_registers.output == NULL) {
-		emtr_registers.output = (emtr_output_registers *)os_zalloc(sizeof(emtr_output_registers));
+	bool event = false;
+	if (last_event == NULL) {
+		last_event = (emtr_output_registers *)os_zalloc(sizeof(emtr_output_registers));
+		event = true;
 	}
 	
-	if (emtr_single_wire_read) {
-		emtr_parse_single_wire(packet, emtr_registers.output);
-	} else {
-		emtr_parse_output(packet, emtr_registers.output);
+	event = event || emtr_over_treshold(emtr_registers.output->current_rms,    last_event->current_rms,     10);
+	event = event || emtr_over_treshold(emtr_registers.output->voltage_rms,    last_event->voltage_rms,      5);
+	event = event || emtr_over_treshold(emtr_registers.output->active_power,   last_event->active_power,     5);
+	event = event || emtr_over_treshold(emtr_registers.output->reactive_power, last_event->reactive_power,   5);
+	event = event || emtr_over_treshold(emtr_registers.output->apparent_power, last_event->apparent_power,   5);
+	event = event || emtr_over_treshold(emtr_registers.output->power_factor,   last_event->power_factor,    50);
+	event = event || emtr_over_treshold(emtr_registers.output->line_frequency, last_event->line_frequency,  50);
+	event = event || emtr_over_treshold(emtr_registers.output->event_flag,     last_event->event_flag,       0);
+	event = event || emtr_over_treshold(emtr_registers.output->system_status,  last_event->system_status,    0);
+	
+	if (!event) {
+		return;
 	}
+
+	last_event->current_rms    = emtr_registers.output->current_rms;
+	last_event->voltage_rms    = emtr_registers.output->voltage_rms;
+	last_event->active_power   = emtr_registers.output->active_power;
+	last_event->reactive_power = emtr_registers.output->reactive_power;
+	last_event->apparent_power = emtr_registers.output->apparent_power;
+	last_event->power_factor   = emtr_registers.output->power_factor;
+	last_event->line_frequency = emtr_registers.output->line_frequency;
+	last_event->event_flag     = emtr_registers.output->event_flag;
+	last_event->system_status  = emtr_registers.output->system_status;
 	
 	char response[WEBSERVER_MAX_RESPONSE_LEN];
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
@@ -247,15 +261,38 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
 		),
 		NULL
 	);
+	user_event_raise(EMTR_URL, response);
+}
+
+LOCAL void ICACHE_FLASH_ATTR emtr_read_done(emtr_packet *packet) {
+	LOCAL uint32 time = 0;
+	LOCAL uint32 interval = 0;
+	LOCAL uint32 now = 0;
+	
+	now = system_get_time();
+	interval = (time != 0) ? 
+		(now - time) / 1000
+		: 
+		0
+	;
+	time = now;
+	
+	if (emtr_registers.output == NULL) {
+		emtr_registers.output = (emtr_output_registers *)os_zalloc(sizeof(emtr_output_registers));
+	}
+	
+	if (emtr_single_wire_read) {
+		emtr_parse_single_wire(packet, emtr_registers.output);
+	} else {
+		emtr_parse_output(packet, emtr_registers.output);
+	}
 	
 	emtr_counter_add(
 		emtr_registers.output->active_power   * interval / 1000, 
 		emtr_registers.output->apparent_power * interval / 1000
 	);
-	
-	user_event_raise(EMTR_URL, response);
+	emtr_read_event(interval);
 	emtr_start_read();
-	
 	if (emtr_registers.output->event_flag != 0) {
 		emtr_clear_event(emtr_registers.output->event_flag, NULL);
 	}

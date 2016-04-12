@@ -41,6 +41,29 @@ LOCAL struct espconn ICACHE_FLASH_ATTR *webclient_new_connection(int port) {
 LOCAL void ICACHE_FLASH_ATTR webclient_free_connection(struct espconn *connection) {
 	websocket_connection_clear(connection);
 	
+	sint8 res;
+#if SSL_ENABLE
+	if(connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT) {
+		res = espconn_secure_delete(connection);
+	} else {
+		res = espconn_delete(connection);
+	}
+#else
+	res = espconn_delete(connection);
+#endif
+	
+#if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
+	if (res != 0) {
+		debug(
+			"WEBCLIENT: Connection delete %d [%s]\n", 
+			res, 
+			connection_err_str(res)
+		);
+	} else {
+		debug("WEBCLIENT: Connection deleted.\n");
+	}
+#endif
+	
 	if (connection->proto.tcp) os_free(connection->proto.tcp);
 	os_free(connection);
 }
@@ -410,6 +433,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_sent(void *arg) {
 	user_event_server_ok();
 	
 	if (is_websocket(connection)) {
+		websocket_sent(arg);
 		return;
 	}
 	

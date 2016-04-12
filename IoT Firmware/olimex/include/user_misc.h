@@ -6,6 +6,7 @@
 	#define MAX_STATUS_LEN   50
 	
 	typedef unsigned long int _uint64_;
+	typedef signed long int _sint64_;
 	
 	uint32 pow_int(uint32 num, uint8 pow);
 	

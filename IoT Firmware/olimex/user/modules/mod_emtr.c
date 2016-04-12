@@ -797,7 +797,7 @@ void ICACHE_FLASH_ATTR emtr_single_wire_start(uint32 system_configuration, emtr_
 
 void ICACHE_FLASH_ATTR emtr_single_wire_stop(uint32 system_configuration) {
 #if EMTR_DEBUG
-	debug("emtr_set_system_configuration()\n");
+	debug("emtr_single_wire_stop()\n");
 #endif
 	
 	emtr_single_wire_done = NULL;
@@ -805,7 +805,7 @@ void ICACHE_FLASH_ATTR emtr_single_wire_stop(uint32 system_configuration) {
 		return;
 	}
 	
-	system_configuration = system_configuration | (~(1 << 8));
+	system_configuration = system_configuration & (~(1 << 8));
 	emtr_set_system_configuration(system_configuration, 2, NULL);
 }
 

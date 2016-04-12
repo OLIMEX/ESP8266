@@ -383,36 +383,6 @@ connections_queue ICACHE_FLASH_ATTR *webserver_connection_find(named_connection_
 }
 
 /******************************************************************************
- * FunctionName : webserver_connection_clear
- * Description  : remove request from connection queue (closed connection)
- * Parameters   : collection
-                  pConnection
- * Returns      : none
-*******************************************************************************/
-void ICACHE_FLASH_ATTR webserver_connection_clear(named_connection_queue *collection, struct espconn *pConnection) {
-	connections_queue *request;
-	
-	while (request = webserver_connection_find(collection, pConnection)) {
-#if WEBSERVER_DEBUG
-		debug(
-			"WEBSERVER: %s remove [%s] [%d.%d.%d.%d:%d]\n", 
-			collection->name,
-			request->pURL,
-			IP2STR(pConnection->proto.tcp->remote_ip),
-			pConnection->proto.tcp->remote_port
-		);
-#endif
-			
-		STAILQ_REMOVE(&(collection->head), request, _connections_queue_, entries);
-		if (request->extra) {
-			os_free(request->extra);
-		}
-		os_free(request->pURL);
-		os_free(request);
-	}
-}
-
-/******************************************************************************
  * FunctionName : webserver_connection_reconnect
  * Description  : 
  * Parameters   : collection
@@ -476,6 +446,52 @@ messages_queue ICACHE_FLASH_ATTR *webserver_fetch_message(connections_queue *req
 	}
 	
 	return message;
+}
+
+/******************************************************************************
+ * FunctionName : webserver_free_message_queue
+ * Description  : free all stored messages
+ * Parameters   : request
+ * Returns      : none
+*******************************************************************************/
+void ICACHE_FLASH_ATTR webserver_free_message_queue(connections_queue *request) {
+	messages_queue *message;
+	
+	while (message = webserver_fetch_message(request)) {
+		os_free(message->data);
+		os_free(message);
+	}
+}
+
+/******************************************************************************
+ * FunctionName : webserver_connection_clear
+ * Description  : remove request from connection queue (closed connection)
+ * Parameters   : collection
+                  pConnection
+ * Returns      : none
+*******************************************************************************/
+void ICACHE_FLASH_ATTR webserver_connection_clear(named_connection_queue *collection, struct espconn *pConnection) {
+	connections_queue *request;
+	
+	while (request = webserver_connection_find(collection, pConnection)) {
+#if WEBSERVER_DEBUG
+		debug(
+			"WEBSERVER: %s remove [%s] [%d.%d.%d.%d:%d]\n", 
+			collection->name,
+			request->pURL,
+			IP2STR(pConnection->proto.tcp->remote_ip),
+			pConnection->proto.tcp->remote_port
+		);
+#endif
+			
+		STAILQ_REMOVE(&(collection->head), request, _connections_queue_, entries);
+		webserver_free_message_queue(request);
+		if (request->extra) {
+			os_free(request->extra);
+		}
+		os_free(request->pURL);
+		os_free(request);
+	}
 }
 
 /******************************************************************************
@@ -1244,7 +1260,7 @@ LOCAL void ICACHE_FLASH_ATTR webserver_recv(void *arg, char *pData, unsigned sho
 LOCAL ICACHE_FLASH_ATTR void webserver_recon(void *arg, sint8 err) { 
 	struct espconn *pConnection = arg;
 
-#if WEBSERVER_DEBUG
+#if CONNECTIONS_DEBUG || WEBSERVER_DEBUG
 	debug(
 		"WEBSERVER: Reconnect [%d.%d.%d.%d:%d] %d [%s] [%s]\n", 
 		IP2STR(pConnection->proto.tcp->remote_ip),
