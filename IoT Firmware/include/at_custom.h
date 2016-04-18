@@ -158,4 +158,11 @@ uint32 at_fake_uart_rx(uint8* data,uint32 length);
   */
 bool at_fake_uart_enable(bool enable,at_fake_uart_tx_func_type at_fake_uart_tx_func);
 
+/**
+  * @brief set at escape character
+  * @param  ch: escape character.
+  * @retval TRUE,if set ok,otherwize FALSE.
+  */
+bool at_set_escape_character(uint8 ch);
+
 #endif

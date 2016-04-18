@@ -1,5 +1,41 @@
 ESP8266_NONOS_SDK Release Note
 
+ESP8266_NONOS_SDK_V1.5.3_16_04_16 Release Note 
+Optimization:
+1. Supported ISSI flash.
+2. SmartConfig updated to version 2.5.4, solved the issue that AirKiss may fail in certain cases.
+3. libphy.a updated to version 9281.
+4. AT updated to version 1.00.
+5. Added lwip_open_src_template_proj in ESP8266_NONOS_SDK\examples for open source LWIP.
+6. Added peripheral_test in ESP8266_NONOS_SDK\examples.
+7. Moved driver_lib folder to be as ESP8266_NONOS_SDK\driver_lib.
+8. Added SPI driver, refer to ESP8266_NONOS_SDK\driver_lib\driver\spi_interface.c.
+9. Optimized espconn.
+10. Optimized DNS function.
+11. Optimized mDNS function.
+12. Optimized the disconnection when ESP8266 runs as TCP server.
+13. Optimized DHCP server: after DHCP release, it will assign the first unused IP to next DHCP client.
+14. Removed the limitation of freedom sending unencrypted beacon/probe req/probe resp.
+15. Resolved the issue that wifi_station_get_connect_status returned incorrect status when some router restarted.
+16. Revised the SSL server crash issue.
+
+Added APIs: 
+1. WPA2-Enterprise APIs 
+wifi_station_set_username : set user name for WPA2-Enterprise
+wifi_station_clear_username : clear user name for WPA2-Enterprise
+2. AT APIs 
+at_set_escape_character : set escape character for AT commands
+
+AT_V1.0 Release Note:
+Optimization: 
+1. Revised the flash map of AT firmware in no bootmode, please download the bin files according to at\readme.
+2. Revised the problem that AT+PING may fail when using some special router.
+3. Optimized AT firmware when receiving TCP data with UART flow control.
+
+Added AT commands£º
+1. AT+CIPDOMAIN: for DNS function.
+
+
 ESP8266_NONOS_SDK_V1.5.2_16_01_29 Release Note 
 Resolved Issues (Bugs listed below apply to Bug Bounty Program):
 1. Strange os_timer_arm behavior.
@@ -32,7 +68,7 @@ Release notes of AT_v0.60:
 3. Added command AT+MDNS, MDSN supported. 
 4. Added command AT+CWSTARTDISCOVER/AT+CWSTOPDISCOVER. AirKiss intranet detecting function is supported. 
 5. Optimized command AT+CIPSTART. The device can function as SSL client, and one SSL connection can be created at most. 
-6. Optimized AT+UART and related command.  
+6. The last byte of baud rate error issue is resolved. 
 
 esp_iot_sdk_v1.5.1_16_01_08 Release Note
 Resolved Issues (Bugs listed below apply to Bug Bounty Program):
@@ -54,13 +90,13 @@ Optimization:
 13.Straighten the control capability of GPIO16 under light sleep mode. 
 14.boot.bin is upgrade to version 1.5, resolving boot failure when firmware is upgraded over the air (OTA).
 
-AT release note£º 
+AT_v0.52 release note£º 
 1.Optimize the process of establishing TCP server via AT command. 
 2.Optimize UART-WiFi transparent transmission mode via AT command. 
 
-Please be noted that with the release of ESP8266_NONOS_SDK_V1.5.0, AT firmware is too large to use 4Mbit Flash. Please choose flash with at least 8Mbit capacity. 
+Please be noted that with the release of NONOS SDK Version 1.5.0 (ESP8266_NONOS_SDK_V1.5.0), the space that AT commands occupies has increased to more than 4Mbit. Therefore, flash with 512Kbit capacity is no longer supported. Please choose flash with at least 8Mbit capacity. 
 
-Please be noted that firmware upgrade over-the-air process is changed a bit. We will upgrade the latest AT firmware to Espressif Cloud server only after it has been tested and the overall performance is guaranteed. Users may not be able to use AT+CIUPDATE in ESP8266_NONOS_SDK_V1.5.0 and other more advanced versions. 
+Please be noted that firmware upgrade over-the-air process is changed a bit. We will upgrade the latest firmware to Espressif Cloud server only after it has been tested and the overall performance is guaranteed. Users may not be able to download firmware encapsulated in ESP8266_NONOS_SDK_V1.5.0 and other more advanced versions. 
 
 esp_iot_sdk_v1.5.0_15_11_27 Release Note
 Resolved Issues (Bugs listed below apply to Bug Bounty Program):
