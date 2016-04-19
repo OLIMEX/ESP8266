@@ -258,7 +258,7 @@ LOCAL void ICACHE_FLASH_ATTR websocket_pong(connections_queue *request, struct e
  * Description  : Send WebSocket pong frame
  * Parameters   : 
 *******************************************************************************/
-LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct espconn *pConnection, uint16 status, char *msg) {
+LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct espconn *pConnection, uint16 status, const char *msg) {
 	websocket_extra *extra = request->extra;
 	switch (extra->state) {
 		case WEBSOCKET_OPEN:
@@ -734,7 +734,7 @@ void ICACHE_FLASH_ATTR websocket_send_message(char *pURL, char *pData, struct es
  * Parameters   : 
  * Returns      : boolean
 *******************************************************************************/
-void ICACHE_FLASH_ATTR websocket_close_all(char *reason, struct espconn *pConnection) {
+void ICACHE_FLASH_ATTR websocket_close_all(const char *reason, struct espconn *pConnection) {
 	connections_queue *request;
 	
 	STAILQ_FOREACH(request, &(websockets.head), entries) {

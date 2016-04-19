@@ -57,5 +57,5 @@
 	
 	void websocket_send_message(char *pURL, char *pData, struct espconn *pConnection);
 	void websocket_debug_message(char *pData);
-	void websocket_close_all(char *reason, struct espconn *pConnection);
+	void websocket_close_all(const char *reason, struct espconn *pConnection);
 #endif
