@@ -44,11 +44,15 @@ LOCAL void ICACHE_FLASH_ATTR button_short_release() {
 	setTimeout(memory_info,  NULL, 100);
 }
 
-LOCAL void ICACHE_FLASH_ATTR button_restore_defaults() {
-	debug("CONFIG: Restore defaults\n");
+LOCAL void ICACHE_FLASH_ATTR button_close_connections() {
+	debug("BUTTON: Close connections\n");
 	
 	websocket_close_all(RECONNECT, NULL);
 	long_poll_close_all();
+}
+
+LOCAL void ICACHE_FLASH_ATTR button_restore_defaults() {
+	debug("BUTTON: Restore defaults\n");
 	
 	user_config_restore_defaults();
 	user_config_load();
@@ -56,7 +60,8 @@ LOCAL void ICACHE_FLASH_ATTR button_restore_defaults() {
 
 LOCAL void ICACHE_FLASH_ATTR button_long_press() {
 	button_set_response("Long Press");
-	setTimeout(button_restore_defaults, NULL, 1500);
+	setTimeout(button_close_connections, NULL, 500);
+	setTimeout(button_restore_defaults,  NULL, 1000);
 }
 
 LOCAL void ICACHE_FLASH_ATTR button_long_release() {
