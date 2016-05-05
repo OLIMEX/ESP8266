@@ -713,7 +713,7 @@ void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {
 	}
 }
 
-LOCAL bool webclient_host_check(char *host) {
+LOCAL bool ICACHE_FLASH_ATTR webclient_host_check(char *host) {
 	if (host == NULL || *host == '\0') {
 #if WEBCLIENT_DEBUG
 		debug("WEBCLIENT: NULL host request. Request ignored!\n");

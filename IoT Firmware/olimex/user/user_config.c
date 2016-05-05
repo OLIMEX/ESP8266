@@ -529,7 +529,7 @@ LOCAL char ICACHE_FLASH_ATTR *config_mac(uint8 interface) {
 	return mac_str[interface];
 }
 
-LOCAL void config_response(char *response, char *error, char *data) {
+LOCAL void ICACHE_FLASH_ATTR config_response(char *response, char *error, char *data) {
 	if (error[0] != '\0') {
 		char data_buff[os_strlen(data) + 20];
 		json_error(
