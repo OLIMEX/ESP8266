@@ -409,6 +409,7 @@ LOCAL void ICACHE_FLASH_ATTR websocket_handle_message(connections_queue *request
 	char cURL[WEBSERVER_MAX_VALUE] = "";
 	char cMethod[WEBSERVER_MAX_VALUE] = "";
 	char cData[WEBSERVER_MAX_PACKET_LEN] = "";
+	char cRef[WEBSERVER_MAX_NAME] = "";
 	request_method method = UNKNOWN;
 
 	jsonparse_setup(&parser, msg, os_strlen(msg));
@@ -427,6 +428,10 @@ LOCAL void ICACHE_FLASH_ATTR websocket_handle_message(connections_queue *request
 				} else if (os_strcmp(cMethod, "POST") == 0) {
 					method = POST;
 				}
+			} else if (jsonparse_strcmp_value(&parser, "ref") == 0) {
+				jsonparse_next(&parser);
+				jsonparse_next(&parser);
+				jsonparse_copy_value(&parser, cRef, WEBSERVER_MAX_NAME);
 			} else if (jsonparse_strcmp_value(&parser, "Data") == 0) {
 				jsonparse_next(&parser);
 				jsonparse_next(&parser);
@@ -466,8 +471,18 @@ LOCAL void ICACHE_FLASH_ATTR websocket_handle_message(connections_queue *request
 	}
 	
 	(*callback)(pConnection, method, cURL, cData, data_len, content_len, response, sizeof(response));
-	if (os_strlen(response) == 0) {
+	
+	uint16 resLen = os_strlen(response);
+	if (resLen == 0) {
 		return;
+	}
+	
+	uint16 refLen = os_strlen(cRef);
+	if (response[resLen-1] == '}' && refLen > 0) {
+		response[resLen-1] = '\0';
+		os_strcat(response, ", \"ref\": \"");
+		os_strcat(response, cRef);
+		os_strcat(response, "\"}");
 	}
 	
 	if (method == POST) {
