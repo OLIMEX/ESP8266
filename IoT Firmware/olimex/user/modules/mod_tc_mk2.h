@@ -7,7 +7,7 @@
 		#define MOD_TC_MK2_ID             0x27
 		#define MOD_TC_MK2_DEFAULT_ADDR   0x23
 		
-		#define MOD_TC_MK2_FILTER_FACTOR     2
+		#define MOD_TC_MK2_FILTER_FACTOR     4
 
 		#include "driver/i2c_extention.h"
 
