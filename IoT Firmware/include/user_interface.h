@@ -96,6 +96,7 @@ void system_uart_swap(void);
 void system_uart_de_swap(void);
 
 uint16 system_adc_read(void);
+void system_adc_read_fast(uint16 *adc_addr, uint16 adc_num, uint8 adc_clk_div);
 uint16 system_get_vdd33(void);
 
 const char *system_get_sdk_version(void);
@@ -359,6 +360,11 @@ void wifi_fpm_do_wakeup(void);
 sint8 wifi_fpm_do_sleep(uint32 sleep_time_in_us);
 void wifi_fpm_set_sleep_type(enum sleep_type type);
 enum sleep_type wifi_fpm_get_sleep_type(void);
+
+typedef void (*fpm_wakeup_cb)(void);
+void wifi_fpm_set_wakeup_cb(fpm_wakeup_cb cb);
+
+void wifi_fpm_auto_sleep_set_in_null_mode(uint8 req);
 
 enum {
     EVENT_STAMODE_CONNECTED = 0,

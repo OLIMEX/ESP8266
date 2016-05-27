@@ -1,6 +1,31 @@
 ESP8266_NONOS_SDK Release Note
 
-ESP8266_NONOS_SDK_V1.5.3_16_04_16 Release Note 
+ESP8266_NONOS_SDK_V1.5.4_16_05_20 Release Note 
+Optimization:
+1. Updated libphy.a to version 972.
+2. Updated libpp.a to version 10.1, revised issues about frequency offset and sleep mode.
+3. Optimized IGMP function.
+4. Optimized DNS function.
+5. Optimized WPS function.
+6. Optimized DHCP server function.
+7. Optimized wifi_station_get_connect_status function.
+8. Revised the issue that API system_adc_read and system_get_vdd33 may return wrong value.
+9. Optimized API:
+bool espconn_secure_ca_enable(uint8 level, uint32 flash_sector);
+bool espconn_secure_cert_req_enable(uint8 level, uint32 flash_sector);
+
+Added APIs: 
+1. system_adc_read_fast: ADC fast sampling.
+2. wifi_fpm_auto_sleep_set_in_null_mode: set whether enter modem-sleep mode or not when WiFi is in NULL_MODE.
+
+AT_V1.1 Release Note:
+Optimization: 
+1. Optimized the behavior of writing Flash.
+2. Optimized DHCP server function.
+3. Updated command AT+SAVETRANSLINK to save domain name. 
+
+
+ESP8266_NONOS_SDK_V1.5.3_16_04_15 Release Note 
 Optimization:
 1. Supported ISSI flash.
 2. SmartConfig updated to version 2.5.4, solved the issue that AirKiss may fail in certain cases.
@@ -94,7 +119,7 @@ AT_v0.52 release note£º
 1.Optimize the process of establishing TCP server via AT command. 
 2.Optimize UART-WiFi transparent transmission mode via AT command. 
 
-Please be noted that with the release of NONOS SDK Version 1.5.0 (ESP8266_NONOS_SDK_V1.5.0), the space that AT commands occupies has increased to more than 4Mbit. Therefore, flash with 512Kbit capacity is no longer supported. Please choose flash with at least 8Mbit capacity. 
+Please be noted that with the release of NONOS SDK Version 1.5.0 (ESP8266_NONOS_SDK_V1.5.0), the space that AT commands occupies has increased to more than 4Mbit. Therefore, flash with 4Mbit capacity is no longer supported. Please choose flash with at least 8Mbit capacity. 
 
 Please be noted that firmware upgrade over-the-air process is changed a bit. We will upgrade the latest firmware to Espressif Cloud server only after it has been tested and the overall performance is guaranteed. Users may not be able to download firmware encapsulated in ESP8266_NONOS_SDK_V1.5.0 and other more advanced versions. 
 
