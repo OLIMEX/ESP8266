@@ -49,6 +49,8 @@ i2c_config ICACHE_FLASH_ATTR *tc_init(uint8 *address, i2c_status *status) {
 	
 	if (config == NULL) {
 		config = i2c_add_config(*address, MOD_TC_MK2_ID, (void *)os_zalloc(sizeof(tc_config_data)));
+		tc_config_data *config_data = (tc_config_data *)config->data;
+		config_data->first = true;
 	}
 	
 	return config;
@@ -94,11 +96,19 @@ i2c_status ICACHE_FLASH_ATTR tc_read(i2c_config *config) {
 	}
 	
 	sint16 d = data[3] * 256 + (data[2] & 0xFC);
-	float tf = 0.0625 * d;
+	// Low pass filter 
+	if (config_data->first) {
+		config_data->first = false;
+		config_data->raw = d;
+	} else {
+		config_data->raw = config_data->raw + (d - config_data->raw) / MOD_TC_MK2_FILTER_FACTOR;
+	}
+	config_data->temperature = config_data->raw / 4;
+	
+	float tf = 0.0625 * config_data->raw;
 	int ti = tf;
 	uint16 td = (tf - ti) * 100;
 	
-	config_data->temperature = d / 4;
 	os_sprintf(config_data->temperature_str, "%d.%02d", ti, td);
 	
 	return I2C_OK;

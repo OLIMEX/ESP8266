@@ -19,8 +19,8 @@
 			#define BATTERY_MAX_ADC          810
 		#endif
 		
-		#define BATTERY_FILTER_COUNT       10
-		#define BATTERY_FILTER_SHIFT       4
+		#define BATTERY_FILTER_COUNT          10
+		#define BATTERY_FILTER_SHIFT           3
 		
 		void  user_battery_init();
 		uint8 battery_percent_get();
