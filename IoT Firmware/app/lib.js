@@ -1,4 +1,15 @@
 (function ($) {
+	$.urlParam = function(name) {
+		var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+		return (results ?
+			results[1]
+			:
+			0
+		);
+	};
+})(jQuery);
+
+(function ($) {
 	$.fn.bits = function () {
 		return this.find(':checkbox').each(
 			function (i, e) {
@@ -951,14 +962,14 @@
 					};
 					
 					this.socket.onclose = function (event) {
-						if (event.code != 1000) {
-							$('form').trigger('error8266', event.code+': '+(event.reason ? event.reason : 'WebSocket error'));
-						}
 						if (this.readyState != WebSocket.OPEN) {
 							conveyor.socket = null;
 							conveyor.clearSocketRequests();
 						}
 						$('form').trigger('abort8266');
+						if (event.code != 1000) {
+							$('form').trigger('error8266', event.code+': '+(event.reason ? event.reason : 'WebSocket error'));
+						}
 					};
 				} else {
 					if (this.socket.readyState != WebSocket.OPEN) {

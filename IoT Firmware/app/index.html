@@ -59,9 +59,23 @@
 					} else {
 						$('.esp').trigger('abort8266');
 					}
+					
+					var host = $.urlParam('host');
+					if (host) {
+						$('#esp').find('input[name=host]').val(host);
+					}
 				}
 			);
 		})(jQuery);
+
+		if (window.applicationCache) {
+			applicationCache.addEventListener(
+				'updateready', 
+				function() {
+					window.location.reload();
+				}
+			);
+		}
 	</script>
 </head>
 
@@ -84,8 +98,8 @@
 				<label>WebSocket</label> <input type="checkbox" name="websocket" value="1" onchange="$(this).submit();" /> <br/>
 				<label>SSL</label>       <input type="checkbox" name="ssl"       value="1" onchange="$(this).submit();" /> <br/>
 				<label>Host</label>      <input type="text"     name="host"      value="192.168.4.1" /> <br/>
-				<label>User</label>      <input type="text"     name="user"      value="olimex" /> <br/>
-				<label>Password</label>  <input type="text"     name="password"  value="olimex" /> <br/>
+				<label>User</label>      <input type="text"     name="user"      value="" /> <br/>
+				<label>Password</label>  <input type="password" name="password"  value="" /> <br/>
 				<button type="submit">Connect</button> <button type="button">Disconnect</button><br/>
 			</fieldset>
 			<div class="status"></div>
@@ -322,7 +336,7 @@
 					<button type="button" class="emtr-reset">Reset</button> 
 				<br/>
 				<label>Counter Apparent, [kWh]</label> <input  type="text" name="CounterApparent" disabled="disabled" class="kWh counter"/><br/>
-				<label>Read Interval</label>    <input type="range" name="ReadInterval" min="500" max="2000" step="10" /> <br/>
+				<label>Read Interval</label>    <input type="range" name="ReadInterval" min="500" max="5000" step="10" /> <br/>
 				<label></label>                 <input type="text"  name="ReadInterval" disabled="disabled" /> <br/>
 				
 				<div class="emtr-mode log">
