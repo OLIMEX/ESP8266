@@ -20,33 +20,29 @@
 LOCAL uint8 battery_state = 0;
 LOCAL uint8 battery_percent = 0;
 
-LOCAL uint16 ICACHE_FLASH_ATTR battery_adc_filter() {
-	LOCAL uint32 adc = 0;
-	LOCAL bool   first = true;
-	
-	if (first) {
-		adc = system_adc_read();
-		first = false;
-	}
-	
-	adc = adc - (adc >> BATTERY_FILTER_SHIFT) + (system_adc_read() >> BATTERY_FILTER_SHIFT);
-	
-	return adc;
-}
-
 uint8 ICACHE_FLASH_ATTR battery_percent_get() {
-	uint16 adc = battery_adc_filter();
-	uint8  percent;
+	LOCAL float percent = 0;
+	LOCAL bool  first = true;
+	
+	float  p;
+	uint16 adc = system_adc_read();
 	
 	if (adc <= BATTERY_MIN_ADC) {
-		percent = 0;
+		p = 0;
 	} else if (adc >= BATTERY_MAX_ADC) {
-		percent = 100;
+		p = 100;
 	} else {
-		percent = 100 * (adc - BATTERY_MIN_ADC) / (BATTERY_MAX_ADC - BATTERY_MIN_ADC);
+		p = 100 * (adc - BATTERY_MIN_ADC) / (BATTERY_MAX_ADC - BATTERY_MIN_ADC);
 	}
 	
-	return percent;
+	if (first) {
+		percent = p;
+		first = false;
+	} else {
+		percent = percent + (p - percent) / BATTERY_FILTER_FACTOR;
+	}
+	
+	return (percent + 0.5);
 }
 
 LOCAL void ICACHE_FLASH_ATTR battery_set_response(char *response) {
@@ -80,21 +76,23 @@ LOCAL void ICACHE_FLASH_ATTR battery_set_response(char *response) {
 }
 
 LOCAL void ICACHE_FLASH_ATTR battery_state_get() {
-	LOCAL uint8 count = 0;
+	LOCAL int count = 0;
 	
 	char response[WEBSERVER_MAX_VALUE];
 	uint8 state = gpio16_input_get();
 	uint8 percent = battery_percent_get();
 	
-	if (percent != battery_percent) {
+	if (percent > battery_percent && battery_state != 0) {
 		count++;
+	} else if (percent < battery_percent && battery_state == 0) {
+		count--;
 	} else {
 		count = 0;
 	}
 	
 	if (
 		state != battery_state || 
-		(percent != battery_percent && count > BATTERY_FILTER_COUNT)
+		(percent != battery_percent && abs(count) > BATTERY_FILTER_COUNT)
 	) {
 		count = 0;
 		battery_state = state;
@@ -115,9 +113,6 @@ void ICACHE_FLASH_ATTR battery_handler(
 	char *response,
 	uint16 response_len
 ) {
-	battery_state = gpio16_input_get();
-	battery_percent = battery_percent_get();
-	
 	battery_set_response(response);
 }
 
@@ -126,6 +121,9 @@ void ICACHE_FLASH_ATTR user_battery_init() {
 	
 	webserver_register_handler_callback(BATTERY_URL, battery_handler);
 	device_register(NATIVE, 0, ESP8266, BATTERY_URL, NULL, NULL);
+	
+	battery_state = gpio16_input_get();
+	battery_percent = battery_percent_get();
 	
 	setInterval(battery_state_get, NULL, BATTERY_STATE_REFRESH);
 }

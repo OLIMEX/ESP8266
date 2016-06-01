@@ -6,10 +6,10 @@
 		
 		#include "user_webserver.h"
 		
-		#define BATTERY_DEBUG           0
+		#define BATTERY_DEBUG                  0
 		
-		#define BATTERY_URL             "/battery"
-		#define BATTERY_STATE_REFRESH   1000
+		#define BATTERY_URL           "/battery"
+		#define BATTERY_STATE_REFRESH       1000
 		
 		#if DEVICE == BADGE
 			#define BATTERY_MIN_ADC          500
@@ -20,7 +20,7 @@
 		#endif
 		
 		#define BATTERY_FILTER_COUNT          10
-		#define BATTERY_FILTER_SHIFT           4
+		#define BATTERY_FILTER_FACTOR         16
 		
 		void  user_battery_init();
 		uint8 battery_percent_get();

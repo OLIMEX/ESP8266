@@ -65,7 +65,7 @@ LOCAL void ICACHE_FLASH_ATTR mod_tc_mk2_read(i2c_config *config, char *response,
 LOCAL void ICACHE_FLASH_ATTR mod_tc_mk2_event(i2c_config *config) {
 	char response[WEBSERVER_MAX_RESPONSE_LEN];
 	LOCAL sint16 old_temperature = 0;
-	LOCAL uint8 count = 0;
+	LOCAL int count = 0;
 
 	i2c_status status;
 	
@@ -76,10 +76,20 @@ LOCAL void ICACHE_FLASH_ATTR mod_tc_mk2_event(i2c_config *config) {
 		return;
 	}
 	
-	count++;
+	if (config_data->temperature > old_temperature) {
+		count++;
+	} else if (config_data->temperature < old_temperature) {
+		count--;
+	} else {
+		count = 0;
+	}
 	
 	mod_tc_mk2_read(config, response, false);
-	if (abs(config_data->temperature - old_temperature) > tc_threshold || (count > tc_each && config_data->temperature != old_temperature)) {
+	if (
+		abs(config_data->temperature - old_temperature) > tc_threshold 
+		|| 
+		(abs(count) > tc_each && config_data->temperature != old_temperature)
+	) {
 #if MOD_TC_MO2_DEBUG
 		debug("MOD-TC-MK2: Temperature change [%d] -> [%d]\n", old_temperature, config_data->temperature);
 #endif		

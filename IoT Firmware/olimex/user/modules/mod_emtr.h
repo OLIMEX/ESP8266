@@ -63,6 +63,19 @@
 		} emtr_sys_params;
 		
 		typedef struct {
+			float  current_rms;
+			float  voltage_rms;
+			float  active_power;
+			float  reactive_power;
+			float  apparent_power;
+			float  power_factor;
+			float  line_frequency;
+			float  thermistor_voltage;
+			uint16 event_flag;
+			uint16 system_status;
+		} emtr_low_pass_output;
+		
+		typedef struct {
 			uint32 current_rms;
 			uint16 voltage_rms;
 			uint32 active_power;

@@ -27,6 +27,9 @@ LOCAL struct {
 	emtr_output_registers      *output;
 } emtr_registers = {NULL, NULL, NULL};
 
+LOCAL emtr_low_pass_output *last_event    = NULL;
+LOCAL emtr_low_pass_output *current_event = NULL;
+
 LOCAL emtr_mode emtr_current_mode     = EMTR_LOG;
 LOCAL uint32    emtr_read_interval    = EMTR_DEFAULT_READ_INTERVAL;
 LOCAL uint32    emtr_single_wire_read = false;
@@ -189,40 +192,18 @@ LOCAL bool ICACHE_FLASH_ATTR emtr_over_treshold(_sint64_ a, _sint64_ b, uint32 t
 	return (abs(a - b) > treshold);
 }
 
-LOCAL void ICACHE_FLASH_ATTR emtr_read_event(uint32 interval) {
-	LOCAL emtr_output_registers *last_event = NULL;
-	
-	bool event = false;
-	if (last_event == NULL) {
-		last_event = (emtr_output_registers *)os_zalloc(sizeof(emtr_output_registers));
-		event = true;
+LOCAL float ICACHE_FLASH_ATTR emtr_low_pass(float old, float new, uint8 factor, uint32 treshold) {
+	if (abs(new - old) > treshold) {
+		return new;
 	}
-	
-	event = event || emtr_over_treshold(emtr_registers.output->current_rms,    last_event->current_rms,     10);
-	event = event || emtr_over_treshold(emtr_registers.output->voltage_rms,    last_event->voltage_rms,      5);
-	event = event || emtr_over_treshold(emtr_registers.output->active_power,   last_event->active_power,     5);
-	event = event || emtr_over_treshold(emtr_registers.output->reactive_power, last_event->reactive_power,   5);
-	event = event || emtr_over_treshold(emtr_registers.output->apparent_power, last_event->apparent_power,   5);
-	event = event || emtr_over_treshold(emtr_registers.output->power_factor,   last_event->power_factor,    50);
-	event = event || emtr_over_treshold(emtr_registers.output->line_frequency, last_event->line_frequency,  50);
-	event = event || emtr_over_treshold(emtr_registers.output->event_flag,     last_event->event_flag,       0);
-	event = event || emtr_over_treshold(emtr_registers.output->system_status,  last_event->system_status,    0);
-	
-	if (!event) {
+	return (old + (new - old) / factor);
+}
+
+LOCAL void ICACHE_FLASH_ATTR emtr_read_format(char *response, uint32 interval) {
+	if (last_event == NULL) {
 		return;
 	}
-
-	last_event->current_rms    = emtr_registers.output->current_rms;
-	last_event->voltage_rms    = emtr_registers.output->voltage_rms;
-	last_event->active_power   = emtr_registers.output->active_power;
-	last_event->reactive_power = emtr_registers.output->reactive_power;
-	last_event->apparent_power = emtr_registers.output->apparent_power;
-	last_event->power_factor   = emtr_registers.output->power_factor;
-	last_event->line_frequency = emtr_registers.output->line_frequency;
-	last_event->event_flag     = emtr_registers.output->event_flag;
-	last_event->system_status  = emtr_registers.output->system_status;
 	
-	char response[WEBSERVER_MAX_RESPONSE_LEN];
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
 	json_data(
 		response, MOD_EMTR, OK_STR,
@@ -248,19 +229,86 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_event(uint32 interval) {
 			emtr_counter_apparent(),
 			interval,
 			
-			emtr_registers.output->current_rms,
-			emtr_registers.output->voltage_rms,
-			emtr_registers.output->active_power,
-			emtr_registers.output->reactive_power,
-			emtr_registers.output->apparent_power,
-			emtr_registers.output->power_factor,
-			emtr_registers.output->line_frequency,
-			emtr_registers.output->thermistor_voltage,
-			emtr_registers.output->event_flag,
-			emtr_registers.output->system_status
+			(_sint64_)last_event->current_rms,
+			(_sint64_)last_event->voltage_rms,
+			(_sint64_)last_event->active_power,
+			(_sint64_)last_event->reactive_power,
+			(_sint64_)last_event->apparent_power,
+			(_sint64_)last_event->power_factor,
+			(_sint64_)last_event->line_frequency,
+			(_sint64_)last_event->thermistor_voltage,
+			(_sint64_)last_event->event_flag,
+			(_sint64_)last_event->system_status
 		),
 		NULL
 	);
+}
+
+LOCAL void ICACHE_FLASH_ATTR emtr_read_event(uint32 interval) {
+	bool event = false;
+	if (last_event == NULL) {
+		current_event = (emtr_low_pass_output *)os_zalloc(sizeof(emtr_low_pass_output));
+		last_event    = (emtr_low_pass_output *)os_zalloc(sizeof(emtr_low_pass_output));
+		
+		current_event->current_rms    = emtr_registers.output->current_rms;
+		current_event->voltage_rms    = emtr_registers.output->voltage_rms;
+		current_event->active_power   = emtr_registers.output->active_power;
+		current_event->reactive_power = emtr_registers.output->reactive_power;
+		current_event->apparent_power = emtr_registers.output->apparent_power;
+		current_event->power_factor   = emtr_registers.output->power_factor;
+		current_event->line_frequency = emtr_registers.output->line_frequency;
+		current_event->event_flag     = emtr_registers.output->event_flag;
+		current_event->system_status  = emtr_registers.output->system_status;
+		
+		last_event->current_rms    = emtr_registers.output->current_rms;
+		last_event->voltage_rms    = emtr_registers.output->voltage_rms;
+		last_event->active_power   = emtr_registers.output->active_power;
+		last_event->reactive_power = emtr_registers.output->reactive_power;
+		last_event->apparent_power = emtr_registers.output->apparent_power;
+		last_event->power_factor   = emtr_registers.output->power_factor;
+		last_event->line_frequency = emtr_registers.output->line_frequency;
+		last_event->event_flag     = emtr_registers.output->event_flag;
+		last_event->system_status  = emtr_registers.output->system_status;
+		
+		event = true;
+	}
+	
+	current_event->current_rms    = emtr_low_pass(current_event->current_rms,       emtr_registers.output->current_rms,     4,  20);
+	current_event->voltage_rms    = emtr_low_pass(current_event->voltage_rms,       emtr_registers.output->voltage_rms,    16,  10);
+	current_event->active_power   = emtr_low_pass(current_event->active_power,      emtr_registers.output->active_power,    8,  10);
+	current_event->reactive_power = emtr_low_pass(current_event->reactive_power,    emtr_registers.output->reactive_power,  8,  10);
+	current_event->apparent_power = emtr_low_pass(current_event->apparent_power,    emtr_registers.output->apparent_power,  8,  10);
+	current_event->power_factor   = emtr_low_pass(current_event->power_factor,      emtr_registers.output->power_factor,    8, 100);
+	current_event->line_frequency = emtr_low_pass(current_event->line_frequency,    emtr_registers.output->line_frequency, 10, 100);
+	current_event->event_flag     = emtr_registers.output->event_flag;
+	current_event->system_status  = emtr_registers.output->system_status;
+	
+	event = event || emtr_over_treshold(last_event->current_rms,    current_event->current_rms,    10);
+	event = event || emtr_over_treshold(last_event->voltage_rms,    current_event->voltage_rms,     5);
+	event = event || emtr_over_treshold(last_event->active_power,   current_event->active_power,    5);
+	event = event || emtr_over_treshold(last_event->reactive_power, current_event->reactive_power,  5);
+	event = event || emtr_over_treshold(last_event->apparent_power, current_event->apparent_power,  5);
+	event = event || emtr_over_treshold(last_event->power_factor,   current_event->power_factor,   50);
+	event = event || emtr_over_treshold(last_event->line_frequency, current_event->line_frequency, 50);
+	event = event || emtr_over_treshold(last_event->event_flag,     current_event->event_flag,      0);
+	event = event || emtr_over_treshold(last_event->system_status,  current_event->system_status,   0);
+	
+	if (!event) {
+		return;
+	}
+	
+	last_event->current_rms    = current_event->current_rms;
+	last_event->voltage_rms    = current_event->voltage_rms;   
+	last_event->active_power   = current_event->active_power;  
+	last_event->reactive_power = current_event->reactive_power;
+	last_event->apparent_power = current_event->apparent_power;
+	last_event->power_factor   = current_event->power_factor;
+	last_event->line_frequency = current_event->line_frequency;
+	last_event->event_flag     = current_event->event_flag;
+	last_event->system_status  = current_event->system_status;
+	
+	char response[WEBSERVER_MAX_RESPONSE_LEN];
+	emtr_read_format(response, interval);
 	user_event_raise(EMTR_URL, response);
 }
 
@@ -666,8 +714,6 @@ void ICACHE_FLASH_ATTR emtr_handler(
 		}
 	}
 	
-	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
-	
 	if (emtr_current_mode == EMTR_CONFIGURE) {
 		setTimeout(emtr_events_read, NULL, 1000);
 	}
@@ -676,24 +722,7 @@ void ICACHE_FLASH_ATTR emtr_handler(
 		setTimeout(emtr_calibration_read, NULL, 1000);
 	}
 	
-	json_data(
-		response, MOD_EMTR, OK_STR,
-		json_sprintf(
-			data_str,
-			"\"Address\" : \"0x%04X\", "
-			"\"Mode\" : \"%s\", "
-			"\"CounterActive\" : %d, "
-			"\"CounterApparent\" : %d, "
-			"\"ReadInterval\" : %d",
-			emtr_address(),
-			emtr_mode_str(emtr_current_mode),
-			emtr_counter_active(),
-			emtr_counter_apparent(),
-			emtr_read_interval
-		),
-		NULL
-	);
-	
+	emtr_read_format(response, emtr_read_interval);
 	emtr_start_read();
 }
 
