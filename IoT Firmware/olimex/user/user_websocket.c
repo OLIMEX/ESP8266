@@ -132,7 +132,10 @@ LOCAL uint16 ICACHE_FLASH_ATTR websocket_get_header(websocket_header *header, ui
 
 LOCAL void ICACHE_FLASH_ATTR data_send(struct espconn *pConnection, uint8 *data, uint16 data_len) {
 #if SSL_ENABLE
-	if (pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT) {
+	if (
+		pConnection->proto.tcp->local_port  == WEBSERVER_SSL_PORT ||
+		pConnection->proto.tcp->remote_port == WEBSERVER_SSL_PORT
+	) {
 		espconn_secure_send(pConnection, data, data_len);
 	} else {
 		espconn_send(pConnection, data, data_len);
