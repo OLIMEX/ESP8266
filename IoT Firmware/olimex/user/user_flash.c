@@ -220,8 +220,8 @@ uint8 ICACHE_FLASH_ATTR *flash_region_read() {
 		return false;
 	}
 	
-	if (flash_mode == FLASH_MODE_WRITE) {
-		flash_error_set("Region is set as WRITE");
+	if (flash_mode != FLASH_MODE_NONE && flash_mode != FLASH_MODE_READ) {
+		flash_error_set("Region is set as WRITE or ERASE");
 		debug("FLASH: %s [%s]\n", flash_error(), flash_open_region->name);
 		return NULL;
 	}
@@ -256,8 +256,8 @@ bool ICACHE_FLASH_ATTR flash_region_write(uint8 *data, uint16 data_len, bool rai
 		return false;
 	}
 	
-	if (flash_mode == FLASH_MODE_READ) {
-		flash_error_set("Region is set as READ");
+	if (flash_mode != FLASH_MODE_NONE && flash_mode != FLASH_MODE_WRITE) {
+		flash_error_set("Region is set as READ or ERASE");
 		debug("FLASH: %s [%s]\n", flash_error(), flash_open_region->name);
 		return false;
 	}
@@ -282,6 +282,51 @@ bool ICACHE_FLASH_ATTR flash_region_write(uint8 *data, uint16 data_len, bool rai
 	if (result && copy_len < data_len) {
 		result = flash_region_write(data + copy_len, data_len - copy_len, raise_event);
 	}
+	
+	return result;
+}
+
+bool ICACHE_FLASH_ATTR flash_region_erase(char *name) {
+	flash_error_set(NULL);
+	
+	if (!flash_region_open(name)) {
+		return false;
+	}
+	
+	if (flash_open_region == NULL) {
+		flash_error_set("No open region to erase");
+		debug("FLASH: %s\n", flash_error());
+		return false;
+	}
+	
+	if (flash_mode != FLASH_MODE_NONE && flash_mode != FLASH_MODE_ERASE) {
+		flash_error_set("Region is set as READ or WRITE");
+		debug("FLASH: %s [%s]\n", flash_error(), flash_open_region->name);
+		return false;
+	}
+	
+	flash_mode = FLASH_MODE_ERASE;
+	
+	bool result = true;
+	
+	while (flash_sector <= flash_max_sector && result) {
+		if (FLASH_SIMULATE || spi_flash_erase_sector(flash_sector) == SPI_FLASH_RESULT_OK) {
+#if FLASH_DEBUG
+			debug("FLASH: Erased sector [%s][0x%03x]\n", flash_open_region->name, flash_sector);
+#endif
+		} else {
+			result = false;
+			flash_error_set("Can not erase sector");
+			debug("FLASH: %s [%s][0x%03x]\n", flash_error(), flash_open_region->name, flash_sector);
+		}
+		
+		flash_sector++;
+		
+		// Feed the watchdog to prevent reset
+		system_soft_wdt_feed();
+	}
+	
+	flash_region_close();
 	
 	return result;
 }

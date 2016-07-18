@@ -42,28 +42,52 @@ uint8 ICACHE_FLASH_ATTR user_relay_get() {
 	return relay_state;
 }
 
+LOCAL void user_relay_on();
 LOCAL void user_relay_off();
 
-LOCAL void ICACHE_FLASH_ATTR user_relay_set(int state) {
+void ICACHE_FLASH_ATTR user_relay_set(int state) {
 	if (relay_timer != 0 || state == relay_state) {
 		return;
 	}
 	
+	uint8 store_state = state;
 	if (state < 0) {
-		// On for (-state) milliseconds then Off
-		relay_timer = setTimeout(user_relay_off, NULL, -state);
-		state = 1;
-	} if (state > 1) {
+		// Off for (-state) milliseconds then On
+		relay_timer = setTimeout(user_relay_on, NULL, -state);
+		state = 0;
+		store_state = 1;
+	} else if (state == 2) {
 		// Toggle
 		state = relay_state ? 0 : 1;
+		store_state = state;
+	} else if (state > 2) {
+		// On for (state) milliseconds then Off
+		relay_timer = setTimeout(user_relay_off, NULL, state);
+		state = 1;
+		store_state = 0;
 	}
 	
 	GPIO_OUTPUT_SET(GPIO_ID_PIN(relay_hardware.gpio_id), state);
 	relay_state = state;
-		
-#if DEVICE == PLUG		
+	
+#if DEVICE == PLUG
 	plug_led(PLUG_LED2, relay_state);
+	emtr_relay_set(0, store_state);
 #endif
+}
+
+uint8 ICACHE_FLASH_ATTR user_relay_toggle() {
+	user_relay_set(2);
+	return relay_state;
+}
+
+LOCAL void ICACHE_FLASH_ATTR user_relay_on() {
+char response[WEBSERVER_MAX_VALUE];
+	relay_timer = 0;
+	user_relay_set(1);
+	
+	user_relay_state(response);
+	user_event_raise(RELAY_URL, response);
 }
 
 LOCAL void ICACHE_FLASH_ATTR user_relay_off() {

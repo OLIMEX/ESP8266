@@ -26,7 +26,6 @@ LOCAL void ICACHE_FLASH_ATTR adc_read(char *response, bool poll) {
 	char data[WEBSERVER_MAX_VALUE];
 	char poll_str[WEBSERVER_MAX_VALUE];
 	
-	poll = true;
 	state = system_adc_read();
 	
 	if (poll) {
@@ -78,6 +77,57 @@ void ICACHE_FLASH_ATTR user_adc_timer_init() {
 	}
 }
 
+LOCAL bool ICACHE_FLASH_ATTR adc_parse(char *data, uint16 data_len) {
+	uint32 refresh   = adc_refresh;
+	uint8  each      = adc_each;
+	uint32 threshold = adc_threshold;
+	
+	struct jsonparse_state parser;
+	int type;
+
+	jsonparse_setup(&parser, data, data_len);
+
+	while ((type = jsonparse_next(&parser)) != 0) {
+		if (type == JSON_TYPE_PAIR_NAME) {
+			if (jsonparse_strcmp_value(&parser, "Refresh") == 0) {
+				jsonparse_next(&parser);
+				jsonparse_next(&parser);
+				adc_refresh = jsonparse_get_value_as_int(&parser) * 1000;
+			} else if (jsonparse_strcmp_value(&parser, "Each") == 0) {
+				jsonparse_next(&parser);
+				jsonparse_next(&parser);
+				adc_each = jsonparse_get_value_as_int(&parser);
+			} else if (jsonparse_strcmp_value(&parser, "Threshold") == 0) {
+				jsonparse_next(&parser);
+				jsonparse_next(&parser);
+				adc_threshold = jsonparse_get_value_as_int(&parser);
+			}
+		}
+	}
+	
+	return (
+		refresh   != adc_refresh ||
+		each      != adc_each ||
+		threshold != adc_threshold
+	);
+}
+
+LOCAL void ICACHE_FLASH_ATTR adc_preferences_set() {
+	char preferences[WEBSERVER_MAX_VALUE];
+	os_sprintf(
+		preferences, 
+		"{"
+			"\"Refresh\" : %d, "
+			"\"Each\" : %d, "
+			"\"Threshold\" : %d"
+		"}",
+		adc_refresh / 1000,
+		adc_each,
+		adc_threshold
+	);
+	preferences_set(ADC_URL, preferences);
+}
+
 void ICACHE_FLASH_ATTR adc_handler(
 	struct espconn *pConnection, 
 	request_method method, 
@@ -88,28 +138,9 @@ void ICACHE_FLASH_ATTR adc_handler(
 	char *response,
 	uint16 response_len
 ) {
-	struct jsonparse_state parser;
-	int type;
-
 	if (method == POST && data != NULL && data_len != 0) {
-		jsonparse_setup(&parser, data, data_len);
-
-		while ((type = jsonparse_next(&parser)) != 0) {
-			if (type == JSON_TYPE_PAIR_NAME) {
-				if (jsonparse_strcmp_value(&parser, "Refresh") == 0) {
-					jsonparse_next(&parser);
-					jsonparse_next(&parser);
-					adc_refresh = jsonparse_get_value_as_int(&parser) * 1000;
-				} else if (jsonparse_strcmp_value(&parser, "Each") == 0) {
-					jsonparse_next(&parser);
-					jsonparse_next(&parser);
-					adc_each = jsonparse_get_value_as_int(&parser);
-				} else if (jsonparse_strcmp_value(&parser, "Threshold") == 0) {
-					jsonparse_next(&parser);
-					jsonparse_next(&parser);
-					adc_threshold = jsonparse_get_value_as_int(&parser);
-				}
-			}
+		if (adc_parse(data, data_len)) {
+			adc_preferences_set();
 		}
 		
 		user_adc_timer_init();
@@ -119,6 +150,7 @@ void ICACHE_FLASH_ATTR adc_handler(
 }
 
 void ICACHE_FLASH_ATTR user_adc_init() {
+	preferences_get(ADC_URL, adc_parse);
 	webserver_register_handler_callback(ADC_URL, adc_handler);
 	device_register(NATIVE, 0, ESP8266, ADC_URL, NULL, NULL);
 	user_adc_timer_init();

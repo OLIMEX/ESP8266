@@ -3,53 +3,10 @@
 		return this.each(
 			function (i, e) {
 				var $this = $(e);
-				$this.find('.integer').
-					bind(
-						'toJSON',
-						function () {
-							var $this = $(this);
-							$this.data('JSON', parseInt($this.val()));
-						}
-					)
-				;
 				
-				$this.find('.milli, .deci, .normalize, .kWh').
-					each(
-						function (i, e) {
-							var $e = $(e);
-							$e.data('factor', 1);
-							$e.data('precision', 0);
-							if ($e.is('.milli')) {
-								$e.data('factor', 1000);
-								$e.data('precision', 3);
-							} else if ($e.is('.deci')) {
-								$e.data('factor', 10);
-								$e.data('precision', 1);
-							} else if ($e.is('.normalize')) {
-								$e.data('factor', 32767);
-								$e.data('precision', 5);
-							} else if ($e.is('.kWh')) {
-								$e.data('factor', 3600000);
-								$e.data('precision', 3);
-							}
-						}
-					).
-					
-					bind(
-						'fromJSON',
-						function (event, value) {
-							var $this = $(this);
-							$this.data('JSON', (value / $this.data('factor')).toFixed($this.data('precision')));
-						}
-					).
-					bind(
-						'toJSON',
-						function () {
-							var $this = $(this);
-							$this.data('JSON', $this.val() * $this.data('factor'));
-						}
-					)
-				;
+				$this.find('select[name=Mode]').emtrMode();
+				$this.find('.emtr-reset').emtrReset();
+				$this.find('button.calibrate').emtrCalibrate();
 			}
 		);
 	}

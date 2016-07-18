@@ -30,6 +30,9 @@
 #include "driver/key.h"
 #include "driver/uart.h"
 
+#include "user_flash.h"
+#include "user_preferences.h"
+
 #include "user_button.h"
 #include "user_relay.h"
 #include "user_adc.h"
@@ -40,6 +43,7 @@
 #include "user_switch2.h"
 #include "user_badge.h"
 #include "user_dimmer.h"
+#include "user_robko.h"
 
 #include "user_events.h"
 #include "user_webserver.h"
@@ -85,7 +89,17 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #if UART1_ENABLE
 	stdout_init(UART1);
 #endif
-
+	
+	flash_region_register("boot.bin",     0x000, 0x001);
+	flash_region_register("user1.bin",    0x001, 0x07B);
+	flash_region_register("user2.bin",    0x081, 0x07B);
+	flash_region_register("user-config",  0x100, 0x001);
+	flash_region_register("PrivateKey",   0x101, 0x001);
+	flash_region_register("Certificate",  0x102, 0x001);
+	flash_region_register("Preferences",  0x103, 0x001);
+	
+	preferences_init();
+	
 	// UART Devices
 #if DEVICE == PLUG
 	user_plug_init();
@@ -155,6 +169,9 @@ void ICACHE_FLASH_ATTR user_init(void) {
 #endif
 #if DEVICE == DIMMER
 	user_dimmer_init();
+#endif
+#if DEVICE == ROBKO
+	user_robko_init();
 #endif
 #endif
 	

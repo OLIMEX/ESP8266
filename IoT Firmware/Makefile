@@ -6,7 +6,8 @@ endif
 
 DEVICE?=0
 SSL?=0
-DEFINES+= -DDEVICE=$(DEVICE) -DSSL=$(SSL)
+BUILD?=\"~\"
+DEFINES+= -DDEVICE=$(DEVICE) -DSSL=$(SSL) -DBUILD=$(BUILD)
 
 export COMPILE?=gcc
 PYTHON?=python

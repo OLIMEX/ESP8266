@@ -20,8 +20,8 @@ STAILQ_HEAD(i2c_configs, _i2c_config_) i2c_configs = STAILQ_HEAD_INITIALIZER(i2c
 const char ICACHE_FLASH_ATTR *i2c_status_str(i2c_status status) {
 	switch (status) {
 		case I2C_OK                    : return "i2c Device OK";
-		case I2C_ADDRESS_NACK          : return "Address not Acknowledged";
-		case I2C_DATA_NACK             : return "Data not Acknowledged";
+		case I2C_ADDRESS_NACK          : return "Address not acknowledged";
+		case I2C_DATA_NACK             : return "Data not acknowledged";
 		case I2C_DEVICE_NOT_FOUND      : return "Device not found";
 		case I2C_DEVICE_ID_DONT_MATCH  : return "Device ID don't match";
 		case I2C_COMMUNICATION_FAILED  : return "Communication failed";
@@ -77,16 +77,17 @@ uint8 ICACHE_FLASH_ATTR i2c_addr_parse(char *addr, const char **error) {
  * Returns      : i2c_status
 *******************************************************************************/
 i2c_status ICACHE_FLASH_ATTR i2c_check_device(uint8 address) {
-	bool result;
-	
-	/* Send address byte and check ACK */
+#if I2C_DEBUG
+	debug("i2c_check_device: [0x%02X]\n", address);
+#endif
+
+	/* Send address for read */
 	i2c_master_start();
 	i2c_master_writeByte(address << 1 | 1);
-	result = (bool)i2c_master_getAck();
-	if (result) {
+	if (i2c_master_getAck()) {
 		i2c_master_stop();
 #if I2C_DEBUG
-		debug("i2c_check_device: Address ACK failed [0x%02x]\n", address);
+		debug("i2c_check_device: Address ACK failed [0x%02X]\n", address);
 #endif
 		return I2C_ADDRESS_NACK;
 	}
@@ -96,6 +97,9 @@ i2c_status ICACHE_FLASH_ATTR i2c_check_device(uint8 address) {
 	
 	i2c_master_stop();
 	
+#if I2C_DEBUG
+	debug("i2c_check_device: OK [0x%02X]\n", address);
+#endif
 	return I2C_OK;
 }
 
@@ -106,17 +110,20 @@ i2c_status ICACHE_FLASH_ATTR i2c_check_device(uint8 address) {
  * Returns      : i2c_status
 *******************************************************************************/
 i2c_status ICACHE_FLASH_ATTR i2c_read_id(uint8 address, uint8 *id) {
-
+#if I2C_DEBUG
+	debug("i2c_read_id: [0x%02X]\n", address);
+#endif
+	
 	*id = 0;
-
+	
 	i2c_master_start();
 
-	/* Send address */
+	/* Send address for write */
 	i2c_master_writeByte(address << 1 | 0);
 	if (i2c_master_getAck()) {
 		i2c_master_stop();
 #if I2C_DEBUG
-		debug("i2c_read_id: Address ACK failed [0x%02x] [set command]\n", address);
+		debug("i2c_read_id: Address ACK failed [0x%02X] [set command]\n", address);
 #endif
 		return I2C_ADDRESS_NACK;
 	}
@@ -126,7 +133,7 @@ i2c_status ICACHE_FLASH_ATTR i2c_read_id(uint8 address, uint8 *id) {
 	if (i2c_master_getAck()) {
 		i2c_master_stop();
 #if I2C_DEBUG
-		debug("i2c_read_id: Command ACK failed [0x%02x]\n", address);
+		debug("i2c_read_id: Command ACK failed [0x%02X]\n", address);
 #endif
 		return I2C_DATA_NACK;
 	}
@@ -135,12 +142,12 @@ i2c_status ICACHE_FLASH_ATTR i2c_read_id(uint8 address, uint8 *id) {
 	i2c_master_stop();
 	i2c_master_start();
 
-	/* Send address */
+	/* Send address for read */
 	i2c_master_writeByte(address << 1 | 1);
 	if (i2c_master_getAck()) {
 		i2c_master_stop();
 #if I2C_DEBUG
-		debug("i2c_read_id: Address ACK failed [0x%02x] [execute command]\n", address);
+		debug("i2c_read_id: Address ACK failed [0x%02X] [execute command]\n", address);
 #endif
 		return I2C_ADDRESS_NACK;
 	}
@@ -150,6 +157,9 @@ i2c_status ICACHE_FLASH_ATTR i2c_read_id(uint8 address, uint8 *id) {
 	i2c_master_send_nack();
 	i2c_master_stop();
 	
+#if I2C_DEBUG
+	debug("i2c_read_id: OK [0x%02X] [0x%02X] \n", address, *id);
+#endif
 	return I2C_OK;
 }
 

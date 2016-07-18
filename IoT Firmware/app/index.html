@@ -4,19 +4,17 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 	<title>ESP8266 Direct Connection</title>
 	
-	<meta name="viewport" content="width=device-width" />
-	
 	<link rel="manifest" href="manifest.json" />
 	
-	<meta name="viewport" content="width=device-width" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta name="mobile-web-app-capable" content="yes" />
 	
 	<link rel="icon" sizes="192x192" href="iot-192.png" />
 	<link rel="icon" sizes="128x128" href="iot-128.png" />
-	<link rel="icon" sizes="48x48" href="iot-48.png" />
-	<link rel="icon" sizes="32x32" href="iot-32.png" />
+	<link rel="icon" sizes="48x48"   href="iot-48.png" />
+	<link rel="icon" sizes="32x32"   href="iot-32.png" />
 	
-	<link rel="apple-touch-icon" sizes="128x128" href="iot-128.png" />
+	<link rel="apple-touch-icon"             sizes="128x128" href="iot-128.png" />
 	<link rel="apple-touch-icon-precomposed" sizes="128x128" href="iot-128.png" />	
 	
 	<link rel="stylesheet" type="text/css" href="style.css" />	
@@ -25,49 +23,18 @@
 	<script src="emtr.js"></script>
 	<script src="finger.js"></script>
 	<script src="irda.js"></script>
+	<script src="switch.js"></script>
 	<script src="lib.js"></script>
 	
 	<script>
 		(function ($) {
 			$(document).ready(
 				function () {
-					$.support.cors = true;
-					
-					$('#menu').menu();
-					$('input[type=range]').range();
-					
-					$('#tabs').formTabs('#esp, .esp:not(.long-poll)', 'legend:first');
-					$('#esp').connection();
-					
-					$('.esp').esp8266();
-					$('.event').event8266();
-					
-					$('#config-station input[name=DHCP]').stationDHCP();
-					
-					$('#irda select[name=Mode]').irdaMode();
-					$('#finger select[name=Mode]').fingerMode();
-					
-					$('.emtr').emtr();
-					$('.emtr select[name=Mode]').emtrMode();
-					$('.emtr-reset').emtrReset();
-					$('.emtr button.calibrate').emtrCalibrate();
-					
-					$('.bits').bits();
-					
-					if (false) {
-						$('.esp').trigger('init8266');
-					} else {
-						$('.esp').trigger('abort8266');
-					}
-					
-					var host = $.urlParam('host');
-					if (host) {
-						$('#esp').find('input[name=host]').val(host);
-					}
+					$(document).trigger('readyIoT');
 				}
 			);
 		})(jQuery);
-
+		
 		if (window.applicationCache) {
 			applicationCache.addEventListener(
 				'updateready', 
@@ -80,27 +47,49 @@
 </head>
 
 <body>
-	<div id="menu">&equiv;</div>
-	<div id="tabs"></div>
 	<div id="container">
-		<form id="events" class="esp event long-poll" action="/events">
-			<input type="text" name="Event" value="Event" disabled="disabled" style="text-align: center;" /> <br/>
+		<div id="menu">&equiv;</div>
+		<div id="tabs"></div>
+		<h1>ESP8266 Direct Connection</h1>
+
+		<form id="events" class="esp event long-poll auto" action="/events">
+			<input type="text" name="Event" value="Event"   disabled="disabled" class="default center" /> 
 		</form>
 		
-		<form id="button" class="event" action="/button">
-			<input type="text" name="Button" value="Button" disabled="disabled" style="text-align: center;" /> <br/>
+		<form id="button" class="event auto" action="/button">
+			<input type="text" name="Button" value="Button" disabled="disabled" class="default center" /> 
 		</form>
-		<br />
 		
 		<form id="esp" method="POST">
 			<fieldset>
 				<legend>ESP8266 Connection</legend>
-				<label>WebSocket</label> <input type="checkbox" name="websocket" value="1" onchange="$(this).submit();" /> <br/>
-				<label>SSL</label>       <input type="checkbox" name="ssl"       value="1" onchange="$(this).submit();" /> <br/>
-				<label>Host</label>      <input type="text"     name="host"      value="192.168.4.1" /> <br/>
-				<label>User</label>      <input type="text"     name="user"      value="" /> <br/>
-				<label>Password</label>  <input type="password" name="password"  value="" /> <br/>
-				<button type="submit">Connect</button> <button type="button">Disconnect</button><br/>
+				<label>WebSocket</label> <input type="checkbox" name="websocket" value="1" onchange="$(this).submit();" />
+				<label>SSL</label>       <input type="checkbox" name="ssl"       value="1" onchange="$(this).submit();" />
+				<label>Host</label>      <input type="text"     name="host"      value="192.168.4.1" />
+				<label>User</label>      <input type="text"     name="user"      value="" /> 
+				<label>Password</label>  <input type="password" name="password"  value="" /> 
+				<button type="submit">Connect</button> <button type="button">Disconnect</button>
+			</fieldset>
+			<div class="status"></div>
+		</form>
+		
+		<form id="config-about" class="esp event on-top" action="/config/about" method="POST">
+			<fieldset name="About">
+				<legend>About</legend>
+				<fieldset name="Firmware">
+					<legend>Firmware</legend>
+					<label>Version</label>      <input type="text" name="Version"        value="" disabled="disabled" />
+					<label>Image</label>        <input type="text" name="Image"          value="" disabled="disabled" />
+					<label>Boot</label>         <input type="text" name="Boot"           value="" disabled="disabled" />
+				</fieldset>
+				<label>SDK Version</label>      <input type="text" name="SDKVersion"     value="" disabled="disabled" />
+				<label>Reset Info</label>       <input type="text" name="ResetInfo"      value="" disabled="disabled" />
+				<label>PHY Mode</label>         <input type="text" name="PHYMode"        value="" disabled="disabled" />
+				<label>Access Point MAC</label> <input type="text" name="AccessPointMAC" value="" disabled="disabled" />
+				<label>Station MAC</label>      <input type="text" name="StationMAC"     value="" disabled="disabled" />
+				
+				<button type="button" class="reset">Reset to defaults</button>
+				<button type="button" class="restart">Restart</button>
 			</fieldset>
 			<div class="status"></div>
 		</form>
@@ -108,14 +97,8 @@
 		<form id="config" class="esp event" action="/config" method="POST">
 			<fieldset name="Config">
 				<legend>General Config</legend>
-				
-				<label>SDK Version</label>      <input type="text" name="SDKVersion"     value="" disabled="disabled" /> <br/>
-				<label>Reset Info</label>       <input type="text" name="ResetInfo"      value="" disabled="disabled" /> <br/>
-				<label>PHY Mode</label>         <input type="text" name="PHYMode"        value="" disabled="disabled" /> <br/>
-				<label>Access Point MAC</label> <input type="text" name="AccessPointMAC" value="" disabled="disabled" /> <br/>
-				<label>Station MAC</label>      <input type="text" name="StationMAC"     value="" disabled="disabled" /> <br/>
-				<label>User</label>             <input type="text" name="User"           value="" /> <br/>
-				<label>Password</label>         <input type="text" name="Password"       value="" /> <br/>
+				<label>User</label>             <input type="text" name="User"           value="" />
+				<label>Password</label>         <input type="text" name="Password"       value="" />
 				
 				<label>Mode</label>
 					<select name="Mode"> 
@@ -123,10 +106,10 @@
 						<option>Station</option>
 						<option>Access Point and Station</option>
 					</select>
-				<br/>
 				
-				<label>Authentication</label> <input type="checkbox" name="Authentication" value="1" /> <br/>
-				<label>SSL</label>            <input type="checkbox" name="SSL"            value="1" /> <br/>
+				
+				<label>Authentication</label> <input type="checkbox" name="Authentication" value="1" />
+				<label>SSL</label>            <input type="checkbox" name="SSL"            value="1" />
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -138,8 +121,8 @@
 			<fieldset name="AccessPoint">
 				<legend>Configure Access Point</legend>
 				
-				<label>SSID</label>            <input type="text" name="SSID"     value=""  /> <br/>
-				<label>Password</label>        <input type="text" name="Password" value=""  /> <br/>
+				<label>SSID</label>            <input type="text" name="SSID"     value=""  />
+				<label>Password</label>        <input type="text" name="Password" value=""  />
 				
 				<label>Mode</label>
 					<select name="Mode"> 
@@ -149,9 +132,9 @@
 						<option>WPA2 PSK</option>
 						<option>WPA WPA2 PSK</option>
 					</select>
-				<br/>
-				<label>Hidden</label>           <input type="checkbox" name="Hidden"         value="1" /> <br/>
-				<label>Beacon Interval</label>  <input type="text"     name="BeaconInterval" value="" /> <br/>
+				
+				<label>Hidden</label>           <input type="checkbox" name="Hidden"         value="1" />
+				<label>Beacon Interval</label>  <input type="text"     name="BeaconInterval" value="" />
 				<label>Max Connections</label>
 					<select name="MaxConnections"> 
 						<option>0</option>
@@ -160,13 +143,13 @@
 						<option>3</option>
 						<option>4</option>
 					</select>
-				<br/>
-				<label>DHCP</label>             <input type="checkbox" name="DHCP"           value="1" /> <br/>
+				
+				<label>DHCP</label>             <input type="checkbox" name="DHCP"           value="1" />
 				<fieldset name="IP">
 					<legend>IP</legend>
-					<label>Address</label>      <input type="text"     name="Address"        value="" /> <br/>
-					<label>NetMask</label>      <input type="text"     name="NetMask"        value="" /> <br/>
-					<label>Gateway</label>      <input type="text"     name="Gateway"        value="" /> <br/>
+					<label>Address</label>      <input type="text"     name="Address"        value="" />
+					<label>NetMask</label>      <input type="text"     name="NetMask"        value="" />
+					<label>Gateway</label>      <input type="text"     name="Gateway"        value="" />
 				</fieldset>
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -178,17 +161,17 @@
 			<fieldset name="Station">
 				<legend>Configure Station</legend>
 				
-				<label>SSID</label>             <input type="text"     name="SSID"        value=""  /> <br/>
-				<label>Password</label>         <input type="text"     name="Password"    value=""  /> <br/>
+				<label>SSID</label>             <input type="text"     name="SSID"        value=""  />
+				<label>Password</label>         <input type="text"     name="Password"    value=""  />
 				
-				<label>Hostname</label>         <input type="text"     name="Hostname"    value="" /> <br/>
-				<label>Autoconnect</label>      <input type="checkbox" name="AutoConnect" value="1" /> <br/>
-				<label>DHCP</label>             <input type="checkbox" name="DHCP"        value="1" /> <br/>
+				<label>Hostname</label>         <input type="text"     name="Hostname"    value="" />
+				<label>Autoconnect</label>      <input type="checkbox" name="AutoConnect" value="1" />
+				<label>DHCP</label>             <input type="checkbox" name="DHCP"        value="1" />
 				<fieldset name="IP">
 					<legend>IP</legend>
-					<label>Address</label>      <input type="text"     name="Address"     value="" /> <br/>
-					<label>NetMask</label>      <input type="text"     name="NetMask"     value="" /> <br/>
-					<label>Gateway</label>      <input type="text"     name="Gateway"     value="" /> <br/>
+					<label>Address</label>      <input type="text"     name="Address"     value="" />
+					<label>NetMask</label>      <input type="text"     name="NetMask"     value="" />
+					<label>Gateway</label>      <input type="text"     name="Gateway"     value="" />
 				</fieldset>
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -196,18 +179,19 @@
 			<div class="status"></div>
 		</form>
 		
-		<form id="config-iot" class="esp event" action="/config/iot" method="POST">
+		<form id="config-iot" class="esp event no-reset" action="/config/iot" method="POST">
 			<fieldset name="IoT">
-				<legend>IoT Config</legend>
+				<legend>Configure IoT</legend>
 				
-				<label>WebSocket</label>   <input type="checkbox" name="WebSocket" value="1" /> <br/>
-				<label>SSL</label>         <input type="checkbox" name="SSL"       value="1" /> <br/>
-				<label>Server</label>      <input type="text"     name="Server"    value="" /> <br/>
-				<label>Entry Point</label> <input type="text"     name="Path"      value="" /> <br/>
-				<label>User</label>        <input type="text"     name="User"      value="" /> <br/>
-				<label>Password</label>    <input type="text"     name="Password"  value="" /> <br/>
-				<label>Name</label>        <input type="text"     name="Name"      value="" /> <br/>
-				<label>Token</label>       <input type="text"     name="Token"     value="" /> <br/>
+				<label>WebSocket</label>   <input type="checkbox" name="WebSocket" value="1" /> 
+				<label>SSL</label>         <input type="checkbox" name="SSL"       value="1" /> 
+				<label>Server</label>      <input type="text"     name="Server"    value="" />
+				<label>Entry Point</label> <input type="text"     name="Path"      value="" />
+				<label>User</label>        <input type="text"     name="User"      value="" />
+				<label>Password</label>    <input type="text"     name="Password"  value="" />
+				<label>Name</label>        <input type="text"     name="Name"      value="" />
+				<label>Token</label>       <input type="text"     name="Token"     value="" />
+				<label>Message</label>     <textarea              name="Message"   disabled="disabled"></textarea>
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -219,8 +203,8 @@
 			<fieldset name="SSL">
 				<legend>Configure SSL</legend>
 				
-				<label>Private key</label>      <input type="file"     name="PrivateKey" /> <br/>
-				<label>Certificate</label>      <input type="file"     name="Certificate" /> <br/>
+				<label>Private key</label>      <input type="file"     name="PrivateKey" /> 
+				<label>Certificate</label>      <input type="file"     name="Certificate" />
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -231,12 +215,15 @@
 		<form id="config-firmware" class="esp event" action="/config/firmware" method="POST" data-timeout="60">
 			<fieldset name="Firmware">
 				<legend>Firmware Update</legend>
-				
-				<label>Current</label>      <input type="text" name="Current" value="" disabled="disabled" /> <br/>
-				<label>Boot</label>         <input type="text" name="Boot"    value="" disabled="disabled" /> <br/>
-				<label>boot.bin</label>     <input type="file" name="boot.bin" /> <br/>
-				<label>user1.bin</label>    <input type="file" name="user1.bin" /> <br/>
-				<label>user2.bin</label>    <input type="file" name="user2.bin" /> <br/>
+				<fieldset>
+					<legend>Current</legend>
+					<label>Version</label>      <input type="text" name="Version" value="" disabled="disabled" />
+					<label>Image</label>        <input type="text" name="Image"   value="" disabled="disabled" />
+					<label>Boot</label>         <input type="text" name="Boot"    value="" disabled="disabled" />
+				</fieldset>
+				<label>boot.bin</label>     <input type="file" name="boot.bin" /> 
+				<label>user1.bin</label>    <input type="file" name="user1.bin" />
+				<label>user2.bin</label>    <input type="file" name="user2.bin" />
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -247,9 +234,9 @@
 		<form id="battery" class="esp event module" action="/battery" method="POST">
 			<fieldset name="Battery">
 				<legend>Battery</legend>
-				<label>State</label>   <input type="text" name="State"   disabled="disabled" /> <br/>
-				<label>Percent</label> <input type="text" name="Percent" disabled="disabled" /> <br/>
-				<label></label>        <input type="range" name="Percent" min="0" max="100" step="1" disabled="disabled" /> <br/>
+				<label>State</label>   <input type="text" name="State"   disabled="disabled" /> 
+				<label>Percent</label> <input type="text" name="Percent" disabled="disabled" /> 
+				<label></label>        <input type="range" name="Percent" min="0" max="100" step="1" disabled="disabled" /> 
 				<button type="button">Refresh</button>
 			</fieldset>
 			<div class="status"></div>
@@ -258,22 +245,22 @@
 		<form id="relay" class="esp event module" action="/relay" method="POST">
 			<fieldset>
 				<legend>Relay</legend>
-				<label>State</label><input type="checkbox" name="Relay" value="1" onchange="$(this).submit();"/> <br/>
+				<label>State</label><input type="checkbox" name="Relay" value="1" onchange="$(this).submit();"/> 
 				<button type="button">Refresh</button>
 			</fieldset>
 			<div class="status"></div>
 		</form>
 		
-		<form id="adc" class="esp event module" action="/adc" method="POST">
+		<form id="adc" class="esp event module no-reset" action="/adc" method="POST">
 			<fieldset name="ADC">
 				<legend>Analog to Digital</legend>
-				<label>Value</label> <input type="text"  name="Value" value="" disabled="disabled"/> <br/>
-				<label></label>      <input type="range" name="Value" min="0" max="1024" step="1" disabled="disabled" /> <br/>
+				<label>Value</label> <input type="text"  name="Value" value="" disabled="disabled"/> 
+				<label></label>      <input type="range" name="Value" min="0" max="1024" step="1" disabled="disabled" /> 
 				<fieldset name="Poll">
 					<legend>Poll</legend>
-					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> <br/>
-					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> <br/>
-					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> <br/>
+					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> 
+					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> 
+					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> 
 				</fieldset>
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -284,10 +271,10 @@
 		<form id="rfid" class="esp event module" action="/mod-rfid" method="POST">
 			<fieldset>
 				<legend>MOD-RFID</legend>
-				<label>Module</label>    <input type="text"     name="Module"    disabled="disabled" /> <br/>
-				<label>Frequency</label> <input type="range"    name="Frequency" min="0" max="9" step="1"/> <br/>
-				<label>Led</label>       <input type="checkbox" name="Led"       value="1" onchange="$(this).submit();" /> <br/>
-				<label>Tag</label>       <input type="text"     name="Tag"       disabled="disabled" /> <br/>
+				<label>Module</label>    <input type="text"     name="Module"    disabled="disabled" /> 
+				<label>Frequency</label> <input type="range"    name="Frequency" min="0" max="9" step="1"/> 
+				<label>Led</label>       <input type="checkbox" name="Led"       value="1" onchange="$(this).submit();" /> 
+				<label>Tag</label>       <input type="text"     name="Tag"       disabled="disabled" /> 
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
 			</fieldset>
@@ -297,11 +284,11 @@
 		<form id="finger" class="esp event module" action="/mod-finger" method="POST">
 			<fieldset>
 				<legend>MOD-FINGER</legend>
-				<label>Address</label>        <input type="text"     name="Address"       disabled="disabled" /> <br/>
-				<label>DB Size</label>        <input type="text"     name="DBSize"        disabled="disabled" /> <br/>
-				<label>DB Stored</label>      <input type="text"     name="DBStored"      disabled="disabled" /> <br/>
-				<label>First Free</label>     <input type="text"     name="FirstFree"     disabled="disabled" /> <br/>
-				<label>Security Level</label> <input type="range"    name="SecurityLevel" min="1" max="5" step="1" /> <br/>
+				<label>Address</label>        <input type="text"     name="Address"       disabled="disabled" />
+				<label>DB Size</label>        <input type="text"     name="DBSize"        disabled="disabled" />
+				<label>DB Stored</label>      <input type="text"     name="DBStored"      disabled="disabled" />
+				<label>First Free</label>     <input type="text"     name="FirstFree"     disabled="disabled" />
+				<label>Security Level</label> <input type="range"    name="SecurityLevel" min="1" max="5" step="1" /> 
 				<label>Mode</label>
 					<select name="Mode"> 
 						<option>Read</option>
@@ -310,7 +297,7 @@
 						<option>Empty DB</option>
 					</select>
 					<div id="finger-delete"><label>Delete ID</label>      <input type="text"     name="DeleteID" /></div>
-				<br/>
+				
 
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -321,7 +308,7 @@
 		<form id="emtr" class="esp emtr event module no-reset" action="/mod-emtr" method="POST">
 			<fieldset>
 				<legend>MOD-EMTR</legend>
-				<label>Address</label>            <input type="text" name="Address"           disabled="disabled" /> <br/>
+				<label>Address</label>            <input type="text" name="Address"           disabled="disabled" /> 
 				
 				<label>Mode</label>
 					<select name="Mode"> 
@@ -329,28 +316,28 @@
 						<option>Configure</option>
 						<option>Calibration</option>
 					</select>
-				<br/>
 				
 				<label>Counter Active, [kWh]</label>
 					<input  type="text" name="CounterActive" disabled="disabled" class="kWh counter"/> 
 					<button type="button" class="emtr-reset">Reset</button> 
-				<br/>
-				<label>Counter Apparent, [kWh]</label> <input  type="text" name="CounterApparent" disabled="disabled" class="kWh counter"/><br/>
-				<label>Read Interval</label>    <input type="range" name="ReadInterval" min="500" max="5000" step="10" /> <br/>
-				<label></label>                 <input type="text"  name="ReadInterval" disabled="disabled" /> <br/>
+				
+				<label>Counter Apparent, [kWh]</label> <input  type="text" name="CounterApparent" disabled="disabled" class="kWh counter"/>
+				<label>Filter</label>           <input type="checkbox" name="Filter" value="1" onchange="$(this).submit();" /> 
+				<label>Read Interval</label>    <input type="range" name="ReadInterval" min="500" max="5000" step="10" /> 
+				<label></label>                 <input type="text"  name="ReadInterval" disabled="disabled" /> 
 				
 				<div class="emtr-mode log">
-					<label>Interval</label>           <input type="text" name="Interval"          disabled="disabled" /> <br/>
+					<label>Interval</label>           <input type="text" name="Interval"          disabled="disabled" />
 					
-					<label>Voltage RMS, [V]</label>      <input type="text" name="VoltageRMS"        disabled="disabled" class="deci" /> <br/>
-					<label>Current RMS, [A]</label>      <input type="text" name="CurrentRMS"        disabled="disabled" class="milli" /> <br/>
-					<label>Active Power, [W]</label>     <input type="text" name="ActivePower"       disabled="disabled" /> <br/>
-					<label>Reactive Power, [W]</label>   <input type="text" name="ReactivePower"     disabled="disabled" /> <br/>
-					<label>Apparent Power, [W]</label>   <input type="text" name="ApparentPower"     disabled="disabled" /> <br/>
-					<label>Power Factor</label>          <input type="text" name="PowerFactor"       disabled="disabled" class="normalize"/> <br/>
-					<label>Line Frequency, [Hz]</label>  <input type="text" name="LineFrequency"     disabled="disabled" class="milli"/> <br/>
-					<label>Thermistor Voltage</label>    <input type="text" name="ThermistorVoltage" disabled="disabled" /> <br/>
-					<label>System Status</label>         <input type="text" name="SystemStatus"      disabled="disabled" /> <br/>
+					<label>Voltage RMS, [V]</label>      <input type="text" name="VoltageRMS"        disabled="disabled" class="deci" /> 
+					<label>Current RMS, [A]</label>      <input type="text" name="CurrentRMS"        disabled="disabled" class="milli" />
+					<label>Active Power, [W]</label>     <input type="text" name="ActivePower"       disabled="disabled" /> 
+					<label>Reactive Power, [W]</label>   <input type="text" name="ReactivePower"     disabled="disabled" /> 
+					<label>Apparent Power, [W]</label>   <input type="text" name="ApparentPower"     disabled="disabled" /> 
+					<label>Power Factor</label>          <input type="text" name="PowerFactor"       disabled="disabled" class="normalize"/> 
+					<label>Line Frequency, [Hz]</label>  <input type="text" name="LineFrequency"     disabled="disabled" class="milli round"/> 
+					<label>Thermistor Voltage</label>    <input type="text" name="ThermistorVoltage" disabled="disabled" /> 
+					<label>System Status</label>         <input type="text" name="SystemStatus"      disabled="disabled" /> 
 					<label>Event Flag</label>
 						<input type="hidden" name="EventFlag" disabled="disabled" /> 
 						<div class="bits">
@@ -395,24 +382,23 @@
 								<input type="checkbox" name="EventFlag[6]" disabled="disabled" />
 							</div>
 						</div>
-					<br/>
 				</div>
 				
 				<div class="emtr-mode configure">
-					<label>Over Current Limit, [A]</label>     <input type="text" name="OverCurrentLimit" class="milli"/> <br/>
-					<label>Over Power Limit, [W]</label>       <input type="text" name="OverPowerLimit" /> <br/>
-					<label>Over Frequency Limit, [Hz]</label>  <input type="text" name="OverFrequencyLimit" class="milli"/> <br/>
-					<label>Under Frequency Limit, [Hz]</label> <input type="text" name="UnderFrequencyLimit" class="milli" /> <br/>
-					<label>Over Temperature Limit</label>      <input type="text" name="OverTemperatureLimit" /> <br/>
-					<label>Under Temperature Limit</label>     <input type="text" name="UnderTemperatureLimit" /> <br/>
-					<label>Voltage Sag Limit, [V]</label>      <input type="text" name="VoltageSagLimit" class="deci" /> <br/>
-					<label>Voltage Surge Limit, [V]</label>    <input type="text" name="VoltageSurgeLimit" class="deci" /> <br/>
-					<label>Over Current Hold</label>           <input type="text" name="OverCurrentHold" /> <br/>
-					<label>Over Power Hold</label>             <input type="text" name="OverPowerHold" /> <br/>
-					<label>Over Frequency Hold</label>         <input type="text" name="OverFrequencyHold" /> <br/>
-					<label>Under Frequency Hold</label>        <input type="text" name="UnderFrequencyHold" /> <br/>
-					<label>Over Temperature Hold</label>       <input type="text" name="OverTemperatureHold" /> <br/>
-					<label>Under Temperature Hold</label>      <input type="text" name="UnderTemperatureHold" /> <br/>
+					<label>Over Current Limit, [A]</label>     <input type="text" name="OverCurrentLimit" class="milli"/> 
+					<label>Over Power Limit, [W]</label>       <input type="text" name="OverPowerLimit" /> 
+					<label>Over Frequency Limit, [Hz]</label>  <input type="text" name="OverFrequencyLimit" class="milli"/> 
+					<label>Under Frequency Limit, [Hz]</label> <input type="text" name="UnderFrequencyLimit" class="milli" /> 
+					<label>Over Temperature Limit</label>      <input type="text" name="OverTemperatureLimit" /> 
+					<label>Under Temperature Limit</label>     <input type="text" name="UnderTemperatureLimit" /> 
+					<label>Voltage Sag Limit, [V]</label>      <input type="text" name="VoltageSagLimit" class="deci" /> 
+					<label>Voltage Surge Limit, [V]</label>    <input type="text" name="VoltageSurgeLimit" class="deci" /> 
+					<label>Over Current Hold</label>           <input type="text" name="OverCurrentHold" /> 
+					<label>Over Power Hold</label>             <input type="text" name="OverPowerHold" /> 
+					<label>Over Frequency Hold</label>         <input type="text" name="OverFrequencyHold" /> 
+					<label>Under Frequency Hold</label>        <input type="text" name="UnderFrequencyHold" /> 
+					<label>Over Temperature Hold</label>       <input type="text" name="OverTemperatureHold" /> 
+					<label>Under Temperature Hold</label>      <input type="text" name="UnderTemperatureHold" /> 
 					<label>Event Enable</label>            
 						<input type="hidden" name="EventEnable" /> 
 						<div class="bits">
@@ -457,7 +443,7 @@
 								<input type="checkbox" name="EventEnable[6]" value="1" />
 							</div>
 						</div>
-					<br/>
+					
 					<label>Event Mask Critical</label>
 						<input type="hidden" name="EventMaskCritical" /> 
 						<div class="bits">
@@ -502,7 +488,7 @@
 								<input type="checkbox" name="EventMaskCritical[6]" value="1" />
 							</div>
 						</div>
-					<br/>
+					
 					<label>Event Mask Standard</label>
 						<input type="hidden" name="EventMaskStandard" /> 
 						<div class="bits">
@@ -547,7 +533,7 @@
 								<input type="checkbox" name="EventMaskStandard[6]" value="1" />
 							</div>
 						</div>
-					<br/>
+					
 					<label>Event Test</label>
 						<input type="hidden" name="EventTest" /> 
 						<div class="bits">
@@ -592,7 +578,7 @@
 								<input type="checkbox" name="EventTest[6]" value="1" />
 							</div>
 						</div>
-					<br/>
+					
 					<label>Event Clear</label>
 						<input type="hidden" name="EventClear" /> 
 						<div class="bits">
@@ -637,35 +623,41 @@
 								<input type="checkbox" name="EventClear[6]" value="1" />
 							</div>
 						</div>
-					<br/>
+					
 				</div>
 				
 				<div class="emtr-mode calibration">
-					<label>Gain Voltage RMS</label>        <input type="text" name="GainVoltageRMS"       class="integer"/> <br/>
-					<label>Gain Current RMS</label>        <input type="text" name="GainCurrentRMS"       class="integer"/> <br/>
-					<label>Gain Active Power</label>       <input type="text" name="GainActivePower"      class="integer"/> <br/>
-					<label>Gain Reactive Power</label>     <input type="text" name="GainReactivePower"    class="integer"/> <br/>
-					<label>Offset Current RMS</label>      <input type="text" name="OffsetCurrentRMS"     class="integer"/> <br/>
-					<label>Offset Active Power</label>     <input type="text" name="OffsetActivePower"    class="integer"/> <br/>
-					<label>Offset Reactive Power</label>   <input type="text" name="OffsetReactivePower"  class="integer"/> <br/>
-					<label>DC Offset Current</label>       <input type="text" name="DCOffsetCurrent"      class="integer"/> <br/>
-					<label>Phase Compensation</label>      <input type="text" name="PhaseCompensation"    class="integer"/> <br/>
-					<label>Apparent Power Divisor</label>  <input type="text" name="ApparentPowerDivisor" class="integer"/> <br/>
-					<label>System Configuration</label>    <input type="text" name="SystemConfiguration"  class="integer"/> <br/>
-					<label>DIO Configuration</label>       <input type="text" name="DIOConfiguration"     class="integer"/> <br/>
-					<label>Range</label>                   <input type="text" name="Range"                class="integer"/> <br/>
+					<label>Gain Voltage RMS</label>        <input type="text" name="GainVoltageRMS"       class="integer"/> 
+					<label>Gain Current RMS</label>        <input type="text" name="GainCurrentRMS"       class="integer"/> 
+					<label>Gain Active Power</label>       <input type="text" name="GainActivePower"      class="integer"/> 
+					<label>Gain Reactive Power</label>     <input type="text" name="GainReactivePower"    class="integer"/> 
+					<label>Offset Current RMS</label>      <input type="text" name="OffsetCurrentRMS"     class="integer"/> 
+					<label>Offset Active Power</label>     <input type="text" name="OffsetActivePower"    class="integer"/> 
+					<label>Offset Reactive Power</label>   <input type="text" name="OffsetReactivePower"  class="integer"/> 
+					<label>DC Offset Current</label>       <input type="text" name="DCOffsetCurrent"      class="integer"/> 
+					<label>Gain Line Frequency</label>     <input type="text" name="GainLineFrequency"    class="integer"/> 
+					<label>Phase Compensation</label>      <input type="text" name="PhaseCompensation"    class="integer"/> 
+					<label>Apparent Power Divisor</label>  <input type="text" name="ApparentPowerDivisor" class="integer"/> 
+					<label>System Configuration</label>    <input type="text" name="SystemConfiguration"  class="integer"/> 
+					<label>DIO Configuration</label>       <input type="text" name="DIOConfiguration"     class="integer"/> 
+					<label>Range</label>                   <input type="text" name="Range"                class="integer"/> 
 					
 					<label>Calibration Voltage, [V]</label>        <input type="text" name="CalibrationVoltage" class="deci calibrate"/> 
 						<button type="button" class="calibrate CalibrationVoltage">Go</button> 
-					<br/>
+					
 					<label>Calibration Current, [A]</label>        <input type="text" name="CalibrationCurrent" class="milli calibrate"/> 
 						<button type="button" class="calibrate CalibrationCurrent">Go</button> 
-					<br/>
-					<label>Calibration Active Power, [W]</label>   <input type="text" name="CalibrationActivePower" class="calibrate" /> 
+					
+					<label>Calibration Active Power, [W]</label>   <input type="text" name="CalibrationActivePower" class="integer calibrate" /> 
 						<button type="button" class="calibrate CalibrationActivePower">Go</button> 
-					<br/>
-					<label>Calibration Reactive Power, [W]</label> <input type="text" name="CalibrationReactivePower" class="integer"/> <br/>
-					<label>Accumulation Interval</label>           <input type="text" name="AccumulationInterval" /> <br/>
+					
+					<label>Calibration Reactive Power, [W]</label> <input type="text" name="CalibrationReactivePower" class="integer calibrate"/> 
+						<button type="button" class="calibrate CalibrationReactivePower">Go</button> 
+					
+					<label>Line Frequency Ref</label>              <input type="text" name="LineFrequencyRef"         class="milli calibrate"/> 
+						<button type="button" class="calibrate LineFrequencyRef">Go</button> 
+					
+					<label>Accumulation Interval</label>           <input type="text" name="AccumulationInterval" /> 
 				</div>
 				
 				<button type="submit">Submit</button>
@@ -677,24 +669,24 @@
 		<form id="rgb" class="esp event module" action="/mod-rgb" method="POST">
 			<fieldset>
 				<legend>MOD-RGB</legend>
-				<label>R</label><input type="range" class="red"   name="R" min="0" max="255" step="1"/> <br/>
-				<label>G</label><input type="range" class="green" name="G" min="0" max="255" step="1"/> <br/>
-				<label>B</label><input type="range" class="blue"  name="B" min="0" max="255" step="1"/> <br/>
+				<label>R</label><input type="range" class="red"   name="R" min="0" max="255" step="1"/> 
+				<label>G</label><input type="range" class="green" name="G" min="0" max="255" step="1"/> 
+				<label>B</label><input type="range" class="blue"  name="B" min="0" max="255" step="1"/> 
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
 			</fieldset>
 			<div class="status"></div>
 		</form>
 		
-		<form id="tc-mk2" class="esp event module" action="/mod-tc-mk2" method="POST">
+		<form id="tc-mk2" class="esp event module no-reset" action="/mod-tc-mk2" method="POST">
 			<fieldset>
 				<legend>MOD-TC-MK2</legend>
-				<label>Temperature</label><input type="text" name="Temperature" value="" disabled="disabled"/> <br/>
+				<label>Temperature</label><input type="text" name="Temperature" value="" disabled="disabled"/> 
 				<fieldset name="Poll">
 					<legend>Poll</legend>
-					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> <br/>
-					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> <br/>
-					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> <br/>
+					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> 
+					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> 
+					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> 
 				</fieldset>
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -710,9 +702,9 @@
 						<option>RC5</option>
 						<option>SIRC</option>
 					</select>
-				<br/>
-				<label>Device</label>  <select name="Device"></select><br/>
-				<label>Command</label> <select name="Command"></select><br/>
+				
+				<label>Device</label>  <select name="Device"></select>
+				<label>Command</label> <select name="Command"></select>
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
 			</fieldset>
@@ -724,33 +716,33 @@
 				<legend>MOD-IO2</legend>
 				<fieldset>
 					<legend>Relays</legend>
-					<label>Relay1</label> <input type="checkbox" name="Relay1" value="1" onchange="$(this).submit();"/> <br/>
-					<label>Relay2</label> <input type="checkbox" name="Relay2" value="1" onchange="$(this).submit();"/> <br/>
+					<label>Relay1</label> <input type="checkbox" name="Relay1" value="1" onchange="$(this).submit();"/> 
+					<label>Relay2</label> <input type="checkbox" name="Relay2" value="1" onchange="$(this).submit();"/> 
 				</fieldset>
 				
 				<fieldset>
 					<legend>Analog to Digital Input</legend>
-					<label>GPIO0</label>  <input type="text"  name="GPIO0"  value="" disabled="disabled" /> <br/>
-					<label></label>       <input type="range" name="GPIO0"  min="0" max="1024" step="1" disabled="disabled" /> <br/>
-					<label>GPIO1</label>  <input type="text"  name="GPIO1"  value="" disabled="disabled" /> <br/>
-					<label></label>       <input type="range" name="GPIO1"  min="0" max="1024" step="1" disabled="disabled" /> <br/>
+					<label>GPIO0</label>  <input type="text"  name="GPIO0"  value="" disabled="disabled" /> 
+					<label></label>       <input type="range" name="GPIO0"  min="0" max="1024" step="1" disabled="disabled" /> 
+					<label>GPIO1</label>  <input type="text"  name="GPIO1"  value="" disabled="disabled" /> 
+					<label></label>       <input type="range" name="GPIO1"  min="0" max="1024" step="1" disabled="disabled" /> 
 				</fieldset>
 				
 				<fieldset>
 					<legend>Digital Output</legend>
-					<label>GPIO2</label>  <input type="checkbox" name="GPIO2"  value="1" onchange="$(this).submit();" /> <br/>
+					<label>GPIO2</label>  <input type="checkbox" name="GPIO2"  value="1" onchange="$(this).submit();" /> 
 				</fieldset>
 				
 				<fieldset>
 					<legend>Digital Input</legend>
-					<label>GPIO3</label>  <input type="checkbox" name="GPIO3"  value="1" disabled="disabled" /> <br/>
-					<label>GPIO4</label>  <input type="checkbox" name="GPIO4"  value="1" disabled="disabled" /> <br/>
+					<label>GPIO3</label>  <input type="checkbox" name="GPIO3"  value="1" disabled="disabled" /> 
+					<label>GPIO4</label>  <input type="checkbox" name="GPIO4"  value="1" disabled="disabled" /> 
 				</fieldset>
 				
 				<fieldset>
 					<legend>Digital to Analog Output</legend>
-					<label>GPIO5</label>  <input type="range" name="GPIO5" min="0" max="255" step="1"/> <br/>
-					<label>GPIO6</label>  <input type="range" name="GPIO6" min="0" max="255" step="1"/> <br/>
+					<label>GPIO5</label>  <input type="range" name="GPIO5" min="0" max="255" step="1"/> 
+					<label>GPIO6</label>  <input type="range" name="GPIO6" min="0" max="255" step="1"/> 
 				</fieldset>
 				
 				<button type="submit">Submit</button>
@@ -762,16 +754,16 @@
 		<form id="led-8x8-rgb" class="esp event module" action="/mod-led-8x8-rgb" method="POST">
 			<fieldset>
 				<legend>MOD-LED8x8RGB</legend>
-				<label>Columns</label> <input type="text"     name="cols" value=""/> <br/>
-				<label>Rows</label>    <input type="text"     name="rows" value=""/> <br/>
+				<label>Columns</label> <input type="text"     name="cols" value=""/> 
+				<label>Rows</label>    <input type="text"     name="rows" value=""/> 
 				
-				<label>Speed</label>   <input type="range"    name="Speed" min="0" max="100" step="1"/> <br/>
+				<label>Speed</label>   <input type="range"    name="Speed" min="0" max="100" step="1"/> 
 				
-				<label>R</label>       <input type="checkbox" name="R" value="1" /> <br/>
-				<label>G</label>       <input type="checkbox" name="G" value="1" /> <br/>
-				<label>B</label>       <input type="checkbox" name="B" value="1" /> <br/>
+				<label>R</label>       <input type="checkbox" name="R" value="1" /> 
+				<label>G</label>       <input type="checkbox" name="G" value="1" /> 
+				<label>B</label>       <input type="checkbox" name="B" value="1" /> 
 				
-				<label>Text</label>    <input type="text"     name="Text" value="" /> <br/>
+				<label>Text</label>    <input type="text"     name="Text" value="" /> 
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -779,11 +771,27 @@
 			<div class="status"></div>
 		</form>
 		
-		<form id="switch1" class="esp event module" action="/switch1" method="POST">
+		<form id="switch1" class="esp event module no-reset" action="/switch1" method="POST">
 			<fieldset>
 				<legend>ESP-SWITCH1</legend>
-				<label>Relay</label>  <input type="checkbox" name="Relay"  value="1" onchange="$(this).submit();"/> <br/>
-				<label>Switch</label> <input type="checkbox" name="Switch" value="1" disabled="disabled" /> <br/>
+				<label>Relay</label>  <input type="checkbox" name="Relay"  value="1" onchange="$(this).submit();"/> 
+				<label>Switch</label> <input type="checkbox" name="Switch" value="1" disabled="disabled" /> 
+				
+				<fieldset>
+					<legend>Switch Preferences</legend>
+					<label>Function</label> 
+					<select name="function" class="no-post">
+						<option value="0">None</option>
+						<option value="2">Relay Toggle</option>
+						<option value="1">Relay Set</option>
+						<option value="1000">Relay On-Off</option>
+						<option value="-1000">Relay Off-On</option>
+					</select>
+					<div class="function">
+						<label>Interval, ms</label> <input type="text" name="interval" value="" class="no-post"/>
+					</div>
+					<input type="hidden" name="Preference" value="" />
+				</fieldset>
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -794,10 +802,42 @@
 		<form id="switch2" class="esp event module" action="/switch2" method="POST">
 			<fieldset>
 				<legend>ESP-SWITCH2</legend>
-				<label>Relay1</label>  <input type="checkbox" name="Relay1"  value="1" onchange="$(this).submit();"/> <br/>
-				<label>Relay2</label>  <input type="checkbox" name="Relay2"  value="1" onchange="$(this).submit();"/> <br/>
-				<label>Switch1</label> <input type="checkbox" name="Switch1" value="1" disabled="disabled" /> <br/>
-				<label>Switch2</label> <input type="checkbox" name="Switch2" value="1" disabled="disabled" /> <br/>
+				<label>Relay1</label>  <input type="checkbox" name="Relay1"  value="1" onchange="$(this).submit();"/> 
+				<label>Relay2</label>  <input type="checkbox" name="Relay2"  value="1" onchange="$(this).submit();"/> 
+				<label>Switch1</label> <input type="checkbox" name="Switch1" value="1" disabled="disabled" /> 
+				<label>Switch2</label> <input type="checkbox" name="Switch2" value="1" disabled="disabled" /> 
+				
+				<fieldset>
+					<legend>Switch1 Preferences</legend>
+					<label>Function</label> 
+					<select name="function" class="no-post">
+						<option value="0">None</option>
+						<option value="2">Relay Toggle</option>
+						<option value="1">Relay Set</option>
+						<option value="1000">Relay On-Off</option>
+						<option value="-1000">Relay Off-On</option>
+					</select>
+					<div class="function">
+						<label>Interval, ms</label> <input type="text" name="interval" value="" class="no-post"/>
+					</div>
+					<input type="hidden" name="Preference1" value="" />
+				</fieldset>
+				
+				<fieldset>
+					<legend>Switch2 Preferences</legend>
+					<label>Function</label> 
+					<select name="function" class="no-post">
+						<option value="0">None</option>
+						<option value="2">Relay Toggle</option>
+						<option value="1">Relay Set</option>
+						<option value="1000">Relay On-Off</option>
+						<option value="-1000">Relay Off-On</option>
+					</select>
+					<div class="function">
+						<label>Interval, ms</label> <input type="text" name="interval" value="" class="no-post"/>
+					</div>
+					<input type="hidden" name="Preference2" value="" />
+				</fieldset>
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -808,8 +848,8 @@
 		<form id="badge" class="esp event module" action="/badge" method="POST">
 			<fieldset>
 				<legend>ESP-BADGE</legend>
-				<label>Speed</label>   <input type="range"    name="Speed" min="0" max="100" step="1"/> <br/>
-				<label>Text</label>    <input type="text"     name="Text" value="" /> <br/>
+				<label>Speed</label>   <input type="range"    name="Speed" min="0" max="100" step="1"/> 
+				<label>Text</label>    <input type="text"     name="Text" value="" /> 
 				
 				<button type="submit">Submit</button>
 				<button type="button">Refresh</button>
@@ -820,15 +860,15 @@
 		<form id="dimmer" class="esp emtr event module no-reset" action="/dimmer" method="POST">
 			<fieldset>
 				<legend>ESP-DIMMER</legend>
-				<label>On</label>            <input type="checkbox" name="Relay" value="1" onchange="$(this).submit();"/> <br/>
-				<label>Brightness</label>    <input type="range"    name="Brightness" min="0" max="255" step="1"/> <br/>
-				<label>Current, A</label>    <input type="text"     name="Current" class="milli" disabled="disabled"  /> <br/>
+				<label>On</label>            <input type="checkbox" name="Relay" value="1" onchange="$(this).submit();"/> 
+				<label>Brightness</label>    <input type="range"    name="Brightness" min="0" max="255" step="1"/> 
+				<label>Current, A</label>    <input type="text"     name="Current" class="milli" disabled="disabled"  /> 
 				
 				<fieldset name="Poll">
 					<legend>Poll</legend>
-					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> <br/>
-					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> <br/>
-					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> <br/>
+					<label>Refresh Interval</label>   <input type="text" name="Refresh"   value=""/> 
+					<label>Update every n-th</label>  <input type="text" name="Each"      value=""/> 
+					<label>Threshold</label>          <input type="text" name="Threshold" value=""/> 
 				</fieldset>
 				
 				<button type="submit">Submit</button>
@@ -836,9 +876,6 @@
 			</fieldset>
 			<div class="status"></div>
 		</form>
-		
-		<br />
-		
 	</div>
 </body>
 </html>

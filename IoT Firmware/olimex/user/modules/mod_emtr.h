@@ -4,11 +4,11 @@
 	#include "user_config.h"
 	#if MOD_EMTR_ENABLE
 
-		#define EMTR_DEBUG            1
+		#define EMTR_DEBUG            0
 		#define EMTR_VERBOSE_OUTPUT   0
 		
 		#define EMTR_TIMEOUT          500
-
+		
 		#define EMTR_START_FRAME      0xA5
 		#define EMTR_ACK_FRAME        0x06
 		#define EMTR_ERROR_NAK        0x15
@@ -23,7 +23,7 @@
 		#define EMTR_READ             0x4E
 		#define EMTR_READ_16          0x52
 		#define EMTR_READ_32          0x44
-
+		
 		#define EMTR_WRITE            0x4D
 		#define EMTR_WRITE_16         0x57
 		#define EMTR_WRITE_32         0x45
@@ -32,6 +32,8 @@
 		
 		#define EMTR_FLASH_READ       0x42
 		#define EMTR_FLASH_WRITE      0x50
+		
+		#define EMTR_RELAYS_COUNT       16
 		
 		#include "user_devices.h"
 		
@@ -60,6 +62,7 @@
 			uint16    address;
 			_uint64_  counter_active;
 			_uint64_  counter_apparent;
+			uint8     relays[EMTR_RELAYS_COUNT];
 		} emtr_sys_params;
 		
 		typedef struct {
@@ -145,25 +148,41 @@
 		#define EMTR_EVENTS_BASE  0x005E
 		#define EMTR_EVENTS_LEN   54
 		
+		typedef struct {
+			uint16 line_frequency_ref;
+			uint16 gain_line_frequency;
+		} emtr_frequency_registers;
+		#define EMTR_FREQUENCY_REF_BASE  0x0094
+		#define EMTR_FREQUENCY_GAIN_BASE 0x00AE
+		#define EMTR_FREQUENCY_LEN       4
+		
 		typedef void (*emtr_callback)(emtr_packet *packet);
 		
 		uint16   emtr_address();
+		
 		_uint64_ emtr_counter_active();
 		_uint64_ emtr_counter_apparent();
-
-		void   emtr_counter_add(_uint64_ active, _uint64_ apparent);
+		void     emtr_counter_add(_uint64_ active, _uint64_ apparent);
+		
+		uint8    emtr_relay(uint8 index);
+		void     emtr_relay_set(uint8 index, uint8 state);
 		
 		void   emtr_get_counter(emtr_callback command_done);
 		void   emtr_set_counter(_uint64_ active, _uint64_ apparent, emtr_callback command_done);
+		
+		void   emtr_get_relays(emtr_callback command_done);
+		void   emtr_set_relays(emtr_callback command_done);
+		
 		void   emtr_get_address(emtr_callback command_done);
 		
 		void   emtr_set_timeout_callback(emtr_callback command_timeout);
 		void   emtr_clear_timeout();
-
+		
 		void   emtr_parse_calibration(emtr_packet *packet, emtr_calibration_registers *registers);
 		void   emtr_get_calibration(emtr_callback command_done);
-		void   emtr_calibration_calc(emtr_calibration_registers *registers, uint8 range_shift, uint32 expected, uint32 measured);
-		
+		void   emtr_calibration_calc(emtr_output_registers *output,	emtr_calibration_registers *calibration, uint8 range_shift);
+		void   emtr_calibration_reactive_power(emtr_output_registers *output, emtr_calibration_registers *calibration);
+		void   emtr_calibration_line_freqensy(emtr_output_registers *output, emtr_frequency_registers *calibration);
 		
 		void   emtr_parse_event(emtr_packet *packet, emtr_event_registers *registers);
 		void   emtr_get_event(emtr_callback command_done);
@@ -172,6 +191,10 @@
 		void   emtr_get_output(emtr_callback command_done);
 		
 		void   emtr_clear_event(uint16 event, emtr_callback command_done);
+		
+		void   emtr_parse_frequency(emtr_packet *packet, emtr_frequency_registers *registers);
+		void   emtr_get_frequency(emtr_callback command_done);
+		void   emtr_set_frequency(emtr_frequency_registers *registers, emtr_callback command_done);
 		
 		void   emtr_set_system_configuration(uint32 system_configuration, uint16 interval, emtr_callback command_done);
 		

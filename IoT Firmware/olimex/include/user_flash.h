@@ -20,6 +20,7 @@
 		FLASH_MODE_NONE = 0,
 		FLASH_MODE_READ,
 		FLASH_MODE_WRITE,
+		FLASH_MODE_ERASE,
 	} flash_region_mode;
 	
 	typedef enum  {
@@ -35,10 +36,12 @@
 	bool flash_region_register(char *name, uint16 start_sector, uint16 sectors);
 	bool flash_region_protect(char *name, bool state);
 	
-	bool flash_region_open(char *name);
-	bool flash_region_write(uint8 *data, uint16 data_len, bool raise_event);
-	bool flash_region_close();
+	bool   flash_region_open(char *name);
+	bool   flash_region_write(uint8 *data, uint16 data_len, bool raise_event);
 	uint8 *flash_region_read();
+	bool   flash_region_close();
+	
+	bool   flash_region_erase(char *name);
 	
 	bool flash_stream_init();
 	bool flash_stream_data(uint8 *data, uint16 data_len, bool raise_event);

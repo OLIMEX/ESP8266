@@ -395,10 +395,11 @@ void ICACHE_FLASH_ATTR webserver_connection_reconnect(named_connection_queue *co
 	while (request = webserver_connection_find(collection, pConnection)) {
 #if WEBSERVER_DEBUG
 		debug(
-			"WEBSERVER: %s reconnect [%s] [%d.%d.%d.%d:%d] %d [%s] [%s]\n", 
+			"WEBSERVER: %s reconnect [%s] [%d.%d.%d.%d:%d:%d] %d [%s] [%s]\n", 
 			collection->name,
 			request->pURL,
 			IP2STR(pConnection->proto.tcp->remote_ip),
+			pConnection->proto.tcp->local_port,
 			pConnection->proto.tcp->remote_port,
 			err,
 			connection_err_str(err),
@@ -476,10 +477,11 @@ void ICACHE_FLASH_ATTR webserver_connection_clear(named_connection_queue *collec
 	while (request = webserver_connection_find(collection, pConnection)) {
 #if WEBSERVER_DEBUG
 		debug(
-			"WEBSERVER: %s remove [%s] [%d.%d.%d.%d:%d]\n", 
+			"WEBSERVER: %s remove [%s] [%d.%d.%d.%d:%d:%d]\n", 
 			collection->name,
 			request->pURL,
 			IP2STR(pConnection->proto.tcp->remote_ip),
+			pConnection->proto.tcp->local_port,
 			pConnection->proto.tcp->remote_port
 		);
 #endif
@@ -696,8 +698,9 @@ void ICACHE_FLASH_ATTR webserver_send_response(struct espconn *pConnection, char
 	pBuf = NULL;
 	
 #if WEBSERVER_DEBUG
-	debug("WEBSERVER: response sent %d.%d.%d.%d:%d\n",
+	debug("WEBSERVER: response sent %d.%d.%d.%d:%d:%d\n",
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port
 	);
 #endif
@@ -1156,10 +1159,10 @@ LOCAL void ICACHE_FLASH_ATTR webserver_recv(void *arg, char *pData, unsigned sho
 	
 #if WEBSERVER_DEBUG
 	debug(
-		"WEBSERVER: %d.%d.%d.%d:%d%sdata [%d]\n", 
+		"WEBSERVER: %d.%d.%d.%d:%d:%d data [%d]\n", 
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port,
-		pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT ? " SSL " : " ",
 		length
 	);
 #endif
@@ -1262,8 +1265,9 @@ LOCAL ICACHE_FLASH_ATTR void webserver_recon(void *arg, sint8 err) {
 
 #if CONNECTIONS_DEBUG || WEBSERVER_DEBUG
 	debug(
-		"WEBSERVER: Reconnect [%d.%d.%d.%d:%d] %d [%s] [%s]\n", 
+		"WEBSERVER: Reconnect [%d.%d.%d.%d:%d:%d] %d [%s] [%s]\n", 
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port, 
 		pConnection->proto.tcp->remote_port, 
 		err,
 		connection_err_str(err),
@@ -1292,8 +1296,9 @@ void ICACHE_FLASH_ATTR webserver_discon(void *arg) {
 	
 #if CONNECTIONS_DEBUG || WEBSERVER_DEBUG
 	debug(
-		"WEBSERVER: Disconnected [%d.%d.%d.%d:%d] [%s]\n",
+		"WEBSERVER: Disconnected [%d.%d.%d.%d:%d:%d] [%s]\n",
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port,
 		connection_state_str(pConnection->state)
 	);
@@ -1320,8 +1325,9 @@ LOCAL void ICACHE_FLASH_ATTR webserver_connect(void *arg) {
 	
 #if CONNECTIONS_DEBUG || WEBSERVER_DEBUG
 	debug(
-		"WEBSERVER: Connected [%d.%d.%d.%d:%d]\n", 
+		"WEBSERVER: Connected [%d.%d.%d.%d:%d:%d]\n", 
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port
 	);
 #endif

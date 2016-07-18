@@ -15,6 +15,7 @@
 	char *json_poll_str(char *poll_str, uint32 refresh, uint8 each, uint32 threshold);
 	
 	void  jsonparse_object_str(struct jsonparse_state *parser, char *dst, int dst_len);
+	char *jsonparse_alloc_object_str(struct jsonparse_state *parser);
 	
 	extern const char ESP8266[];
 	#if DEVICE == SWITCH1
@@ -28,6 +29,9 @@
 	#endif
 	#if DEVICE == DIMMER
 	extern const char DIMMER_STR[];
+	#endif
+	#if DEVICE == ROBKO
+	extern const char ROBKO_STR[];
 	#endif
 	
 	#if MOD_IO2_ENABLE
@@ -61,6 +65,7 @@
 	extern const char OK_STR[];
 	extern const char REBOOTING[];
 	extern const char CONNECTED[];
+	extern const char DISCONNECTED[];
 	extern const char RECONNECT[];
 	extern const char BUSY_STR[];
 	extern const char DONE[];

@@ -1,9 +1,11 @@
 CACHE MANIFEST
-# 2016-05-30 v1.0.31
+# 2016-07-03 v1.0.36
+manifest.json
 jquery-1.11.3.min.js
 emtr.js
 finger.js
 irda.js
+switch.js
 lib.js
 style.css
 iot-192.png

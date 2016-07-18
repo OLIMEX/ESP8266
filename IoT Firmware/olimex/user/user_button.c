@@ -16,6 +16,7 @@
 #include "user_config.h"
 #include "user_button.h"
 #include "user_devices.h"
+#include "user_relay.h"
 
 LOCAL void ICACHE_FLASH_ATTR button_set_response(char *state) {
 	char response[WEBSERVER_MAX_VALUE];
@@ -37,6 +38,9 @@ LOCAL void ICACHE_FLASH_ATTR button_set_response(char *state) {
 
 LOCAL void ICACHE_FLASH_ATTR button_press() {
 	button_set_response("Press");
+	#if DEVICE == PLUG
+	user_relay_toggle();
+	#endif
 }
 
 LOCAL void ICACHE_FLASH_ATTR button_short_release() {
@@ -52,10 +56,7 @@ LOCAL void ICACHE_FLASH_ATTR button_close_connections() {
 }
 
 LOCAL void ICACHE_FLASH_ATTR button_restore_defaults() {
-	debug("BUTTON: Restore defaults\n");
-	
-	user_config_restore_defaults();
-	user_config_load();
+	config_reset_to_defaults();
 }
 
 LOCAL void ICACHE_FLASH_ATTR button_long_press() {

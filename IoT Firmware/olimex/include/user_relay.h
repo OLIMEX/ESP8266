@@ -21,5 +21,7 @@
 		
 		void  user_relay_init();
 		uint8 user_relay_get();
+		void  user_relay_set(int state);
+		uint8 user_relay_toggle();
 	#endif
 #endif

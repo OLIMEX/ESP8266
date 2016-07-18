@@ -12,6 +12,7 @@
 #include "user_timer.h"
 #include "user_misc.h"
 #include "user_config.h"
+#include "user_events.h"
 #include "user_websocket.h"
 #include "user_webserver.h"
 
@@ -224,9 +225,10 @@ LOCAL void ICACHE_FLASH_ATTR websocket_ping(connections_queue *request, struct e
 	
 #if WEBSOCKET_DEBUG
 	debug(
-		"WebSocket: Send PING [%s] [%d.%d.%d.%d:%d]\n",
+		"WebSocket: Send PING [%s] [%d.%d.%d.%d:%d:%d]\n",
 		msg,
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port
 	);
 #endif
@@ -247,14 +249,17 @@ LOCAL void ICACHE_FLASH_ATTR websocket_pong(connections_queue *request, struct e
 	
 #if WEBSOCKET_DEBUG
 	debug(
-		"WebSocket: Send PONG [%s] [%d.%d.%d.%d:%d]\n",
+		"WebSocket: Send PONG [%s] [%d.%d.%d.%d:%d:%d]\n",
 		msg,
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port
 	);
 #endif
 	websocket_send(request, pConnection, WEBSOCKET_PONG, msg, msg ? os_strlen(msg) : 0);
 }
+
+LOCAL void ICACHE_FLASH_ATTR websocket_timeout(void *arg);
 
 /******************************************************************************
  * FunctionName : websocket_close
@@ -279,7 +284,8 @@ LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct 
 			extra->state = WEBSOCKET_CLOSED;
 			setTimeout(
 #if SSL_ENABLE	
-				pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT ?
+				pConnection->proto.tcp->local_port  == WEBSERVER_SSL_PORT ||
+				pConnection->proto.tcp->remote_port == WEBSERVER_SSL_PORT ?
 					(os_timer_func_t *)espconn_secure_disconnect
 					:
 #endif
@@ -298,10 +304,11 @@ LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct 
 	
 #if WEBSOCKET_DEBUG
 	debug(
-		"WebSocket: Send CLOSE [%d] [%s] [%d.%d.%d.%d:%d]\n",
+		"WebSocket: Send CLOSE [%d] [%s] [%d.%d.%d.%d:%d:%d]\n",
 		status,
 		msg,
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port
 	);
 #endif
@@ -314,9 +321,15 @@ LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct 
 	
 	if (msg) {
 		os_memcpy(data + 2, msg, len - 2);
+		if (extra->type == WEBSOCKET_CLIENT) {
+			user_event_server_disconnected(msg);
+		}
 	}
 	
 	websocket_send(request, pConnection, WEBSOCKET_CLOSE, data, len);
+	if (extra->timeout && websocket_timeout_timer == 0) {
+		websocket_timeout_timer = setTimeout(websocket_timeout, NULL, WEBSOCKET_TIMEOUT * 1000);
+	}
 }
 
 /******************************************************************************
@@ -397,11 +410,12 @@ LOCAL void ICACHE_FLASH_ATTR websocket_handle_message(connections_queue *request
 		}
 		
 		debug(
-			"WebSocket: IGNORED chunked request [%d][%d] [%d.%d.%d.%d:%d]\n", 
+			"WebSocket: IGNORED chunked request [%d][%d] [%d.%d.%d.%d:%d:%d]\n", 
 			chunkID, 
 			msg_len, 
 			IP2STR(pConnection->proto.tcp->remote_ip), 
-			pConnection->proto.tcp->local_port
+			pConnection->proto.tcp->local_port,
+			pConnection->proto.tcp->remote_port
 		);
 		return;
 	}
@@ -618,10 +632,11 @@ recursion:
 		
 #if WEBSOCKET_DEBUG
 		debug(
-			"WebSocket: Received CLOSE [%d] [%s] [%d.%d.%d.%d:%d]\n",
+			"WebSocket: Received CLOSE [%d] [%s] [%d.%d.%d.%d:%d:%d]\n",
 			status,
 			msg,
 			IP2STR(pConnection->proto.tcp->remote_ip),
+			pConnection->proto.tcp->local_port,
 			pConnection->proto.tcp->remote_port
 		);
 #endif
@@ -638,7 +653,7 @@ recursion:
 	os_sprintf(debug_msg, "%d bytes", data_len);
 	
 	debug(
-		"WebSocket: Received %s [%s] [%d.%d.%d.%d:%d]\n", 
+		"WebSocket: Received %s [%s] [%d.%d.%d.%d:%d:%d]\n", 
 		websocket_opcode_str(header.opcode), 
 		(header.opcode > 7 || WEBSOCKET_VERBOSE_OUTPUT) ?
 			data
@@ -646,6 +661,7 @@ recursion:
 			debug_msg
 		,
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port
 	);
 #endif
@@ -771,9 +787,20 @@ void ICACHE_FLASH_ATTR websocket_close_all(const char *reason, struct espconn *p
 LOCAL void ICACHE_FLASH_ATTR websocket_timeout(void *arg) {
 	connections_queue *request;
 	
+	websocket_timeout_timer = 0;
+	
 	STAILQ_FOREACH(request, &(websockets.head), entries) {
 		websocket_extra *extra = request->extra;
 		if (extra->timeout) {
+#if CONNECTIONS_DEBUG || WEBSOCKET_DEBUG 
+			debug(
+				"WebSocket: Timeout [%d.%d.%d.%d:%d:%d] [%s]\n", 
+				IP2STR(request->pConnection->proto.tcp->remote_ip), 
+				request->pConnection->proto.tcp->local_port,
+				request->pConnection->proto.tcp->remote_port,
+				connection_state_str(request->pConnection->state)
+			);
+#endif
 			websocket_close(request, request->pConnection, 1002, "Timeout");
 		}
 	}
@@ -791,6 +818,7 @@ LOCAL void ICACHE_FLASH_ATTR websocket_keep_alive(void *arg) {
 	http_chunk_callback webserver_chunk = webserver_chunk_get();
 	if (webserver_chunk) {
 		clearTimeout(websocket_timeout_timer);
+		websocket_timeout_timer = 0;
 		return;
 	}
 	
@@ -806,6 +834,9 @@ LOCAL void ICACHE_FLASH_ATTR websocket_keep_alive(void *arg) {
 	if (!f) debug("\n");
 #endif
 	
+	if (websocket_timeout_timer != 0) {
+		clearTimeout(websocket_timeout_timer);
+	}
 	websocket_timeout_timer = setTimeout(websocket_timeout, NULL, WEBSOCKET_TIMEOUT * 1000);
 }
 
@@ -872,12 +903,15 @@ bool ICACHE_FLASH_ATTR websocket_server_upgrade(struct espconn *pConnection, cha
 	webserver_set_response_header("Sec-WebSocket-Accept", hAccept, true);
 	webserver_send_response(pConnection, NULL);
 	
+#if CONNECTIONS_DEBUG || WEBSOCKET_DEBUG 
 	debug(
-		"WebSocket: Accepted new connection [%s] [%d.%d.%d.%d:%d]\n",
+		"WebSocket: Accepted new connection [%s] [%d.%d.%d.%d:%d:%d]\n",
 		pURL,
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port
 	);
+#endif
 
 	bool ssl = pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT;
 	uint32 keep_alive = ssl ? WEBSOCKET_KEEP_ALIVE * 4 : WEBSOCKET_KEEP_ALIVE;
@@ -943,12 +977,15 @@ bool ICACHE_FLASH_ATTR websocket_client_upgrade(struct espconn *pConnection, cha
 		goto clean;
 	}
 	
+#if CONNECTIONS_DEBUG || WEBSOCKET_DEBUG 
 	debug(
-		"WebSocket: Open new connection [%s] [%d.%d.%d.%d:%d]\n",
+		"WebSocket: Open new connection [%s] [%d.%d.%d.%d:%d:%d]\n",
 		pURL,
 		IP2STR(pConnection->proto.tcp->remote_ip),
+		pConnection->proto.tcp->local_port,
 		pConnection->proto.tcp->remote_port
 	);
+#endif
 	
 	bool ssl = pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT;
 	uint32 keep_alive = ssl ? WEBSOCKET_KEEP_ALIVE * 4 : WEBSOCKET_KEEP_ALIVE;
@@ -964,6 +1001,8 @@ bool ICACHE_FLASH_ATTR websocket_client_upgrade(struct espconn *pConnection, cha
 	espconn_regist_sentcb(pConnection, websocket_sent);
 	
 	result = true;
+	
+	user_event_server_connected();
 	
 	clean:
 		if (hConnection) os_free(hConnection);
@@ -989,6 +1028,23 @@ bool ICACHE_FLASH_ATTR is_websocket(struct espconn *pConnection) {
 	}
 	
 	return false;
+}
+
+/******************************************************************************
+ * FunctionName : websocket_get_request
+ * Description  : get WebSocket request
+ * Returns	    : 
+*******************************************************************************/
+connections_queue ICACHE_FLASH_ATTR *websocket_get_request(struct espconn *pConnection) {
+	connections_queue *request;
+	
+	STAILQ_FOREACH(request, &(websockets.head), entries) {
+		if (webserver_connection_match(pConnection, &(request->footprint))) {
+			return request;
+		}
+	}
+	
+	return NULL;
 }
 
 /******************************************************************************

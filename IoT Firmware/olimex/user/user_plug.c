@@ -10,7 +10,8 @@
 #include "user_relay.h"
 #include "user_plug.h"
 
-LOCAL bool plug_wifi_blink = false;
+LOCAL bool plug_wifi_blink   = false;
+LOCAL bool plug_server_blink = false;
 
 LOCAL gpio_config plug_led_hardware[PLUG_LED_COUNT] = {
 	{ 
@@ -39,11 +40,13 @@ LOCAL void plug_wifi_blink_cycle() {
 	LOCAL bool state = false;
 	
 	if (!plug_wifi_blink) {
+		state = false;
 		return;
 	}
 	
 	state = !state;
-	plug_led(PLUG_LED2, state);
+	plug_led(PLUG_LED1, state);
+	plug_led(PLUG_LED2, !state && user_relay_get());
 	
 	setTimeout(plug_wifi_blink_cycle, NULL, 500);
 }
@@ -59,6 +62,46 @@ void ICACHE_FLASH_ATTR plug_wifi_blink_start() {
 
 void ICACHE_FLASH_ATTR plug_wifi_blink_stop() {
 	plug_wifi_blink = false;
+	plug_led(PLUG_LED1, 1);
+	plug_led(PLUG_LED2, user_relay_get());
+}
+
+LOCAL void plug_server_blink_cycle() {
+	LOCAL uint8 state = 0;
+	
+	if (!plug_server_blink) {
+		state = 0;
+		return;
+	}
+	
+	if (!plug_wifi_blink) {
+		// change led state only if not wifi blinking
+		state++;
+		if (state > 7) {
+			state = 0;
+		}
+		
+		uint8 led_state = (state & 0x01) && (state < 5);
+		
+		plug_led(PLUG_LED1, led_state);
+		plug_led(PLUG_LED2, !led_state && user_relay_get());
+	}
+	
+	setTimeout(plug_server_blink_cycle, NULL, 250);
+}
+
+void ICACHE_FLASH_ATTR plug_server_blink_start() {
+	if (plug_server_blink) {
+		return;
+	}
+	
+	plug_server_blink = true;
+	plug_server_blink_cycle();
+}
+
+void ICACHE_FLASH_ATTR plug_server_blink_stop() {
+	plug_server_blink = false;
+	plug_led(PLUG_LED1, 1);
 	plug_led(PLUG_LED2, user_relay_get());
 }
 

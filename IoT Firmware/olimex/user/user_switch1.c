@@ -29,7 +29,8 @@ LOCAL switch1_config switch1_hardware[SWITCH_COUNT] = {
 		.handler    = NULL,
 		.state      = 1,
 		.state_buf  = 0,
-		.timer      = 0
+		.timer      = 0,
+		.preference = 0
 	}, 
 	
 	{
@@ -42,7 +43,8 @@ LOCAL switch1_config switch1_hardware[SWITCH_COUNT] = {
 		.handler    = switch1_toggle,
 		.state      = 0,
 		.state_buf  = SWITCH_STATE_FILTER / 2,
-		.timer      = 0
+		.timer      = 0,
+		.preference = 2
 	}
 };
 
@@ -59,9 +61,11 @@ LOCAL void ICACHE_FLASH_ATTR user_switch1_state(char *response) {
 		json_sprintf(
 			data_str,
 			"\"Relay\" : %d, "
-			"\"Switch\" : %d ",
+			"\"Switch\" : %d, "
+			"\"Preference\" : %d ",
 			switch1_hardware[0].state,
-			switch1_hardware[1].state
+			switch1_hardware[1].state,
+			switch1_hardware[1].preference
 		),
 		NULL
 	);
@@ -74,9 +78,10 @@ LOCAL void ICACHE_FLASH_ATTR user_switch1_event() {
 
 }
 
+LOCAL void user_switch1_on(void *arg);
 LOCAL void user_switch1_off(void *arg);
 
-LOCAL void ICACHE_FLASH_ATTR user_switch1_set(uint8 i, int state) {
+void ICACHE_FLASH_ATTR user_switch1_set(uint8 i, int state) {
 	if (i >= SWITCH_COUNT || switch1_hardware[i].type != SWITCH1_RELAY) {
 		return;
 	}
@@ -85,17 +90,35 @@ LOCAL void ICACHE_FLASH_ATTR user_switch1_set(uint8 i, int state) {
 		return;
 	}
 	
+	uint8 store_state = state;
 	if (state < 0) {
-		// On for (-state) milliseconds then Off
-		switch1_hardware[i].timer = setTimeout(user_switch1_off, &switch1_hardware[i], -state);
-		state = 1;
-	} else if (state > 1) {
+		// Off for (-state) milliseconds then On
+		switch1_hardware[i].timer = setTimeout(user_switch1_on, &switch1_hardware[i], -state);
+		state = 0;
+		store_state = 1;
+	} else if (state == 2) {
 		// Toggle
 		state = switch1_hardware[i].state == 0 ? 1 : 0;
+		store_state = state;
+	} else if (state > 2) {
+		// On for (state) milliseconds then Off
+		switch1_hardware[i].timer = setTimeout(user_switch1_off, &switch1_hardware[i], state);
+		state = 1;
+		store_state = 0;
 	}
 	
 	GPIO_OUTPUT_SET(GPIO_ID_PIN(switch1_hardware[i].gpio.gpio_id), state);
 	switch1_hardware[i].state = state;
+	emtr_relay_set(i, store_state);
+}
+
+LOCAL void user_switch1_on(void *arg) {
+	switch1_config *config = arg;
+	
+	config->timer = 0;
+	user_switch1_set(config->id, 1);
+	
+	user_switch1_event();
 }
 
 LOCAL void user_switch1_off(void *arg) {
@@ -128,12 +151,64 @@ LOCAL void ICACHE_FLASH_ATTR switch1_toggle(void *arg) {
 		uint8 state = (config->state_buf == SWITCH_STATE_FILTER);
 		if (config->state != state) {
 			config->state = state;
-			user_switch1_set(config->id - 1, 2);
+			
+			if (config->preference == 0) {
+				return;
+			}
+			
+			int relay_state = 0;
+			if (config->preference < 0 || config->preference >= 2) {
+				// Relay Off-On || On-Off || Toggle
+				relay_state = config->preference;
+			} else if (config->preference == 1) {
+				// Relay Set
+				relay_state = state;
+			}
+			
+			user_switch1_set(config->id - 1, relay_state);
 			
 			clearTimeout(event_timer);
 			event_timer = setTimeout(user_switch1_event, NULL, 50);
 		}
 	}
+}
+
+LOCAL bool ICACHE_FLASH_ATTR switch1_parse(char *data, uint16 data_len) {
+	struct jsonparse_state parser;
+	int type;
+	
+	int preference = switch1_hardware[1].preference;
+	
+	jsonparse_setup(&parser, data, data_len);
+	while ((type = jsonparse_next(&parser)) != 0) {
+		if (type == JSON_TYPE_PAIR_NAME) {
+			if (jsonparse_strcmp_value(&parser, "Relay") == 0) {
+				jsonparse_next(&parser);
+				jsonparse_next(&parser);
+				user_switch1_set(0, jsonparse_get_value_as_sint(&parser));
+			} else if (jsonparse_strcmp_value(&parser, "Preference") == 0) {
+				jsonparse_next(&parser);
+				jsonparse_next(&parser);
+				switch1_hardware[1].preference = jsonparse_get_value_as_sint(&parser);
+			}
+		}
+	}
+	
+	return (
+		preference != switch1_hardware[1].preference
+	);
+}
+
+LOCAL void ICACHE_FLASH_ATTR switch1_preferences_set() {
+	char preferences[WEBSERVER_MAX_VALUE];
+	os_sprintf(
+		preferences, 
+		"{"
+			"\"Preference\": %d"
+		"}",
+		switch1_hardware[1].preference
+	);
+	preferences_set(SWITCH1_STR, preferences);
 }
 
 void ICACHE_FLASH_ATTR switch1_handler(
@@ -146,22 +221,9 @@ void ICACHE_FLASH_ATTR switch1_handler(
 	char *response,
 	uint16 response_len
 ) {
-	struct jsonparse_state parser;
-	int type;
-	int state = 0;
-	
 	if (method == POST && data != NULL && data_len != 0) {
-		jsonparse_setup(&parser, data, data_len);
-		
-		while ((type = jsonparse_next(&parser)) != 0) {
-			if (type == JSON_TYPE_PAIR_NAME) {
-				if (jsonparse_strcmp_value(&parser, "Relay") == 0) {
-					jsonparse_next(&parser);
-					jsonparse_next(&parser);
-					state = jsonparse_get_value_as_sint(&parser);
-					user_switch1_set(0, state);
-				}
-			}
+		if (switch1_parse(data, data_len)) {
+			switch1_preferences_set();
 		}
 	}
 	
@@ -200,6 +262,8 @@ void ICACHE_FLASH_ATTR user_switch1_init() {
 			setInterval(switch1_toggle, &switch1_hardware[i], 10);
 		}
 	}
+	
+	preferences_get(SWITCH1_STR, switch1_parse);
 	
 	webserver_register_handler_callback(SWITCH1_URL, switch1_handler);
 	device_register(NATIVE, 0, SWITCH1_STR, SWITCH1_URL, switch1_init, switch1_down);

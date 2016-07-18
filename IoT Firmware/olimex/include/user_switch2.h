@@ -26,6 +26,7 @@
 			uint8       state;
 			uint8       state_buf;
 			uint32      timer;
+			int         preference;
 		} switch2_config;
 		
 		void switch2_handler(
@@ -43,5 +44,6 @@
 		void switch2_down();
 		
 		void user_switch2_init();
+		void user_switch2_set(uint8 i, int state);
 	#endif
 #endif

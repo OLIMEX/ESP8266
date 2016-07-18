@@ -1,6 +1,13 @@
 #ifndef __USER_CONFIG_H__
 	#define __USER_CONFIG_H__
 	
+	#define FIRMWARE_VERSION             "1.0.0"
+	#ifdef BUILD
+		#define FIRMWARE_BUILD           BUILD
+	#else
+		#define FIRMWARE_BUILD           "~"
+	#endif
+	
 	#define USE_OPTIMIZE_PRINTF
 	
 	#define CONNECTIONS_DEBUG                  1
@@ -20,6 +27,7 @@
 	#define SWITCH2                            4
 	#define BADGE                              5
 	#define DIMMER                             6
+	#define ROBKO                              7
 	
 /***********************************************
  * Modules conditional compiling
@@ -75,7 +83,7 @@
 		#define UART1_ENABLE                   1
 		
 		// ESP8266-EVB native
-		#define BUTTON_ENABLE                  1
+		#define BUTTON_ENABLE                  0
 		#define RELAY_ENABLE                   0
 		#define ADC_ENABLE                     0
 		// ESP8266-EVB-BAT native
@@ -141,6 +149,29 @@
 		#define MOD_IRDA_ENABLE                0
 		// SPI
 		#define MOD_LED_8x8_RGB_ENABLE         0
+	#elif DEVICE == ROBKO
+		#define UART0_SWAP                     0
+		#define UART1_ENABLE                   0
+		
+		// ESP8266-EVB native
+		#define BUTTON_ENABLE                  1
+		#define RELAY_ENABLE                   0
+		#define ADC_ENABLE                     0
+		// ESP8266-EVB-BAT native
+		#define BATTERY_ENABLE                 0
+		
+		// UEXT modules
+		// UART
+		#define MOD_RFID_ENABLE                0
+		#define MOD_FINGER_ENABLE              0
+		#define MOD_EMTR_ENABLE                0
+		// I2C
+		#define MOD_RGB_ENABLE                 0
+		#define MOD_TC_MK2_ENABLE              0
+		#define MOD_IO2_ENABLE                 0
+		#define MOD_IRDA_ENABLE                0
+		// SPI
+		#define MOD_LED_8x8_RGB_ENABLE         0
 	#elif DEVICE == EVB_ONLY
 		#define UART0_SWAP                     0
 		#define UART1_ENABLE                   0
@@ -189,8 +220,8 @@
 		#define MOD_LED_8x8_RGB_ENABLE         1
 	#endif
 /***********************************************/
-
-	#if UART1_ENABLE || (DEVICE == PLUG) || (DEVICE == SWITCH2)
+	
+	#if UART1_ENABLE || (DEVICE == PLUG) || (DEVICE == SWITCH1) || (DEVICE == SWITCH2)
 		#define I2C_ENABLE                     0
 	#else
 		#define I2C_ENABLE                     1
@@ -220,6 +251,7 @@
 	// URLs
 	#define USER_CONFIG_URL                    "/config"
 	#define USER_CONFIG__URL                   "/config/"
+	#define USER_CONFIG_ABOUT_URL              "/config/about"
 	#define USER_CONFIG_IOT_URL                "/config/iot"
 	#define USER_CONFIG_AP_URL                 "/config/access-point"
 	#define USER_CONFIG_STATION_URL            "/config/station"
@@ -240,6 +272,8 @@
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_SWITCH2"
 	#elif  DEVICE == DIMMER
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_DIMMER"
+	#elif  DEVICE == ROBKO
+		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_ROBKO"
 	#else
 		#define USER_CONFIG_DEFAULT_AP_SSID    "ESP_OLIMEX"
 	#endif
@@ -247,11 +281,7 @@
 	#define USER_CONFIG_DEFAULT_AP_PASSWD      "olimex-ap"
 	
 	#define USER_CONFIG_DEFAULT_EVENT_SERVER   "iot.olimex.com"
-	#if DEVICE == BADGE
-		#define USER_CONFIG_DEFAULT_EVENT_PATH "/events"
-	#else
-		#define USER_CONFIG_DEFAULT_EVENT_PATH "/"
-	#endif
+	#define USER_CONFIG_DEFAULT_EVENT_PATH     "/events"
 	
 	#include "ip_addr.h"
 	#include "user_webserver.h"
@@ -314,7 +344,21 @@
 	char *user_config_events_name();
 	char *user_config_events_token();
 	
+	void config_restart();
+	void config_reset_to_defaults();
+	
 	void config_handler(
+		struct espconn *pConnection, 
+		request_method method, 
+		char *url, 
+		char *data, 
+		uint16 data_len, 
+		uint32 content_len, 
+		char *response,
+		uint16 response_len
+	);
+	
+	void config_about_handler(
 		struct espconn *pConnection, 
 		request_method method, 
 		char *url, 

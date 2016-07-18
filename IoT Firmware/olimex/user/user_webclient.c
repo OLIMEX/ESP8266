@@ -94,6 +94,21 @@ LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_request_find(char *host, in
 	return NULL;
 }
 
+const char ICACHE_FLASH_ATTR *webclient_get_status(char *host, int port, char *path) {
+	webclient_request *request = webclient_request_find(host, port, path);
+	
+	if (request != NULL) {
+		if (request->state != HTTP || is_websocket(request->connection)) {
+			if (request->connection != NULL && request->connection->state != ESPCONN_CLOSE) {
+				return CONNECTED;
+			}
+		}
+		return DISCONNECTED;
+	} else {
+		return DISCONNECTED;
+	}
+}
+
 LOCAL webclient_request ICACHE_FLASH_ATTR *webclient_request_port_find(int local_port) {
 	webclient_request *request;
 	
@@ -181,11 +196,13 @@ LOCAL void ICACHE_FLASH_ATTR webclient_renew_connection(webclient_request *reque
 		
 #if WEBCLIENT_DEBUG
 		debug(
-			"WEBCLIENT: Renew [%d.%d.%d.%d:%d] -> [%d.%d.%d.%d:%d]\n", 
+			"WEBCLIENT: Renew [%d.%d.%d.%d:%d:%d] -> [%d.%d.%d.%d:%d:%d]\n", 
 			IP2STR(old_connection->proto.tcp->remote_ip), 
 			old_connection->proto.tcp->local_port, 
+			old_connection->proto.tcp->remote_port, 
 			IP2STR(request->connection->proto.tcp->remote_ip), 
-			request->connection->proto.tcp->local_port
+			request->connection->proto.tcp->local_port,
+			request->connection->proto.tcp->remote_port
 		);
 #endif
 		
@@ -284,7 +301,19 @@ LOCAL void ICACHE_FLASH_ATTR webclient_free_request(webclient_request *request) 
 
 LOCAL void ICACHE_FLASH_ATTR webclient_raise_reconnect() {
 	char status[WEBSERVER_MAX_VALUE];
-	user_event_raise(NULL, json_status(status, ESP8266, "WebSocket Reconnect", NULL));
+	char data[WEBSERVER_MAX_VALUE];
+	
+	user_event_raise(
+		NULL, 
+		json_status(
+			status, ESP8266, "WebSocket Reconnect", 
+			json_sprintf(
+				data,
+				"\"FreeHeap\" : %d",
+				system_get_free_heap_size()
+			)
+		)
+	);
 }
 
 LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct espconn *connection) {
@@ -347,15 +376,17 @@ LOCAL void ICACHE_FLASH_ATTR webclient_timeout(struct espconn *connection) {
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
-		"WEBCLIENT: Timeout [%d.%d.%d.%d:%d]\n", 
+		"WEBCLIENT: Timeout [%d.%d.%d.%d:%d:%d]\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
-		connection->proto.tcp->local_port
+		connection->proto.tcp->local_port,
+		connection->proto.tcp->remote_port
 	);
 #endif	
 	
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
-		debug("WEBCLIENT: webclient_timeout() request not found");
+		debug("WEBCLIENT: webclient_timeout() request not found\n");
+		return;
 	}
 	
 #if SSL_ENABLE
@@ -378,9 +409,10 @@ LOCAL void ICACHE_FLASH_ATTR webclient_reconnect(void *arg, sint8 err) {
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
-		"WEBCLIENT: Reconnect [%d.%d.%d.%d:%d] %d [%s] [%s]\n", 
+		"WEBCLIENT: Reconnect [%d.%d.%d.%d:%d:%d] %d [%s] [%s]\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
 		connection->proto.tcp->local_port, 
+		connection->proto.tcp->remote_port, 
 		err,
 		connection_err_str(err),
 		connection_state_str(connection->state)
@@ -389,7 +421,8 @@ LOCAL void ICACHE_FLASH_ATTR webclient_reconnect(void *arg, sint8 err) {
 	
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
-		debug("WEBCLIENT: webclient_reconnect() request not found");
+		debug("WEBCLIENT: webclient_reconnect() request not found\n");
+		return;
 	}
 	
 	if (err != 0) {
@@ -402,16 +435,18 @@ LOCAL void ICACHE_FLASH_ATTR webclient_disconnect(void *arg) {
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
-		"WEBCLIENT: Disconnected [%d.%d.%d.%d:%d] [%s]\n", 
+		"WEBCLIENT: Disconnected [%d.%d.%d.%d:%d:%d] [%s]\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
 		connection->proto.tcp->local_port,
+		connection->proto.tcp->remote_port,
 		connection_state_str(connection->state)
 	);
 #endif
 	
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
-		debug("WEBCLIENT: webclient_disconnect() request not found");
+		debug("WEBCLIENT: webclient_disconnect() request not found\n");
+		return;
 	}
 	
 	// after closing HTTP; and received data OK
@@ -439,9 +474,10 @@ LOCAL void ICACHE_FLASH_ATTR webclient_sent(void *arg) {
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
-		"WEBCLIENT: Done [%d.%d.%d.%d:%d].\n", 
+		"WEBCLIENT: Done [%d.%d.%d.%d:%d:%d].\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
-		connection->proto.tcp->local_port
+		connection->proto.tcp->local_port,
+		connection->proto.tcp->remote_port
 	);
 #endif
 	
@@ -464,9 +500,10 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 #if WEBCLIENT_DEBUG
 #if WEBCLIENT_VERBOSE_OUTPUT
 	debug(
-		"WEBCLIENT: Receive [%d.%d.%d.%d:%d]\n", 
+		"WEBCLIENT: Receive [%d.%d.%d.%d:%d:%d]\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
-		connection->proto.tcp->local_port
+		connection->proto.tcp->local_port,
+		connection->proto.tcp->remote_port
 	);
 	debug("WEBCLIENT RESPONSE:\n%s\n\n", pData);
 #endif
@@ -475,30 +512,30 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
 		debug("WEBCLIENT: webclient_recv() request not found");
-		webclient_error(request, connection);
 		return;
 	}
-
+	
 	request->retry = 0;
+	webclient_reset_timers(request);
 	
 	if (websocket_client_upgrade(connection, EVENTS_URL, pData, request->headers)) {
-		webclient_reset_timers(request);
-		
 		request->state = WEBSOCKET;
 		if (os_strlen(request->user) + os_strlen(request->password) != 0) {
 			char auth[WEBSERVER_MAX_VALUE];
 			os_sprintf(auth, "{\"User\" : \"%s\", \"Password\" : \"%s\"}", request->user, request->password);
 			websocket_send_message(EVENTS_URL, auth, request->connection);
 		}
-		char ident[WEBSERVER_MAX_VALUE];
-		os_sprintf(ident, "{\"Name\" : \"%s\", \"Token\" : \"%s\"}", user_config_events_name(), user_config_events_token());
-		websocket_send_message(EVENTS_URL, ident, request->connection);
+		if (os_strlen(user_config_events_name()) + os_strlen(user_config_events_token()) != 0) {
+			char ident[WEBSERVER_MAX_VALUE];
+			os_sprintf(ident, "{\"Name\" : \"%s\", \"Token\" : \"%s\"}", user_config_events_name(), user_config_events_token());
+			websocket_send_message(EVENTS_URL, ident, request->connection);
+		}
 		webclient_execute(request);
 		return;
 	}
 	
 	bool is_close_conn = false;
-
+	
 	// Check if header && not chunked
 	if (request->response_state == WEBCLIENT_RESP_STATE_WAITCHUNK) {
 		if ((char *)os_strstr(pData, "0\r\n") == pData) {
@@ -535,15 +572,16 @@ LOCAL void ICACHE_FLASH_ATTR webclient_connect(void *arg) {
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
-		"WEBCLIENT: Connected [%d.%d.%d.%d:%d]\n", 
+		"WEBCLIENT: Connected [%d.%d.%d.%d:%d:%d]\n", 
 		IP2STR(connection->proto.tcp->remote_ip), 
-		connection->proto.tcp->local_port
+		connection->proto.tcp->local_port,
+		connection->proto.tcp->remote_port
 	);
 #endif
 	
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
-		debug("WEBCLIENT: webclient_connect() request not found!");
+		debug("WEBCLIENT: webclient_connect() request not found\n");
 		return;
 	}
 	
@@ -624,9 +662,10 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 	webclient_request *request = webclient_request_port_find(connection->proto.tcp->local_port);
 	if (request == NULL) {
 		debug(
-			"WEBCLIENT: Request can not be found [%d.%d.%d.%d:%d]\n", 
+			"WEBCLIENT: Request can not be found [%d.%d.%d.%d:%d:%d]\n", 
 			IP2STR(connection->proto.tcp->remote_ip),
-			connection->proto.tcp->local_port
+			connection->proto.tcp->local_port,
+			connection->proto.tcp->remote_port
 		);
 		webclient_free_connection(connection);
 		return;
@@ -646,12 +685,12 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 	
 #if CONNECTIONS_DEBUG || WEBCLIENT_DEBUG
 	debug(
-		"WEBCLIENT: %s [%s:%d] [%d.%d.%d.%d:%d]\n", 
+		"WEBCLIENT: %s [%s] [%d.%d.%d.%d:%d:%d]\n", 
 		webclient_method_str(request->method), 
 		request->host, 
-		connection->proto.tcp->remote_port,
 		IP2STR(connection->proto.tcp->remote_ip),
-		connection->proto.tcp->local_port
+		connection->proto.tcp->local_port,
+		connection->proto.tcp->remote_port
 	);
 #endif
 	
@@ -684,12 +723,17 @@ void ICACHE_FLASH_ATTR webclient_execute(webclient_request *request) {
 		return;
 	}
 	
-	webclient_reset_timers(request);
-	
 	if (is_websocket(request->connection)) {
 		if (request->content != NULL && os_strlen(request->content) > 0) {
 			websocket_send_message(EVENTS_URL, request->content, request->connection);
 		}
+		return;
+	}
+	
+	if (request->disconnect_timer != 0) {
+#if WEBCLIENT_DEBUG
+		debug("WEBCLIENT: Pending timeout. Drop current request.\n");
+#endif
 		return;
 	}
 	

@@ -8,6 +8,9 @@
 
 #include "user_interface.h"
 #include "user_config.h"
+#include "user_json.h"
+#include "user_websocket.h"
+
 #include "user_i2c_scan.h"
 #include "user_devices.h"
 
@@ -33,6 +36,20 @@ LOCAL const char ICACHE_FLASH_ATTR *device_type_str(device_type type) {
 		case UART:   return "UART";
 		case I2C:    return "I2C";
 		case SPI:    return "SPI";
+	}
+	
+	return "UNKNOWN";
+}
+
+LOCAL const char ICACHE_FLASH_ATTR *reset_reason(enum rst_reason reason) {
+	switch (reason) {
+		case REASON_DEFAULT_RST:       return "Power On";
+		case REASON_WDT_RST:           return "Watch Dog Reset";
+		case REASON_EXCEPTION_RST:     return "Exception Reset";
+		case REASON_SOFT_WDT_RST:      return "Soft Watch Dog Reset";
+		case REASON_SOFT_RESTART:      return "Soft Restart";
+		case REASON_DEEP_SLEEP_AWAKE:  return "Deep Sleep Awake";
+		case REASON_EXT_SYS_RST:       return "External Reset";
 	}
 	
 	return "UNKNOWN";
@@ -225,7 +242,33 @@ void ICACHE_FLASH_ATTR devices_handler(
 	char *response,
 	uint16 response_len
 ) {
-	webserver_set_status(0);
+	LOCAL bool first = true;
+	
+	connections_queue *request = websocket_get_request(pConnection);
+	if (request) {
+		websocket_extra *extra = request->extra;
+		if (first && extra->type == WEBSOCKET_CLIENT) {
+			struct rst_info *rst = system_get_rst_info();
+			
+			char data_str[WEBSERVER_MAX_VALUE];
+			json_data(
+				response, ESP8266, reset_reason(rst->reason),
+				json_sprintf(
+					data_str,
+					"\"ResetInfo\" : \"%d:%d:%08x\"",
+					rst->reason, rst->exccause, rst->epc1
+				),
+				NULL
+			);
+			
+			first = false;
+		}
+	}
+	
+	if (os_strlen(response) == 0) {
+		webserver_set_status(0);
+	}
+	
 #if I2C_ENABLE	
 	i2c_scan_start(devices_i2c_done);
 #else

@@ -17,16 +17,76 @@
 #include "user_battery.h"
 #include "user_devices.h"
 
-LOCAL uint8 battery_state = 0;
-LOCAL uint8 battery_percent = 0;
+LOCAL uint8  battery_state      = 0;
+LOCAL sint32 battery_adc        = 0;
+LOCAL sint32 battery_charge_fix = 0;
+LOCAL uint8  battery_percent    = 0;
+
+#if BATTERY_DEBUG
+LOCAL void ICACHE_FLASH_ATTR battery_debug(uint8 percent) {
+	float v = battery_adc;
+	v = v / 1024;
+	int    vi = v;
+	uint16 vd = (v - vi) * 1000;
+	
+	float vb = v + v / 4.99 * 22;
+	int    vbi = vb;
+	uint16 vbd = (vb - vbi) * 1000;
+	
+	debug(
+		"ADC=%d "
+		"Vadc=%d.%03d "
+		"Vbat=%d.%03d "
+		"Percent=%d\n", 
+		battery_adc, 
+		vi, vd,
+		vbi, vbd,
+		percent
+	);
+}
+#endif	
+
+LOCAL sint32 ICACHE_FLASH_ATTR battery_adc_read() {
+	uint8  state = gpio16_input_get();
+	sint32 adc = system_adc_read();
+	
+	if (state != battery_state) {
+		// Change of state - calculate new charge fix
+		if (state == 0) {
+			battery_charge_fix = (adc < battery_adc ? 
+				battery_adc - adc
+				:
+				0
+			);
+		} else {
+			battery_charge_fix = (adc > battery_adc ? 
+				battery_adc - adc
+				:
+				0
+			);
+		}
+	}
+	
+#if BATTERY_DEBUG
+	debug(
+		"ADC=%d "
+		"fix=%d\n",
+		adc, 
+		battery_charge_fix
+	);
+#endif	
+	
+	battery_adc = adc + battery_charge_fix;
+	return battery_adc;
+}
 
 uint8 ICACHE_FLASH_ATTR battery_percent_get() {
-	LOCAL float percent = 0;
-	LOCAL bool  first = true;
+	LOCAL bool   first = true;
+	LOCAL float  percent = 0;
+	
+	sint32 adc = battery_adc_read();
 	
 	float  p;
-	uint16 adc = system_adc_read();
-	
 	if (adc <= BATTERY_MIN_ADC) {
 		p = 0;
 	} else if (adc >= BATTERY_MAX_ADC) {
@@ -37,25 +97,20 @@ uint8 ICACHE_FLASH_ATTR battery_percent_get() {
 	
 	if (first) {
 		percent = p;
-		first = false;
 	} else {
 		percent = percent + (p - percent) / BATTERY_FILTER_FACTOR;
 	}
 	
+#if BATTERY_DEBUG
+	battery_debug(percent + 0.5);
+#endif
+	
+	first = false;
 	return (percent + 0.5);
 }
 
 LOCAL void ICACHE_FLASH_ATTR battery_set_response(char *response) {
 	char data[WEBSERVER_MAX_VALUE];
-#if BATTERY_DEBUG
-	debug(
-		"BATTERY:\n"
-		"    State %d\n"
-		"    Percent %d\n", 
-		battery_state, 
-		battery_percent
-	);
-#endif	
 	json_data(
 		response, ESP8266, OK_STR,
 		json_sprintf(
@@ -81,18 +136,27 @@ LOCAL void ICACHE_FLASH_ATTR battery_state_get() {
 	char response[WEBSERVER_MAX_VALUE];
 	uint8 state = gpio16_input_get();
 	uint8 percent = battery_percent_get();
+	uint8 diff = 0;
 	
-	if (percent > battery_percent && battery_state != 0) {
-		count++;
-	} else if (percent < battery_percent && battery_state == 0) {
-		count--;
+	if (percent > battery_percent) {
+		diff = percent - battery_percent;
+		count += diff;
+	} else if (percent < battery_percent) {
+		diff = battery_percent - percent;
+		count -= diff;
 	} else {
 		count = 0;
 	}
 	
+#if BATTERY_DEBUG
+	debug("State: %d Count: %d\n", state, count);
+#endif
+
 	if (
 		state != battery_state || 
-		(percent != battery_percent && abs(count) > BATTERY_FILTER_COUNT)
+		(abs(count) > BATTERY_FILTER_COUNT && diff > BATTERY_FILTER_DIFF) || 
+		(battery_state != 0 && percent > battery_percent &&  count > BATTERY_FILTER_COUNT) ||
+		(battery_state == 0 && percent < battery_percent && -count > BATTERY_FILTER_COUNT)
 	) {
 		count = 0;
 		battery_state = state;
@@ -100,6 +164,15 @@ LOCAL void ICACHE_FLASH_ATTR battery_state_get() {
 		
 		battery_set_response(response);
 		user_event_raise(BATTERY_URL, response);
+	}
+	
+	if (abs(count) > BATTERY_FILTER_COUNT) {
+		if (count > 0 && battery_charge_fix > 0) {
+			battery_charge_fix--;
+		} else if (count < 0 && battery_charge_fix < 0) {
+			battery_charge_fix++;
+		}
+		count = 0;
 	}
 }
 
@@ -122,8 +195,11 @@ void ICACHE_FLASH_ATTR user_battery_init() {
 	webserver_register_handler_callback(BATTERY_URL, battery_handler);
 	device_register(NATIVE, 0, ESP8266, BATTERY_URL, NULL, NULL);
 	
+	uint8 i;
 	battery_state = gpio16_input_get();
-	battery_percent = battery_percent_get();
+	for (i=0; i<BATTERY_FILTER_COUNT; i++) {
+		battery_percent = battery_percent_get();
+	}
 	
 	setInterval(battery_state_get, NULL, BATTERY_STATE_REFRESH);
 }

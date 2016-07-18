@@ -1,10 +1,114 @@
 (function ($) {
+	$(document).on(
+		'readyIoT',
+		function () {
+			$.support.cors = true;
+			
+			$('#menu').menu();
+			$('input[type=range]').range();
+			
+			$('#tabs').formTabs('#esp, .esp:not(.long-poll)', 'legend:first');
+			$('#esp').connection();
+			
+			$('.esp').esp8266();
+			$('.event').event8266();
+			
+			$('button.reset').reset();
+			$('button.restart').restart();
+			
+			$('#config-firmware input[name=Image]').firmwareImage();
+			$('#config-station input[name=DHCP]').stationDHCP();
+			
+			$('#irda select[name=Mode]').irdaMode();
+			$('#finger select[name=Mode]').fingerMode();
+			
+			$('.emtr').emtr();
+			
+			$('.bits').bits();
+			
+			$('#switch1').switch_dev();
+			$('#switch2').switch_dev();
+			
+			if (false) {
+				$('.esp').trigger('init8266');
+			} else {
+				$('.esp').trigger('abort8266');
+			}
+			
+			var host = $.urlParam('host');
+			if (host) {
+				$('#esp').find('input[name=host]').val(host);
+			}
+			
+			$('.integer').integers();
+			$('.milli, .deci, .normalize, .kWh').floats();
+		}
+	);
+})(jQuery);
+
+(function ($) {
 	$.urlParam = function(name) {
 		var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
 		return (results ?
 			results[1]
 			:
 			0
+		);
+	};
+})(jQuery);
+
+(function ($) {
+	$.fn.integers = function () {
+		return this.bind(
+			'toJSON',
+			function () {
+				var $this = $(this);
+				$this.data('JSON', parseInt($this.val()));
+			}
+		);
+	};
+})(jQuery);
+
+(function ($) {
+	$.fn.floats = function () {
+		return this.each(
+			function (i, e) {
+				var $e = $(e);
+				$e.data('factor', 1);
+				$e.data('precision', 0);
+				if ($e.is('.milli')) {
+					$e.data('factor', 1000);
+					$e.data('precision', 3);
+				} else if ($e.is('.deci')) {
+					$e.data('factor', 10);
+					$e.data('precision', 1);
+				} else if ($e.is('.normalize')) {
+					$e.data('factor', 32767);
+					$e.data('precision', 5);
+				} else if ($e.is('.kWh')) {
+					$e.data('factor', 3600000);
+					$e.data('precision', 3);
+				}
+				if ($e.is('.round')) {
+					$e.data('precision', 0);
+				}
+			}
+		).
+		
+		bind(
+			'fromJSON',
+			function (event, value) {
+				var $this = $(this);
+				$this.data('JSON', (value / $this.data('factor')).toFixed($this.data('precision')));
+			}
+		).
+		
+		bind(
+			'toJSON',
+			function () {
+				var $this = $(this);
+				$this.data('JSON', $this.val() * $this.data('factor'));
+			}
 		);
 	};
 })(jQuery);
@@ -39,6 +143,57 @@
 					
 					$target.trigger('refresh');
 				}
+			}
+		);
+	}
+})(jQuery);
+
+(function ($) {
+	$.fn.reset = function () {
+		return this.each(
+			function (i, e) {
+				var $this = $(e);
+				var $form = $this.closest('form');
+				
+				$this.click(
+					function () {
+						if (confirm('Do you really want to reset to defaults?')) {
+							$form.trigger('post8266', {Reset: 1});
+						}
+					}
+				);
+			}
+		);
+	}
+})(jQuery);
+
+(function ($) {
+	$.fn.restart = function () {
+		return this.each(
+			function (i, e) {
+				var $this = $(e);
+				var $form = $this.closest('form');
+				
+				$this.click(
+					function () {
+						if (confirm('Do you really want to restart?')) {
+							$form.trigger('post8266', {Restart: 1});
+						}
+					}
+				);
+			}
+		);
+	}
+})(jQuery);
+
+(function ($) {
+	$.fn.firmwareImage = function () {
+		return this.bind(
+			'fromJSON',
+			function (event, value) {
+				var $form = $(this).closest('form');
+				$form.find('input[type=file]').prop('disabled', false);
+				$form.find('input[name="'+value.replace(/([\.]+)/g, '\\$1')+'"]').prop('disabled', true);
 			}
 		);
 	}
@@ -136,11 +291,19 @@
 (function ($) {
 	$.fn.formTabs = function (selector, titleSelector) {
 		var $this = $(this);
+		var $menu = $('#menu');
 		
-		if ($this.css('position') == 'absolute') {
-			$('#menu').show();
-			$this.addClass('contextual');
-		}
+		$(window).resize(
+			function () {
+				if ($menu.is(':visible')) {
+					$this.addClass('contextual');
+					$this.hide();
+				} else {
+					$this.removeClass('contextual');
+					$this.show();
+				}
+			}
+		).resize();
 		
 		$(selector).each(
 			function (i, e) {
@@ -150,11 +313,11 @@
 					click(
 						function (event) {
 							$(selector).hide();
-							$e.show().css('display', 'inline-block');
+							$e.show();
 							$tab.parent().children().removeClass('active');
 							$tab.addClass('active');
 							
-							if ($this.css('position') == 'absolute') {
+							if ($menu.is(':visible')) {
 								$this.hide();
 							}
 							
@@ -187,8 +350,10 @@
 			function (i, e) {
 				var $e = $(e);
 				if (
+					$e.is('.no-post') || 
 					$e.is(':button') || 
 					$e.is(':disabled') ||
+					$e.prop('disabled') ||
 					($e.is(':checkbox') && $e.parents('.bits').length > 0)
 				) {
 					return json;
@@ -379,6 +544,10 @@
 				var $this = $(e);
 				
 				var $status = $this.find('.status').add($this.data('tab')).status();
+				var $title  = $('h1');
+				var $ssid = $('#config-ap input[name=SSID]');
+				
+				var title = $title.html();
 				
 				e.message = function (msg, css) {
 					$status.message(msg, css);
@@ -395,6 +564,10 @@
 					'event8266',
 					function (event, data) {
 						$status.message('OK', 'event');
+						var ssid = $ssid.val();
+						if (ssid != '' && ssid != $title.html()) {
+							$title.html(ssid);
+						}
 					}
 				);
 				
@@ -402,6 +575,7 @@
 					'abort8266',
 					function (event, data) {
 						$this.data('tab').click();
+						$title.html(title);
 					}
 				);
 				
@@ -950,7 +1124,7 @@
 						try {
 							$('form').trigger(request.event, JSON.parse(event.data));
 						} catch (e) {
-							// console.log(e.message);
+							//console.log(e.message);
 							console.log(event.data);
 						} 
 					};

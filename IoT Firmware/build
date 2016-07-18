@@ -1,0 +1,17 @@
+#!/bin/sh
+
+svn update
+
+REVISION=$(svn info olimex | sed -n -e 's/^Last Changed Rev: //p')
+CHANGES=$(svn status | grep -E ".*\.(c|h)$" | wc -l)
+[ $CHANGES = 0 ] && CHANGES="" || CHANGES="~"
+BUILD="$REVISION$CHANGES"
+
+make clean
+make APP=1 BUILD=\\\"$BUILD\\\" $@ || exit 1
+
+make clean
+make APP=2 BUILD=\\\"$BUILD\\\" $@ || exit 1
+
+echo 
+echo "Done. BUILD=$BUILD $@"

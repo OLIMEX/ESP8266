@@ -20,6 +20,9 @@ const char BADGE_STR[]         = "ESP-BADGE";
 #if DEVICE == DIMMER
 const char DIMMER_STR[]        = "ESP-DIMMER";
 #endif
+#if DEVICE == ROBKO
+const char ROBKO_STR[]         = "ESP-ROBKO";
+#endif
 
 #if MOD_IO2_ENABLE
 const char MOD_IO2[]           = "MOD-IO2";
@@ -52,6 +55,7 @@ const char TIMEOUT[]           = "Timeout";
 const char OK_STR[]            = "OK";
 const char REBOOTING[]         = "Rebooting";
 const char CONNECTED[]         = "Connected";
+const char DISCONNECTED[]      = "Disconnected";
 const char RECONNECT[]         = "Reconnect station";
 const char BUSY_STR[]          = "Busy";
 const char DONE[]              = "Done";
@@ -159,16 +163,15 @@ char ICACHE_FLASH_ATTR *json_poll_str(char *poll_str, uint32 refresh, uint8 each
 }
 
 /******************************************************************************
- * FunctionName : jsonparse_object_str
+ * FunctionName : jsonparse_object
  * Description  : 
  * Parameters   : 
 *******************************************************************************/
-void ICACHE_FLASH_ATTR jsonparse_object_str(struct jsonparse_state *parser, char *dst, int dst_len) {
-	int pos = parser->pos;
+LOCAL void ICACHE_FLASH_ATTR jsonparse_object(struct jsonparse_state *parser, int *pos, int *len) {
+	*pos = parser->pos;
+	*len = 0;
+	
 	int depth = parser->depth;
-	
-	*dst = '\0';
-	
 	int json_type = jsonparse_get_type(parser);
 	
 	while (json_type != '}' && parser->depth != depth-1) {
@@ -176,12 +179,48 @@ void ICACHE_FLASH_ATTR jsonparse_object_str(struct jsonparse_state *parser, char
 	}
 	
 	if (json_type == '}') {
-		int len = parser->pos - pos + 1;
-		if (len < dst_len) {
-			os_memcpy(dst, parser->json + pos - 1, len);
-			dst[len] = '\0';
-		}
+		*len = parser->pos - *pos + 1;
 	}
+}
+
+/******************************************************************************
+ * FunctionName : jsonparse_object_str
+ * Description  : 
+ * Parameters   : 
+*******************************************************************************/
+void ICACHE_FLASH_ATTR jsonparse_object_str(struct jsonparse_state *parser, char *dst, int dst_len) {
+	int pos;
+	int len;
+	
+	*dst = '\0';
+	jsonparse_object(parser, &pos, &len);
+	
+	if (len <= 0 || len >= dst_len) {
+		return;
+	}
+	
+	os_memcpy(dst, parser->json + pos - 1, len);
+	dst[len] = '\0';
+}
+
+/******************************************************************************
+ * FunctionName : jsonparse_alloc_object_str
+ * Description  : 
+ * Parameters   : 
+*******************************************************************************/
+char ICACHE_FLASH_ATTR *jsonparse_alloc_object_str(struct jsonparse_state *parser) {
+	int pos;
+	int len;
+	
+	jsonparse_object(parser, &pos, &len);
+	
+	if (len <= 0) {
+		return NULL;
+	}
+	
+	char *dst = (char *)os_zalloc(len+1);
+	os_memcpy(dst, parser->json + pos - 1, len);
+	return dst;
 }
 
 /******************************************************************************

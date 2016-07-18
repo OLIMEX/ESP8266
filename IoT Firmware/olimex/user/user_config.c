@@ -24,15 +24,9 @@ LOCAL user_config user_configuration;
 LOCAL wifi_station_connected_callback station_connected = NULL;
 
 void ICACHE_FLASH_ATTR user_config_init() {
-	flash_region_register("boot.bin",     0x000, 0x001);
-	flash_region_register("user1.bin",    0x001, 0x07B);
-	flash_region_register("user2.bin",    0x081, 0x07B);
-	flash_region_register("user-config",  0x100, 0x001);
-	flash_region_register("PrivateKey",   0x101, 0x001);
-	flash_region_register("Certificate",  0x102, 0x001);
-	
 	webserver_register_handler_callback(USER_CONFIG_URL,           config_handler);
 	webserver_register_handler_callback(USER_CONFIG__URL,          config_handler);
+	webserver_register_handler_callback(USER_CONFIG_ABOUT_URL,     config_about_handler);
 	webserver_register_handler_callback(USER_CONFIG_IOT_URL,       config_iot_handler);
 	webserver_register_handler_callback(USER_CONFIG_AP_URL,        config_ap_handler);
 	webserver_register_handler_callback(USER_CONFIG_STATION_URL,   config_station_handler);
@@ -96,7 +90,7 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	user_configuration.events_websocket = true;
 	user_configuration.events_ssl = false;
 	
-#if DEVICE == BADGE	
+#if DEVICE == BADGE
 	os_sprintf(user_configuration.events_server,   USER_CONFIG_DEFAULT_EVENT_SERVER);
 #endif
 	os_sprintf(user_configuration.events_path,     USER_CONFIG_DEFAULT_EVENT_PATH);
@@ -387,11 +381,71 @@ void ICACHE_FLASH_ATTR user_config_load_certificate() {
 }
 #endif
 
+void ICACHE_FLASH_ATTR config_restart() {
+	debug("CONFIG: Restarting...\n");
+	setTimeout(user_event_reboot, NULL, USER_CONFIG_REBOOT_AFTER / 2);
+	setTimeout(system_restart,    NULL, USER_CONFIG_REBOOT_AFTER);
+}
+
+void ICACHE_FLASH_ATTR config_reset_to_defaults() {
+	debug("CONFIG: Resetting to defaults...\n");
+	user_config_restore_defaults();
+	
+	debug("CONFIG: Erasing preferences...\n");
+	flash_region_erase("PrivateKey");
+	flash_region_erase("Certificate");
+	flash_region_erase("Preferences");
+	debug("CONFIG: Preferences erased.\n");
+	
+	debug("CONFIG: Resetting to defaults DONE.\n");
+	debug("CONFIG: Restarting...\n");
+	system_restart();
+}
+
 /* ============================================================================================= */
 
 LOCAL char ICACHE_FLASH_ATTR *ip_str(ip_addr_t *ip, char *ip_str) {
 	os_sprintf(ip_str, IPSTR, IP2STR(ip));
 	return ip_str;
+}
+
+char ICACHE_FLASH_ATTR *config_boot_details() {
+LOCAL char boot_details[WEBSERVER_MAX_VALUE];
+	os_sprintf(
+		boot_details, 
+		"v%d %s 0x%08X", 
+		system_get_boot_version(),
+		system_get_boot_mode() == SYS_BOOT_ENHANCE_MODE ? "enhanced" : "normal",
+		system_get_userbin_addr()
+	);
+	return boot_details;
+}
+
+char ICACHE_FLASH_ATTR *config_firmware_bin() {
+LOCAL char firmware_bin[10];
+	os_sprintf(firmware_bin, "user%d.bin", system_upgrade_userbin_check()+1);
+	return firmware_bin;
+}
+
+char ICACHE_FLASH_ATTR *config_firmware_upgrade_bin() {
+LOCAL char firmware_bin[10];
+	os_sprintf(firmware_bin, "user%d.bin", (system_upgrade_userbin_check()+1) ^ 3);
+	return firmware_bin;
+}
+
+LOCAL char ICACHE_FLASH_ATTR *config_firmware(char *json, const char *bin) {
+	os_sprintf(
+		json,
+		"\"Firmware\" : {"
+			"\"Version\" : \"%s\", "
+			"\"Image\" : \"%s\", "
+			"\"Boot\" : \"%s\""
+		"}",
+		FIRMWARE_VERSION " (" FIRMWARE_BUILD ")",
+		bin,
+		config_boot_details()
+	);
+	return json;
 }
 
 LOCAL char ICACHE_FLASH_ATTR *config_ip_info(uint8 interface) {
@@ -600,9 +654,6 @@ void ICACHE_FLASH_ATTR config_handler(
 		user_config_load();
 	}
 	
-	struct rst_info* rst;
-	rst = system_get_rst_info();
-	
 	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
 	config_response(
 		response,
@@ -610,27 +661,80 @@ void ICACHE_FLASH_ATTR config_handler(
 		json_sprintf(
 			data_str,
 			"\"Config\" : {"
-				"\"SDKVersion\" : \"%s\", "
-				"\"ResetInfo\" : \"%d:%d:%08x\", "
-				"\"PHYMode\" : \"%s Channel %d\", "
-				"\"AccessPointMAC\" : \"%s\", "
-				"\"StationMAC\" : \"%s\", "
 				"\"User\" : \"%s\", "
 				"\"Password\" : \"%s\", "
 				"\"Mode\" : \"%s\", "
 				"\"Authentication\" : %d, "
 				"\"SSL\" : %d"
 			"}",
-			system_get_sdk_version(),
-			rst->reason, rst->exccause, rst->epc1,
-			wifi_phy_mode_str(wifi_get_phy_mode()), wifi_get_channel(),
-			config_mac(SOFTAP_IF),
-			config_mac(STATION_IF),
 			user_config_user(),
 			user_config_password(),
 			wifi_op_mode_str(wifi_get_opmode()),
 			user_config_authentication(),
 			user_config_ssl()
+		)
+	);
+}
+
+void ICACHE_FLASH_ATTR config_about_handler(
+	struct espconn *pConnection, 
+	request_method method, 
+	char *url, 
+	char *data, 
+	uint16 data_len, 
+	uint32 content_len, 
+	char *response,
+	uint16 response_len
+) {
+	if (method == POST && data != NULL && data_len != 0) {
+		struct jsonparse_state parser;
+		int json_type;
+		
+		jsonparse_setup(&parser, data, data_len);
+		while ((json_type = jsonparse_next(&parser)) != 0) {
+			if (json_type == JSON_TYPE_PAIR_NAME) {
+				if (jsonparse_strcmp_value(&parser, "Reset") == 0) {
+					jsonparse_next(&parser);
+					jsonparse_next(&parser);
+					if (jsonparse_get_value_as_int(&parser) == 1) {
+						setTimeout(user_event_reboot, NULL, USER_CONFIG_REBOOT_AFTER / 2);
+						setTimeout(config_reset_to_defaults, NULL, USER_CONFIG_REBOOT_AFTER);
+					}
+				} else if (jsonparse_strcmp_value(&parser, "Restart") == 0) {
+					jsonparse_next(&parser);
+					jsonparse_next(&parser);
+					if (jsonparse_get_value_as_int(&parser) == 1) {
+						config_restart();
+					}
+				}
+			}
+		}
+	}
+	
+	struct rst_info* rst;
+	rst = system_get_rst_info();
+	
+	char data_str[WEBSERVER_MAX_RESPONSE_LEN];
+	char firmware_str[WEBSERVER_MAX_VALUE];
+	config_response(
+		response,
+		"",
+		json_sprintf(
+			data_str,
+			"\"About\" : {"
+				"\"SDKVersion\" : \"%s\", "
+				"%s, "
+				"\"ResetInfo\" : \"%d:%d:%08x\", "
+				"\"PHYMode\" : \"%s Channel %d\", "
+				"\"AccessPointMAC\" : \"%s\", "
+				"\"StationMAC\" : \"%s\""
+			"}",
+			system_get_sdk_version(),
+			config_firmware(firmware_str, config_firmware_bin()),
+			rst->reason, rst->exccause, rst->epc1,
+			wifi_phy_mode_str(wifi_get_phy_mode()), wifi_get_channel(),
+			config_mac(SOFTAP_IF),
+			config_mac(STATION_IF)
 		)
 	);
 }
@@ -710,7 +814,8 @@ void ICACHE_FLASH_ATTR config_iot_handler(
 				"\"Password\" : \"%s\", "
 				"\"Path\" : \"%s\", "
 				"\"Name\" : \"%s\", "
-				"\"Token\" : \"%s\""
+				"\"Token\" : \"%s\", "
+				"\"Message\" : \"%s\""
 			"}",
 			user_config_events_websocket(),
 			user_config_events_ssl(),
@@ -719,7 +824,16 @@ void ICACHE_FLASH_ATTR config_iot_handler(
 			user_config_events_password(),
 			user_config_events_path(),
 			user_config_events_name(),
-			user_config_events_token()
+			user_config_events_token(),
+			webclient_get_status(
+				user_config_events_server(), 
+				user_config_events_ssl() ?
+					WEBSERVER_SSL_PORT
+					:
+					WEBSERVER_PORT
+				, 
+				user_config_events_path()
+			)
 		)
 	);
 }
@@ -954,6 +1068,7 @@ void ICACHE_FLASH_ATTR config_stream_end_ssl(bool success) {
 		json_error(status, ESP8266, flash_error(), EMPTY_DATA);
 	}
 	user_event_raise(webserver_chunk_url(), status);
+	config_restart();
 }
 #endif
 
@@ -984,43 +1099,11 @@ void ICACHE_FLASH_ATTR config_ssl_handler(
 #endif
 }
 
-char ICACHE_FLASH_ATTR *config_boot_details() {
-LOCAL char boot_details[WEBSERVER_MAX_VALUE];
-	os_sprintf(
-		boot_details, 
-		"v%d %s 0x%08X", 
-		system_get_boot_version(),
-		system_get_boot_mode() == SYS_BOOT_ENHANCE_MODE ? "enhanced" : "normal",
-		system_get_userbin_addr()
-	);
-	return boot_details;
-}
-
-char ICACHE_FLASH_ATTR *config_firmware_bin() {
-LOCAL char firmware_bin[10];
-	os_sprintf(firmware_bin, "user%d.bin", system_upgrade_userbin_check()+1);
-	return firmware_bin;
-}
-
-char ICACHE_FLASH_ATTR *config_firmware_upgrade_bin() {
-LOCAL char firmware_bin[10];
-	os_sprintf(firmware_bin, "user%d.bin", (system_upgrade_userbin_check()+1) ^ 3);
-	return firmware_bin;
-}
-
 LOCAL void ICACHE_FLASH_ATTR config_firmware_json(char *json, const char *status, const char *bin) {
-	char data_str[WEBSERVER_MAX_VALUE];
+	char firmware_str[WEBSERVER_MAX_VALUE];
 	json_data(
 		json, ESP8266, status,
-		json_sprintf(
-			data_str,
-			"\"Firmware\" : {"
-				"\"Current\" : \"%s\", "
-				"\"Boot\" : \"%s\""
-			"}",
-			bin,
-			config_boot_details()
-		),
+		config_firmware(firmware_str, bin),
 		NULL
 	);
 }

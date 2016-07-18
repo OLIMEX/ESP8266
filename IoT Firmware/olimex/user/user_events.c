@@ -17,10 +17,49 @@
 
 #include "user_badge.h"
 
+void ICACHE_FLASH_ATTR user_event_server_connected() {
+	char data[WEBSERVER_MAX_VALUE];
+	char buff[WEBSERVER_MAX_VALUE];
+	user_websocket_event(
+		USER_CONFIG_IOT_URL, 
+		json_data(
+			data, ESP8266, OK_STR, 
+			json_sprintf(
+				buff, 
+				"\"Message\": \"%s\"", 
+				CONNECTED
+			),
+			NULL
+		),
+		NULL
+	);
+}
+
+void ICACHE_FLASH_ATTR user_event_server_disconnected(const char *msg) {
+	char data[WEBSERVER_MAX_VALUE];
+	char buff[WEBSERVER_MAX_VALUE];
+	user_websocket_event(
+		USER_CONFIG_IOT_URL, 
+		json_data(
+			data, ESP8266, DISCONNECTED, 
+			json_sprintf(
+				buff, 
+				"\"Message\": \"%s\"", 
+				msg
+			),
+			NULL
+		),
+		NULL
+	);
+}
+
 void ICACHE_FLASH_ATTR user_event_server_error() {
 // TODO - register callbacks to break module/device dependency
 #if DEVICE == BADGE
 	badge_server_animation_start();
+#endif
+#if DEVICE == PLUG
+	plug_server_blink_start();
 #endif
 }
 
@@ -28,6 +67,9 @@ void ICACHE_FLASH_ATTR user_event_server_ok() {
 // TODO - register callbacks to break module/device dependency
 #if DEVICE == BADGE
 	badge_server_animation_stop();
+#endif
+#if DEVICE == PLUG
+	plug_server_blink_stop();
 #endif
 }
 
@@ -125,7 +167,7 @@ void ICACHE_FLASH_ATTR user_event_progress(uint8 progress) {
 	LOCAL uint8 prev = 0;
 	
 	uint32 heap = system_get_free_heap_size();
-	if (abs(progress - prev) < 3 || heap < 5000) {
+	if (progress - prev < 3 || heap < 5000) {
 		return;
 	}
 	
@@ -232,7 +274,28 @@ void ICACHE_FLASH_ATTR events_handler(
 	webserver_set_status(0);
 }
 
+#if EVENTS_SYS_TIMER
+void ICACHE_FLASH_ATTR user_event_system_timer() {
+	char status[WEBSERVER_MAX_RESPONSE_LEN];
+	char data[WEBSERVER_MAX_RESPONSE_LEN];
+	user_event_raise(
+		NULL, 
+		json_status(
+			status, ESP8266, "SysTimer", 
+			json_sprintf(
+				data,
+				"\"Timer\": %d",
+				system_get_time()
+			)
+		)
+	);
+}
+#endif
+
 void ICACHE_FLASH_ATTR user_events_init() {
 	wifi_set_event_handler_cb(user_event_wifi);
 	webserver_register_handler_callback(EVENTS_URL, events_handler);
+#if EVENTS_SYS_TIMER
+	setInterval(user_event_system_timer, NULL, 1000);
+#endif
 }

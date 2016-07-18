@@ -54,6 +54,8 @@
 		STAILQ_ENTRY(_webclient_request_) entries;
 	} webclient_request;
 	
+	const char *webclient_get_status(char *host, int port, char *path);
+	
 	void webclient_execute(webclient_request *request);
 	void webclient_get(bool ssl, char *user, char *password, char *host, int port, char *path);
 	void webclient_post(bool ssl, char *user, char *password, char *host, int port, char *path, char *content);

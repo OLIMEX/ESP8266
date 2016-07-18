@@ -5,6 +5,7 @@
 	#include "os_type.h"
 	#include "espconn.h"
 	#include "user_misc.h"
+	#include "user_webserver.h"
 	
 	#define WEBSOCKET_DEBUG            0
 	#define WEBSOCKET_VERBOSE_OUTPUT   0
@@ -52,6 +53,8 @@
 	bool websocket_client_upgrade(struct espconn *pConnection, char *pURL, char *pData, char *request_headers);
 	
 	bool is_websocket(struct espconn *pConnection);
+	connections_queue *websocket_get_request(struct espconn *pConnection);
+
 	bool websocket_switched(struct espconn *pConnection, char *pData, unsigned short length);
 	void websocket_sent(void *arg);
 	

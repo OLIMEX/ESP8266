@@ -36,8 +36,9 @@ void ICACHE_FLASH_ATTR clearAllTimers() {
 
 LOCAL void ICACHE_FLASH_ATTR timer_handler(void *param) {
 	timer *t = param;
+	uint32 handle = t->handle;
 	(*t->func)(t->param);
-	clearTimeout(t->handle);
+	clearTimeout(handle);
 }
 
 LOCAL uint32 ICACHE_FLASH_ATTR timer_init(os_timer_func_t func, void *param, uint32 interval, bool repeat) {

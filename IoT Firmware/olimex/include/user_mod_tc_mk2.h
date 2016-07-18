@@ -11,7 +11,7 @@
 		#define MOD_TC_MK2_EACH_DEFAULT         3
 		#define MOD_TC_MK2_THRESHOLD_DEFAULT    2
 		
-		#define MOD_TC_MO2_DEBUG                0
+		#define MOD_TC_MK2_DEBUG                0
 		
 		void mod_tc_mk2_handler(
 			struct espconn *pConnection, 

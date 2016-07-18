@@ -20,6 +20,7 @@
 		#endif
 		
 		#define BATTERY_FILTER_COUNT          10
+		#define BATTERY_FILTER_DIFF           10
 		#define BATTERY_FILTER_FACTOR         16
 		
 		void  user_battery_init();
