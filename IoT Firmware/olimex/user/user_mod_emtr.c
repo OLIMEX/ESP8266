@@ -58,8 +58,8 @@ LOCAL void ICACHE_FLASH_ATTR emtr_read_format(char *response, uint32 interval) {
 		json_sprintf(
 			data_str,
 			"\"Address\" : \"0x%04X\", "
-			"\"CounterActive\" : %d, "
-			"\"CounterApparent\" : %d, "
+			"\"CounterActive\" : %lu, "
+			"\"CounterApparent\" : %lu, "
 			"\"ReadInterval\" : %d, "
 			"\"Interval\" : %d, "
 			"\"Filter\" : %d, "
