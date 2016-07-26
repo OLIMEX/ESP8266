@@ -91,7 +91,7 @@ void ICACHE_FLASH_ATTR user_event_connect() {
 	char status[WEBSERVER_MAX_RESPONSE_LEN];
 	user_event_raise(
 		USER_CONFIG_STATION_URL, 
-		json_data(status, ESP8266, CONNECTED, (char *)config_wifi_station(), NULL)
+		json_data(status, ESP8266, CONNECTED, (char *)config_wifi_station_ip(), NULL)
 	);
 }
 

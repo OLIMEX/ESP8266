@@ -19,7 +19,9 @@
 #include "user_devices.h"
 #include "user_wifi_scan.h"
 
-LOCAL user_config user_configuration;
+LOCAL user_config           user_configuration;
+LOCAL struct softap_config  user_ap_config;
+LOCAL struct station_config user_station_config;
 
 LOCAL wifi_station_connected_callback station_connected = NULL;
 
@@ -119,27 +121,22 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	
 	wifi_set_opmode(STATIONAP_MODE);
 	
-	struct softap_config ap_config = {
-		.ssid = USER_CONFIG_DEFAULT_AP_SSID,
-		.password = USER_CONFIG_DEFAULT_AP_PASSWD,
-		.ssid_len = 0,
-		.channel = 0,
-		.authmode = AUTH_WPA2_PSK,
-		.ssid_hidden = 0,
-		.max_connection = 2,
-		.beacon_interval = 100
-	};
-	config_default_ssid(ap_config.ssid);
+	os_sprintf(user_ap_config.ssid, USER_CONFIG_DEFAULT_AP_SSID);
+	os_sprintf(user_ap_config.password, USER_CONFIG_DEFAULT_AP_PASSWD);
+	user_ap_config.ssid_len = 0;
+	user_ap_config.channel = 0;
+	user_ap_config.authmode = AUTH_WPA2_PSK;
+	user_ap_config.ssid_hidden = 0;
+	user_ap_config.max_connection = 2;
+	user_ap_config.beacon_interval = 100;
+	config_default_ssid(user_ap_config.ssid);
+	wifi_softap_set_config(&user_ap_config);
 	
-	wifi_softap_set_config(&ap_config);
-
-	struct station_config s_config = {
-		.ssid = "",
-		.password = "",
-		.bssid_set = 0,
-		.bssid = ""
-	};
-	wifi_station_set_config(&s_config);
+	os_sprintf(user_station_config.ssid, "");
+	os_sprintf(user_station_config.password, "");
+	os_sprintf(user_station_config.bssid, "");
+	user_station_config.bssid_set = 0;
+	wifi_station_set_config(&user_station_config);
 	wifi_station_set_hostname(user_configuration.station_hostname);
 	
 	wifi_station_set_auto_connect(user_configuration.station_auto_connect);
@@ -196,17 +193,17 @@ void ICACHE_FLASH_ATTR user_config_load() {
 		}
 	}
 	
+	uint8 station_status = wifi_station_get_connect_status();
 	if (user_configuration.station_auto_connect) {
-		uint8 status = wifi_station_get_connect_status();
 		uint16 reconnect_after = 300;
 		
-		if (status == STATION_GOT_IP) {
+		if (station_status == STATION_GOT_IP) {
 			reconnect_after = USER_CONFIG_RECONNECT_AFTER;
 		}
 		
-		setTimeout(user_config_station_connect, NULL, reconnect_after);
+		setTimeout(user_config_station_connect, NULL, USER_CONFIG_RECONNECT_AFTER);
 	} else {
-		if (wifi_station_get_connect_status() != STATION_IDLE) {
+		if (station_status != STATION_IDLE) {
 			user_config_station_disconnect();
 		}
 	}
@@ -476,17 +473,11 @@ LOCAL char ICACHE_FLASH_ATTR *config_ip_info(uint8 interface) {
 	return ip_info_str;
 }
 
-char ICACHE_FLASH_ATTR *config_wifi_ap() {
-	struct softap_config config;
+LOCAL char ICACHE_FLASH_ATTR *config_wifi_ap() {
 	static char ap_str[WEBSERVER_MAX_VALUE*2];
-	os_sprintf(ap_str, "{}");
 	
-	if (!wifi_softap_get_config(&config)) {
-		return ap_str;
-	}
-	
-	if (config.ssid_len != 0) {
-		config.ssid[config.ssid_len] = '\0';
+	if (user_ap_config.ssid_len != 0) {
+		user_ap_config.ssid[user_ap_config.ssid_len] = '\0';
 	}
 	
 	os_sprintf(
@@ -501,12 +492,12 @@ char ICACHE_FLASH_ATTR *config_wifi_ap() {
 			"\"DHCP\" : %d, "
 			"\"IP\" : %s"
 		"}",
-		config.ssid,
-		config.password,
-		wifi_auth_mode_str(config.authmode),
-		config.ssid_hidden,
-		config.max_connection,
-		config.beacon_interval,
+		user_ap_config.ssid,
+		user_ap_config.password,
+		wifi_auth_mode_str(user_ap_config.authmode),
+		user_ap_config.ssid_hidden,
+		user_ap_config.max_connection,
+		user_ap_config.beacon_interval,
 		wifi_softap_dhcps_status(),
 		config_ip_info(SOFTAP_IF)
 	);
@@ -538,11 +529,22 @@ LOCAL char ICACHE_FLASH_ATTR *config_wifi_stored_ap() {
 	return stored_ap_str;
 }
 
-char ICACHE_FLASH_ATTR *config_wifi_station() {
-	static char client_str[WEBSERVER_MAX_VALUE*3] = "";
-	struct station_config config;
+char ICACHE_FLASH_ATTR *config_wifi_station_ip() {
+	static char client_str[WEBSERVER_MAX_VALUE] = "";
 	
-	wifi_station_get_config_default(&config);
+	os_sprintf(
+		client_str,
+		"\"Station\" : {"
+			"\"IP\" : %s"
+		"}",
+		config_ip_info(STATION_IF)
+	);
+	
+	return client_str;
+} 
+
+LOCAL char ICACHE_FLASH_ATTR *config_wifi_station() {
+	static char client_str[WEBSERVER_MAX_VALUE*3] = "";
 	
 	os_sprintf(
 		client_str,
@@ -558,8 +560,8 @@ char ICACHE_FLASH_ATTR *config_wifi_station() {
 		"}",
 		config_wifi_stored_ap(),
 		wifi_station_get_current_ap_id(),
-		config.ssid,
-		config.password,
+		user_station_config.ssid,
+		user_station_config.password,
 		wifi_station_get_auto_connect(),
 		wifi_station_dhcpc_status(),
 		config_ip_info(STATION_IF),
@@ -850,12 +852,11 @@ void ICACHE_FLASH_ATTR config_ap_handler(
 ) {
 	char error_str[WEBSERVER_MAX_VALUE] = "";
 	
+	wifi_softap_get_config(&user_ap_config);
+	
 	if (method == POST && data != NULL && data_len != 0) {
 		struct jsonparse_state parser;
 		int json_type;
-		
-		struct softap_config config;
-		wifi_softap_get_config(&config);
 		
 		jsonparse_setup(&parser, data, data_len);
 		while ((json_type = jsonparse_next(&parser)) != 0) {
@@ -863,38 +864,38 @@ void ICACHE_FLASH_ATTR config_ap_handler(
 				if (jsonparse_strcmp_value(&parser, "SSID") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					jsonparse_copy_value(&parser, config.ssid, 32);
-					config.ssid_len = os_strlen(config.ssid);
+					jsonparse_copy_value(&parser, user_ap_config.ssid, 32);
+					user_ap_config.ssid_len = os_strlen(user_ap_config.ssid);
 				} else if (jsonparse_strcmp_value(&parser, "Password") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					jsonparse_copy_value(&parser, config.password, 64);
+					jsonparse_copy_value(&parser, user_ap_config.password, 64);
 				} else if (jsonparse_strcmp_value(&parser, "Mode") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
 					if (jsonparse_strcmp_value(&parser, "Open") == 0) {
-						config.authmode = AUTH_OPEN;
+						user_ap_config.authmode = AUTH_OPEN;
 					} else if (jsonparse_strcmp_value(&parser, "WEP") == 0) {
-						config.authmode = AUTH_WEP;
+						user_ap_config.authmode = AUTH_WEP;
 					} else if (jsonparse_strcmp_value(&parser, "WPA PSK") == 0) {
-						config.authmode = AUTH_WPA_PSK;
+						user_ap_config.authmode = AUTH_WPA_PSK;
 					} else if (jsonparse_strcmp_value(&parser, "WPA2 PSK") == 0) {
-						config.authmode = AUTH_WPA2_PSK;
+						user_ap_config.authmode = AUTH_WPA2_PSK;
 					} else if (jsonparse_strcmp_value(&parser, "WPA WPA2 PSK") == 0) {
-						config.authmode = AUTH_WPA_WPA2_PSK;
+						user_ap_config.authmode = AUTH_WPA_WPA2_PSK;
 					}
 				} else if (jsonparse_strcmp_value(&parser, "Hidden") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					config.ssid_hidden = jsonparse_get_value_as_int(&parser);
+					user_ap_config.ssid_hidden = jsonparse_get_value_as_int(&parser);
 				} else if (jsonparse_strcmp_value(&parser, "BeaconInterval") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					config.beacon_interval = jsonparse_get_value_as_int(&parser);
+					user_ap_config.beacon_interval = jsonparse_get_value_as_int(&parser);
 				} else if (jsonparse_strcmp_value(&parser, "MaxConnections") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					config.max_connection = jsonparse_get_value_as_int(&parser);
+					user_ap_config.max_connection = jsonparse_get_value_as_int(&parser);
 				} else if (jsonparse_strcmp_value(&parser, "DHCP") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
@@ -921,13 +922,9 @@ void ICACHE_FLASH_ATTR config_ap_handler(
 			}
 		}
 		
-		if (wifi_softap_set_config(&config)) {
-			debug("CONFIG: AP config set\n");
-		} else {
-			LOCAL const char AP_ERR[] = "Failed to set AP config";
-			debug("CONFIG: %s\n", AP_ERR);
-			os_sprintf(error_str, AP_ERR);
-		}
+		// delayed set to be able to send response
+		setTimeout(wifi_softap_set_config, &user_ap_config, 500);
+		
 		user_config_store(error_str);
 		user_config_load();
 	}
@@ -951,12 +948,11 @@ void ICACHE_FLASH_ATTR config_station_handler(
 ) {
 	char error_str[WEBSERVER_MAX_VALUE] = "";
 	
+	wifi_station_get_config_default(&user_station_config);
+		
 	if (method == POST && data != NULL && data_len != 0) {
 		struct jsonparse_state parser;
 		int json_type;
-		
-		struct station_config config;
-		wifi_station_get_config_default(&config);
 		
 		jsonparse_setup(&parser, data, data_len);
 		while ((json_type = jsonparse_next(&parser)) != 0) {
@@ -964,11 +960,11 @@ void ICACHE_FLASH_ATTR config_station_handler(
 				if (jsonparse_strcmp_value(&parser, "SSID") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					jsonparse_copy_value(&parser, config.ssid, 32);
+					jsonparse_copy_value(&parser, user_station_config.ssid, 32);
 				} else if (jsonparse_strcmp_value(&parser, "Password") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
-					jsonparse_copy_value(&parser, config.password, 64);
+					jsonparse_copy_value(&parser, user_station_config.password, 64);
 				} else if (jsonparse_strcmp_value(&parser, "AutoConnect") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
@@ -1004,13 +1000,9 @@ void ICACHE_FLASH_ATTR config_station_handler(
 			}
 		}
 		
-		if (wifi_station_set_config(&config)) {
-			debug("CONFIG: Station config set\n");
-		} else {
-			LOCAL const char STATION_ERR[] = "Failed to set Station config";
-			debug("CONFIG: %s\n", STATION_ERR);
-			os_sprintf(error_str, STATION_ERR);
-		}
+		// delayed set to be able to send response
+		setTimeout(wifi_station_set_config, &user_station_config, 500);
+		
 		user_config_store(error_str);
 		user_config_load();
 	}
