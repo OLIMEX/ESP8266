@@ -38,6 +38,7 @@ void ICACHE_FLASH_ATTR plug_led(plug_led_type led, uint8 state) {
 
 LOCAL void plug_wifi_blink_cycle() {
 	LOCAL bool state = false;
+	LOCAL uint32 timer = 0;
 	
 	if (!plug_wifi_blink) {
 		state = false;
@@ -48,7 +49,8 @@ LOCAL void plug_wifi_blink_cycle() {
 	plug_led(PLUG_LED1, state);
 	plug_led(PLUG_LED2, !state && user_relay_get());
 	
-	setTimeout(plug_wifi_blink_cycle, NULL, 500);
+	clearTimeout(timer);
+	timer = setTimeout(plug_wifi_blink_cycle, NULL, 500);
 }
 
 void ICACHE_FLASH_ATTR plug_wifi_blink_start() {
@@ -67,15 +69,18 @@ void ICACHE_FLASH_ATTR plug_wifi_blink_stop() {
 }
 
 LOCAL void plug_server_blink_cycle() {
-	LOCAL uint8 state = 0;
+	LOCAL uint8  state = 0;
+	LOCAL uint32 timer = 0;
 	
 	if (!plug_server_blink) {
 		state = 0;
 		return;
 	}
 	
-	if (!plug_wifi_blink) {
-		// change led state only if not wifi blinking
+	if (plug_wifi_blink) {
+		state = 0;
+	} else {
+		// change led state only if wifi not blinking
 		state++;
 		if (state > 7) {
 			state = 0;
@@ -87,7 +92,8 @@ LOCAL void plug_server_blink_cycle() {
 		plug_led(PLUG_LED2, !led_state && user_relay_get());
 	}
 	
-	setTimeout(plug_server_blink_cycle, NULL, 250);
+	clearTimeout(timer);
+	timer = setTimeout(plug_server_blink_cycle, NULL, 250);
 }
 
 void ICACHE_FLASH_ATTR plug_server_blink_start() {
