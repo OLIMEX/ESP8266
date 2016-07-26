@@ -38,13 +38,13 @@ LOCAL void ICACHE_FLASH_ATTR button_set_response(char *state) {
 
 LOCAL void ICACHE_FLASH_ATTR button_press() {
 	button_set_response("Press");
-	#if DEVICE == PLUG
-	user_relay_toggle();
-	#endif
 }
 
 LOCAL void ICACHE_FLASH_ATTR button_short_release() {
 	button_set_response("Short Release");
+	#if DEVICE == PLUG
+	user_relay_toggle();
+	#endif
 	setTimeout(memory_info,  NULL, 100);
 }
 
