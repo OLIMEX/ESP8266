@@ -2,7 +2,7 @@ esptool/esptool.py \
 	--port /dev/ttyUSB0 \
 	--baud 576000 \
 	write_flash \
-		0x00000  bin/boot_v1.5.bin \
+		0x00000  bin/boot_v1.6.bin \
 		0x01000  bin/upgrade/user1.2048.new.3.bin \
 		0x81000  bin/upgrade/user2.2048.new.3.bin \
 		0x100000 bin/blank.bin \
