@@ -508,10 +508,6 @@ void ICACHE_FLASH_ATTR emtr_calibration_calc(
 	uint16 *gain;
 	uint32 new_gain;
 	
-	if (measured == 0) {
-		return;
-	}
-	
 	if (range_shift == 0) {
 		measured = output->voltage_rms;
 		expected = calibration->calibration_voltage;
@@ -525,6 +521,10 @@ void ICACHE_FLASH_ATTR emtr_calibration_calc(
 		expected = calibration->calibration_active_power;
 		gain = &(calibration->gain_active_power);
 	} else {
+		return;
+	}
+	
+	if (measured == 0) {
 		return;
 	}
 	
