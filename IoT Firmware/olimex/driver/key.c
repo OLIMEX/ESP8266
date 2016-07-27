@@ -122,12 +122,41 @@ LOCAL void ICACHE_FLASH_ATTR key_5s_cb(struct single_key_param *single_key) {
 }
 
 /******************************************************************************
- * FunctionName : key_50ms_cb
+ * FunctionName : key_50ms_press
  * Description  : 50ms timer callback to check it's a real key push
  * Parameters   : single_key_param *single_key - single key parameter
  * Returns	  : none
 *******************************************************************************/
-LOCAL void ICACHE_FLASH_ATTR key_50ms_cb(struct single_key_param *single_key) {
+LOCAL void ICACHE_FLASH_ATTR key_50ms_press(struct single_key_param *single_key) {
+	os_timer_disarm(&single_key->key_press);
+
+	// low, then key is down
+	if (0 == GPIO_INPUT_GET(GPIO_ID_PIN(single_key->gpio_id))) {
+		// 5s long release timer
+		os_timer_disarm(&single_key->key_5s);
+		os_timer_setfn(&single_key->key_5s, (os_timer_func_t *)key_5s_cb, single_key);
+		os_timer_arm(&single_key->key_5s, 5000, 0);
+		
+		single_key->key_level = 0;
+		single_key->is_long = 0;
+		gpio_pin_intr_state_set(GPIO_ID_PIN(single_key->gpio_id), GPIO_PIN_INTR_POSEDGE);
+		
+		// PRESS callback
+		if (single_key->press) {
+			single_key->press();
+		}
+	} else {
+		gpio_pin_intr_state_set(GPIO_ID_PIN(single_key->gpio_id), GPIO_PIN_INTR_NEGEDGE);
+	}
+}
+
+/******************************************************************************
+ * FunctionName : key_50ms_release
+ * Description  : 50ms timer callback to check it's a real key push
+ * Parameters   : single_key_param *single_key - single key parameter
+ * Returns	  : none
+*******************************************************************************/
+LOCAL void ICACHE_FLASH_ATTR key_50ms_release(struct single_key_param *single_key) {
 	os_timer_disarm(&single_key->key_50ms);
 
 	// high, then key is up
@@ -170,25 +199,14 @@ LOCAL void key_intr_handler(struct keys_param *keys) {
 			GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(keys->single_key[i]->gpio_id));
 
 			if (keys->single_key[i]->key_level == 1) {
-				// 5s long release timer
-				os_timer_disarm(&keys->single_key[i]->key_5s);
-				os_timer_setfn(&keys->single_key[i]->key_5s, (os_timer_func_t *)key_5s_cb, keys->single_key[i]);
-				os_timer_arm(&keys->single_key[i]->key_5s, 5000, 0);
-				
-				keys->single_key[i]->key_level = 0;
-				keys->single_key[i]->is_long = 0;
-				gpio_pin_intr_state_set(GPIO_ID_PIN(keys->single_key[i]->gpio_id), GPIO_PIN_INTR_POSEDGE);
-				
-				if (keys->single_key[i]->press) {
-					// PRESS callback
-					os_timer_disarm(&keys->single_key[i]->key_press);
-					os_timer_setfn(&keys->single_key[i]->key_press, (os_timer_func_t *)keys->single_key[i]->press, NULL);
-					os_timer_arm(&keys->single_key[i]->key_press, 5, 0);
-				}
+				// 50ms check if this is a real key press
+				os_timer_disarm(&keys->single_key[i]->key_press);
+				os_timer_setfn(&keys->single_key[i]->key_press, (os_timer_func_t *)key_50ms_press, keys->single_key[i]);
+				os_timer_arm(&keys->single_key[i]->key_press, 50, 0);
 			} else {
 				// 50ms check if this is a real key up
 				os_timer_disarm(&keys->single_key[i]->key_50ms);
-				os_timer_setfn(&keys->single_key[i]->key_50ms, (os_timer_func_t *)key_50ms_cb, keys->single_key[i]);
+				os_timer_setfn(&keys->single_key[i]->key_50ms, (os_timer_func_t *)key_50ms_release, keys->single_key[i]);
 				os_timer_arm(&keys->single_key[i]->key_50ms, 50, 0);
 			}
 		}
