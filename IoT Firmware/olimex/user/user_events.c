@@ -235,11 +235,7 @@ void ICACHE_FLASH_ATTR user_event_raise(char *url, char *data) {
 			user_config_events_user(),
 			user_config_events_password(),
 			user_config_events_server(),
-			user_config_events_ssl() ?
-				WEBSERVER_SSL_PORT
-				:
-				WEBSERVER_PORT
-			,
+			user_config_events_port(),
 			user_config_events_path(),
 			event
 		);
@@ -249,11 +245,7 @@ void ICACHE_FLASH_ATTR user_event_raise(char *url, char *data) {
 			user_config_events_user(),
 			user_config_events_password(),
 			user_config_events_server(),
-			user_config_events_ssl() ?
-				WEBSERVER_SSL_PORT
-				:
-				WEBSERVER_PORT
-			,
+			user_config_events_port(),
 			user_config_events_path(),
 			event
 		);

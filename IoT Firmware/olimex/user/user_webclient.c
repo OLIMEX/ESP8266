@@ -38,12 +38,12 @@ LOCAL struct espconn ICACHE_FLASH_ATTR *webclient_new_connection(int port) {
 	return connection;
 }
 
-LOCAL void ICACHE_FLASH_ATTR webclient_free_connection(struct espconn *connection) {
+LOCAL void ICACHE_FLASH_ATTR webclient_free_connection(struct espconn *connection, bool ssl) {
 	websocket_connection_clear(connection);
 	
 	sint8 res;
 #if SSL_ENABLE
-	if(connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT) {
+	if(connection->proto.tcp->remote_port == WEBSERVER_SSL_PORT || ssl) {
 		res = espconn_secure_delete(connection);
 	} else {
 		res = espconn_delete(connection);
@@ -206,7 +206,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_renew_connection(webclient_request *reque
 		);
 #endif
 		
-		webclient_free_connection(old_connection);
+		webclient_free_connection(old_connection, request->ssl);
 	}
 }
 
@@ -295,7 +295,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_free_request(webclient_request *request) 
 	if (request->headers) os_free(request->headers);
 	if (request->content) os_free(request->content);
 	
-	if (request->connection) webclient_free_connection(request->connection);
+	if (request->connection) webclient_free_connection(request->connection, request->ssl);
 	os_free(request);
 }
 
@@ -318,7 +318,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_raise_reconnect() {
 
 LOCAL void ICACHE_FLASH_ATTR webclient_error(webclient_request *request, struct espconn *connection) {
 	if (request == NULL) {
-		webclient_free_connection(connection);
+		webclient_free_connection(connection, false);
 		return;
 	}
 	
@@ -518,7 +518,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_recv(void *arg, char *pData, unsigned sho
 	request->retry = 0;
 	webclient_reset_timers(request);
 	
-	if (websocket_client_upgrade(connection, EVENTS_URL, pData, request->headers)) {
+	if (websocket_client_upgrade(connection, request->ssl, EVENTS_URL, pData, request->headers)) {
 		request->state = WEBSOCKET;
 		if (os_strlen(request->user) + os_strlen(request->password) != 0) {
 			char auth[WEBSERVER_MAX_VALUE];
@@ -667,7 +667,7 @@ LOCAL void ICACHE_FLASH_ATTR webclient_dns(const char *name, ip_addr_t *ip, void
 			connection->proto.tcp->local_port,
 			connection->proto.tcp->remote_port
 		);
-		webclient_free_connection(connection);
+		webclient_free_connection(connection, false);
 		return;
 	}
 	

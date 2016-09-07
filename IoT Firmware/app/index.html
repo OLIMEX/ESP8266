@@ -157,7 +157,7 @@
 			<div class="status"></div>
 		</form>
 		
-		<form id="config-station" class="esp event" action="/config/station" method="POST">
+		<form id="config-station" class="esp event no-reset" action="/config/station" method="POST">
 			<fieldset name="Station">
 				<legend>Configure Station</legend>
 				
@@ -185,6 +185,7 @@
 				
 				<label>WebSocket</label>   <input type="checkbox" name="WebSocket" value="1" /> 
 				<label>SSL</label>         <input type="checkbox" name="SSL"       value="1" /> 
+				<label>Port</label>        <input type="text"     name="Port"      value="" /> 
 				<label>Server</label>      <input type="text"     name="Server"    value="" />
 				<label>Entry Point</label> <input type="text"     name="Path"      value="" />
 				<label>User</label>        <input type="text"     name="User"      value="" />
@@ -331,9 +332,9 @@
 					
 					<label>Voltage RMS, [V]</label>      <input type="text" name="VoltageRMS"        disabled="disabled" class="deci" /> 
 					<label>Current RMS, [A]</label>      <input type="text" name="CurrentRMS"        disabled="disabled" class="milli" />
-					<label>Active Power, [W]</label>     <input type="text" name="ActivePower"       disabled="disabled" /> 
-					<label>Reactive Power, [W]</label>   <input type="text" name="ReactivePower"     disabled="disabled" /> 
-					<label>Apparent Power, [W]</label>   <input type="text" name="ApparentPower"     disabled="disabled" /> 
+					<label>Active Power, [W]</label>     <input type="text" name="ActivePower"       disabled="disabled" class="deci" /> 
+					<label>Reactive Power, [W]</label>   <input type="text" name="ReactivePower"     disabled="disabled" class="deci" /> 
+					<label>Apparent Power, [W]</label>   <input type="text" name="ApparentPower"     disabled="disabled" class="deci" /> 
 					<label>Power Factor</label>          <input type="text" name="PowerFactor"       disabled="disabled" class="normalize"/> 
 					<label>Line Frequency, [Hz]</label>  <input type="text" name="LineFrequency"     disabled="disabled" class="milli round"/> 
 					<label>Thermistor Voltage</label>    <input type="text" name="ThermistorVoltage" disabled="disabled" /> 
@@ -386,7 +387,7 @@
 				
 				<div class="emtr-mode configure">
 					<label>Over Current Limit, [A]</label>     <input type="text" name="OverCurrentLimit" class="milli"/> 
-					<label>Over Power Limit, [W]</label>       <input type="text" name="OverPowerLimit" /> 
+					<label>Over Power Limit, [W]</label>       <input type="text" name="OverPowerLimit" class="deci" /> 
 					<label>Over Frequency Limit, [Hz]</label>  <input type="text" name="OverFrequencyLimit" class="milli"/> 
 					<label>Under Frequency Limit, [Hz]</label> <input type="text" name="UnderFrequencyLimit" class="milli" /> 
 					<label>Over Temperature Limit</label>      <input type="text" name="OverTemperatureLimit" /> 
@@ -648,10 +649,10 @@
 					<label>Calibration Current, [A]</label>        <input type="text" name="CalibrationCurrent" class="milli calibrate"/> 
 						<button type="button" class="calibrate CalibrationCurrent">Go</button> 
 					
-					<label>Calibration Active Power, [W]</label>   <input type="text" name="CalibrationActivePower" class="integer calibrate" /> 
+					<label>Calibration Active Power, [W]</label>   <input type="text" name="CalibrationActivePower" class="deci calibrate" /> 
 						<button type="button" class="calibrate CalibrationActivePower">Go</button> 
 					
-					<label>Calibration Reactive Power, [W]</label> <input type="text" name="CalibrationReactivePower" class="integer calibrate"/> 
+					<label>Calibration Reactive Power, [W]</label> <input type="text" name="CalibrationReactivePower" class="deci calibrate"/> 
 						<button type="button" class="calibrate CalibrationReactivePower">Go</button> 
 					
 					<label>Line Frequency Ref</label>              <input type="text" name="LineFrequencyRef"         class="milli calibrate"/> 

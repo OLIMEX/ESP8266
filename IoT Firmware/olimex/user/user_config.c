@@ -91,6 +91,7 @@ void ICACHE_FLASH_ATTR user_config_restore_defaults() {
 	
 	user_configuration.events_websocket = true;
 	user_configuration.events_ssl = false;
+	user_configuration.events_port = 0;
 	
 #if DEVICE == BADGE
 	os_sprintf(user_configuration.events_server,   USER_CONFIG_DEFAULT_EVENT_SERVER);
@@ -286,6 +287,26 @@ char ICACHE_FLASH_ATTR *user_config_events_password() {
 
 bool ICACHE_FLASH_ATTR user_config_events_ssl() {
 	return (bool)user_configuration.events_ssl;
+}
+
+int ICACHE_FLASH_ATTR user_config_events_port() {
+	if (user_config_events_ssl()) {
+		if (
+			user_configuration.events_port == 0 ||
+			user_configuration.events_port == WEBSERVER_PORT
+		) {
+			return WEBSERVER_SSL_PORT;
+		}
+	} else {
+		if (
+			user_configuration.events_port == 0 ||
+			user_configuration.events_port == WEBSERVER_SSL_PORT
+		) {
+			return WEBSERVER_PORT;
+		}
+	}
+	
+	return user_configuration.events_port;
 }
 
 bool ICACHE_FLASH_ATTR user_config_events_websocket() {
@@ -768,6 +789,10 @@ void ICACHE_FLASH_ATTR config_iot_handler(
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
 					user_configuration.events_ssl = jsonparse_get_value_as_int(&parser);
+				} else if (jsonparse_strcmp_value(&parser, "Port") == 0) {
+					jsonparse_next(&parser);
+					jsonparse_next(&parser);
+					user_configuration.events_port = jsonparse_get_value_as_int(&parser);
 				} else if (jsonparse_strcmp_value(&parser, "Server") == 0) {
 					jsonparse_next(&parser);
 					jsonparse_next(&parser);
@@ -811,6 +836,7 @@ void ICACHE_FLASH_ATTR config_iot_handler(
 			"\"IoT\" : {"
 				"\"WebSocket\" : %d, "
 				"\"SSL\" : %d, "
+				"\"Port\" : %d, "
 				"\"Server\" : \"%s\", "
 				"\"User\" : \"%s\", "
 				"\"Password\" : \"%s\", "
@@ -821,6 +847,7 @@ void ICACHE_FLASH_ATTR config_iot_handler(
 			"}",
 			user_config_events_websocket(),
 			user_config_events_ssl(),
+			user_config_events_port(),
 			user_config_events_server(),
 			user_config_events_user(),
 			user_config_events_password(),
@@ -829,11 +856,7 @@ void ICACHE_FLASH_ATTR config_iot_handler(
 			user_config_events_token(),
 			webclient_get_status(
 				user_config_events_server(), 
-				user_config_events_ssl() ?
-					WEBSERVER_SSL_PORT
-					:
-					WEBSERVER_PORT
-				, 
+				user_config_events_port(), 
 				user_config_events_path()
 			)
 		)

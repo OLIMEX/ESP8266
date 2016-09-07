@@ -308,12 +308,14 @@
 		
 		uint8     events_ssl;
         uint8     events_websocket;
+		uint16    events_port;
+		
 		char      events_path[USER_CONFIG_PATH_SIZE];
 		char      events_name[USER_CONFIG_USER_SIZE];
 		char      events_token[USER_CONFIG_TOKEN_SIZE];
 		char      station_hostname[USER_CONFIG_HOSTNAME_SIZE];
 		
-		char      check[7];
+		char      check[5];
 	} user_config;
 	
 	typedef void (*wifi_station_connected_callback)(void);
@@ -340,6 +342,7 @@
 	char *user_config_events_user();
 	char *user_config_events_password();
 	bool  user_config_events_ssl();
+	int   user_config_events_port();
 	char *user_config_events_path();
 	char *user_config_events_name();
 	char *user_config_events_token();

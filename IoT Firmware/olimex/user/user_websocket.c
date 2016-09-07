@@ -131,11 +131,12 @@ LOCAL uint16 ICACHE_FLASH_ATTR websocket_get_header(websocket_header *header, ui
 	return i;
 }
 
-LOCAL void ICACHE_FLASH_ATTR data_send(struct espconn *pConnection, uint8 *data, uint16 data_len) {
+LOCAL void ICACHE_FLASH_ATTR data_send(struct espconn *pConnection, bool ssl, uint8 *data, uint16 data_len) {
 #if SSL_ENABLE
 	if (
 		pConnection->proto.tcp->local_port  == WEBSERVER_SSL_PORT ||
-		pConnection->proto.tcp->remote_port == WEBSERVER_SSL_PORT
+		pConnection->proto.tcp->remote_port == WEBSERVER_SSL_PORT ||
+		ssl
 	) {
 		espconn_secure_send(pConnection, data, data_len);
 	} else {
@@ -183,7 +184,7 @@ LOCAL void ICACHE_FLASH_ATTR websocket_send(connections_queue *request, struct e
 	
 	extra->sending = true;
 	
-	data_send(pConnection, frame, frame_len);
+	data_send(pConnection, extra->ssl, frame, frame_len);
 	os_free(frame);
 }
 
@@ -201,7 +202,7 @@ void ICACHE_FLASH_ATTR websocket_sent(void *arg) {
 			messages_queue *message;
 			message = webserver_fetch_message(request);
 			if (message) {
-				data_send(pConnection, message->data, message->data_len);
+				data_send(pConnection, extra->ssl, message->data, message->data_len);
 				os_free(message->data);
 				os_free(message);
 				return;
@@ -285,7 +286,8 @@ LOCAL void ICACHE_FLASH_ATTR websocket_close(connections_queue *request, struct 
 			setTimeout(
 #if SSL_ENABLE	
 				pConnection->proto.tcp->local_port  == WEBSERVER_SSL_PORT ||
-				pConnection->proto.tcp->remote_port == WEBSERVER_SSL_PORT ?
+				pConnection->proto.tcp->remote_port == WEBSERVER_SSL_PORT ||
+				extra->ssl ?
 					(os_timer_func_t *)espconn_secure_disconnect
 					:
 #endif
@@ -912,19 +914,22 @@ bool ICACHE_FLASH_ATTR websocket_server_upgrade(struct espconn *pConnection, cha
 		pConnection->proto.tcp->remote_port
 	);
 #endif
-
+	
+	espconn_regist_sentcb(pConnection, websocket_sent);
+	
 	bool ssl = pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT;
 	uint32 keep_alive = ssl ? WEBSOCKET_KEEP_ALIVE * 4 : WEBSOCKET_KEEP_ALIVE;
 	connections_queue *request = webserver_connection_store(&websockets, pConnection, pURL, keep_alive);
+	
 	request->extra = (websocket_extra *)os_zalloc(sizeof(websocket_extra));
 	websocket_extra *extra = request->extra;
+	
+	extra->ssl = ssl;
 	extra->authorized = !user_config_authentication();
 	extra->timeout = false;
 	extra->sending = false;
 	extra->type = WEBSOCKET_SERVER;
 	extra->state = WEBSOCKET_OPEN;
-	
-	espconn_regist_sentcb(pConnection, websocket_sent);
 	
 	result = true;
 	
@@ -943,7 +948,7 @@ bool ICACHE_FLASH_ATTR websocket_server_upgrade(struct espconn *pConnection, cha
  * Parameters   : 
  * Returns      : boolean
 *******************************************************************************/
-bool ICACHE_FLASH_ATTR websocket_client_upgrade(struct espconn *pConnection, char *pURL, char *pData, char *request_headers) {
+bool ICACHE_FLASH_ATTR websocket_client_upgrade(struct espconn *pConnection, bool ssl, char *pURL, char *pData, char *request_headers) {
 	char *hConnection = NULL;
 	char *hUpgrade = NULL;
 	char *hKey = NULL;
@@ -987,18 +992,21 @@ bool ICACHE_FLASH_ATTR websocket_client_upgrade(struct espconn *pConnection, cha
 	);
 #endif
 	
-	bool ssl = pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT;
+	espconn_regist_sentcb(pConnection, websocket_sent);
+	
+	ssl = ssl || pConnection->proto.tcp->local_port == WEBSERVER_SSL_PORT;
 	uint32 keep_alive = ssl ? WEBSOCKET_KEEP_ALIVE * 4 : WEBSOCKET_KEEP_ALIVE;
 	connections_queue *request = webserver_connection_store(&websockets, pConnection, pURL, keep_alive);
+	
 	request->extra = (websocket_extra *)os_zalloc(sizeof(websocket_extra));
 	websocket_extra *extra = request->extra;
+	
+	extra->ssl = ssl;
 	extra->authorized = true;
 	extra->timeout = false;
 	extra->sending = false;
 	extra->type = WEBSOCKET_CLIENT;
 	extra->state = WEBSOCKET_OPEN;
-	
-	espconn_regist_sentcb(pConnection, websocket_sent);
 	
 	result = true;
 	

@@ -42,6 +42,7 @@
 	} websocket_state;
 	
 	typedef struct {
+		bool ssl;
 		bool authorized;
 		bool timeout;
 		bool sending;
@@ -50,7 +51,7 @@
 	} websocket_extra;
 	
 	bool websocket_server_upgrade(struct espconn *pConnection, char *pURL, char *pData);
-	bool websocket_client_upgrade(struct espconn *pConnection, char *pURL, char *pData, char *request_headers);
+	bool websocket_client_upgrade(struct espconn *pConnection, bool ssl, char *pURL, char *pData, char *request_headers);
 	
 	bool is_websocket(struct espconn *pConnection);
 	connections_queue *websocket_get_request(struct espconn *pConnection);
