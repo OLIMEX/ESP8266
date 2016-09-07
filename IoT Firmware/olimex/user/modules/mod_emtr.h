@@ -62,6 +62,7 @@
 			uint16    address;
 			_uint64_  counter_active;
 			_uint64_  counter_apparent;
+			uint32    apparent_divisor;
 			uint8     relays[EMTR_RELAYS_COUNT];
 		} emtr_sys_params;
 		
@@ -187,7 +188,7 @@
 		void   emtr_parse_event(emtr_packet *packet, emtr_event_registers *registers);
 		void   emtr_get_event(emtr_callback command_done);
 		
-		void   emtr_parse_output(emtr_packet *packet, emtr_output_registers *registers);
+		void   emtr_parse_output(emtr_packet *packet, emtr_output_registers *registers, bool calculate);
 		void   emtr_get_output(emtr_callback command_done);
 		
 		void   emtr_clear_event(uint16 event, emtr_callback command_done);

@@ -32,6 +32,7 @@ LOCAL emtr_sys_params emtr_params = {
 	.address = 0,
 	.counter_active = 0,
 	.counter_apparent = 0,
+	.apparent_divisor = 1,
 	.relays = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
@@ -344,7 +345,7 @@ void ICACHE_FLASH_ATTR emtr_parse_single_wire(emtr_packet *packet, emtr_output_r
 	registers->line_frequency = emtr_extract_int(packet->data, 10, 2);
 }
 
-void ICACHE_FLASH_ATTR emtr_parse_output(emtr_packet *packet, emtr_output_registers *registers) {
+void ICACHE_FLASH_ATTR emtr_parse_output(emtr_packet *packet, emtr_output_registers *registers, bool calculate) {
 #if EMTR_DEBUG
 	debug("emtr_parse_output()\n");
 #endif
@@ -369,6 +370,43 @@ void ICACHE_FLASH_ATTR emtr_parse_output(emtr_packet *packet, emtr_output_regist
 	if (emtr_relay(EMTR_RELAYS_COUNT - 1)) {
 		if (registers->power_factor < 0x7FFF) {
 			registers->power_factor = -registers->power_factor;
+		}
+	}
+	
+	if (calculate) {
+		uint32 apparent_power = registers->current_rms * registers->voltage_rms;
+		registers->apparent_power = apparent_power / emtr_params.apparent_divisor;
+		
+		if (registers->apparent_power < registers->active_power) {
+			// theoretically impossible 
+			registers->power_factor = 0x7FFF;
+			registers->active_power = registers->apparent_power;
+			registers->reactive_power = 0;
+			return;
+		}
+		
+		uint32 diff = registers->apparent_power - registers->active_power;
+		if (
+			registers->current_rms > 5
+			&&
+			(diff > 15 || diff > registers->apparent_power / 100)
+		) {
+			// calculating power factor and reactive power only if
+			// current is greater than 0.005A and
+			// difference between active and apparent power is greater than 1.5W or 1%
+			
+			double power_factor = (registers->power_factor < 0 ? -1.0 : 1.0) * registers->active_power / registers->apparent_power;
+			registers->power_factor = power_factor * 0x7FFF;
+			
+			registers->reactive_power = round_sqrt_int(
+				registers->apparent_power * registers->apparent_power
+				-
+				registers->active_power * registers->active_power
+			);
+		} else {
+			registers->power_factor = 0x7FFF;
+			registers->active_power = registers->apparent_power;
+			registers->reactive_power = 0;
 		}
 	}
 }
@@ -422,6 +460,8 @@ void ICACHE_FLASH_ATTR emtr_parse_calibration(emtr_packet *packet, emtr_calibrat
 	registers->calibration_active_power   = emtr_extract_int(packet->data, 42, 4);
 	registers->calibration_reactive_power = emtr_extract_int(packet->data, 46, 4);
 	registers->accumulation_interval      = emtr_extract_int(packet->data, 50, 2);
+	
+	emtr_params.apparent_divisor = pow_int(10, registers->apparent_power_divisor);
 }
 
 void ICACHE_FLASH_ATTR emtr_get_calibration(emtr_callback command_done) {
@@ -448,6 +488,8 @@ void ICACHE_FLASH_ATTR emtr_set_calibration(emtr_calibration_registers *register
 #if EMTR_DEBUG
 	debug("emtr_set_calibration()\n");
 #endif
+	emtr_params.apparent_divisor = pow_int(10, registers->apparent_power_divisor);
+	
 	emtr_packet *packet = NULL;
 	emtr_packet_init(&packet, EMTR_START_FRAME, 2+5+EMTR_CALIBRATION_LEN+2+1);
 	
@@ -533,7 +575,7 @@ void ICACHE_FLASH_ATTR emtr_calibration_calc(
 calc:
 	new_gain = (*gain) * expected / measured;
 	
-	if (new_gain < 15000) {
+	if (new_gain < 25000) {
 		range++;
 		if (measured > 6) {
 			measured = measured / 2;

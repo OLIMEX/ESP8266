@@ -9,6 +9,8 @@
 	typedef signed long int _sint64_;
 	
 	uint32 pow_int(uint32 num, uint8 pow);
+	uint32 sqrt_int(uint32 num);
+	uint32 round_sqrt_int(uint32 num);
 	
 	bool  str_match(char *pattern, char * string);
 	char *strncpy_null(char *dest, char *src, uint16 n);

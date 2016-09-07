@@ -14,6 +14,30 @@ uint32 ICACHE_FLASH_ATTR pow_int(uint32 num, uint8 pow) {
 	return res;
 }
 
+uint32 ICACHE_FLASH_ATTR sqrt_int(uint32 num) {
+	if (num <= 1) {
+		return num;
+	}
+	
+	uint32 x = num / 2;
+	uint32 y;
+	do {
+		y = (x + num / x) / 2;
+		if (y >= x) {
+			return x;
+		}
+		x = y;
+	} while (true);
+}
+
+uint32 ICACHE_FLASH_ATTR round_sqrt_int(uint32 num) {
+	uint32 s = sqrt_int(4 * num);
+	if (s & 1) {
+		s++;
+	}
+	return s / 2;
+}
+
 /******************************************************************************
  * FunctionName : str_match
  * Description  : checks if two given strings match. The first string may contain wildcards
