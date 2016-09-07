@@ -77,7 +77,12 @@ void ICACHE_FLASH_ATTR user_relay_set(int state) {
 }
 
 uint8 ICACHE_FLASH_ATTR user_relay_toggle() {
+char response[WEBSERVER_MAX_VALUE];
 	user_relay_set(2);
+	
+	user_relay_state(response);
+	user_event_raise(RELAY_URL, response);
+	
 	return relay_state;
 }
 
