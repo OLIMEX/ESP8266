@@ -14,7 +14,7 @@
 
 LOCAL bool   wifi_scan_in_progress = false;
 LOCAL bool   wifi_auto_connect     = false;
-LOCAL sint8  wifi_auto_rssi        = -127;
+LOCAL sint8  wifi_auto_rssi        = SINT8_MIN;
 
 LOCAL uint32 wifi_clean_timeout    = 0;
 LOCAL uint32 wifi_detect_timeout   = 0;
@@ -73,7 +73,7 @@ void ICACHE_FLASH_ATTR wifi_auto_detect() {
 	wifi_station_get_config_default(&wifi_auto_config);
 	if (wifi_auto_config.ssid[0] == '\0') {
 		wifi_auto_connect   = true;
-		wifi_auto_rssi      = -127;
+		wifi_auto_rssi      = SINT8_MIN;
 		
 		wifi_auto_config.ssid[0]     = '\0';
 		wifi_auto_config.password[0] = '\0';
@@ -155,14 +155,15 @@ LOCAL void ICACHE_FLASH_ATTR wifi_scan_done(void *arg, STATUS status) {
 	
 	// count AP data
 	struct bss_info *ap = (struct bss_info *)arg;
-	while (ap = ap->next.stqe_next) {
+	while (ap != NULL && wifi_scan_ap_count < WIFI_SCAN_LIMIT) {
 		wifi_scan_ap_count++;
-		if (ap->ssid_len != 0 && ap->ssid_len < 32) {
+		if (ap->ssid_len != 0 && ap->ssid_len < WIFI_SSID_LEN) {
 			ap->ssid[ap->ssid_len] = '\0';
 		}
 #if WIFI_SCAN_DEBUG	
 		debug("\tSSID: [%s] Channel: [%d] Strength: [%d] Mode: [%d]\n", ap->ssid, ap->channel, ap->rssi, ap->authmode);
 #endif
+		ap = ap->next.stqe_next;
 	}
 #if WIFI_SCAN_DEBUG	
 	debug("WiFi Scan: %d APs found.\n", wifi_scan_ap_count);
@@ -181,23 +182,47 @@ LOCAL void ICACHE_FLASH_ATTR wifi_scan_done(void *arg, STATUS status) {
 		wifi_scan_result = (ap_info **)os_malloc(sizeof(ap_info *) * wifi_scan_ap_count);
 		
 		uint8 i=0;
+		uint8 j=0;
+		sint8 min = 0;
 		ap = (struct bss_info *)arg;
-		while (ap = ap->next.stqe_next) {
-			wifi_scan_result[i] = (ap_info *)os_malloc(sizeof(ap_info));
-			
-			os_memcpy(wifi_scan_result[i]->ssid, ap->ssid, 32);
-			
-			wifi_scan_result[i]->rssi = ap->rssi;
-			wifi_scan_result[i]->channel = ap->channel;
-			wifi_scan_result[i]->authmode = ap->authmode;
-			if (
-				wifi_auto_connect && 
-				ap->authmode == AUTH_OPEN &&
-				ap->rssi > wifi_auto_rssi
-			) {
-				os_memcpy(&(wifi_auto_config.ssid), ap->ssid, 32);
+		while (ap != NULL) {
+			if (i < wifi_scan_ap_count) {
+				wifi_scan_result[i] = (ap_info *)os_malloc(sizeof(ap_info));
+				
+				// Force to absolute minimum
+				min = SINT8_MIN;
+				j = i;
+			} else {
+				// Find minimal rssi to be replaced
+				uint8 k;
+				min = SINT8_MAX;
+				for (k = 0; k < wifi_scan_ap_count; k++) {
+					if (min > wifi_scan_result[k]->rssi) {
+						min = wifi_scan_result[k]->rssi;
+						j = k;
+					}
+				}
 			}
+			
+			if (min < ap->rssi) {
+				os_memcpy(wifi_scan_result[j]->ssid, ap->ssid, WIFI_SSID_LEN);
+				
+				wifi_scan_result[j]->rssi = ap->rssi;
+				wifi_scan_result[j]->channel = ap->channel;
+				wifi_scan_result[j]->authmode = ap->authmode;
+				
+				if (
+					wifi_auto_connect && 
+					ap->authmode == AUTH_OPEN &&
+					ap->rssi > wifi_auto_rssi
+				) {
+					wifi_auto_rssi = ap->rssi;
+					os_memcpy(&(wifi_auto_config.ssid), ap->ssid, WIFI_SSID_LEN);
+				}
+			}
+			
 			i++;
+			ap = ap->next.stqe_next;
 		}
 		
 		wifi_clean_timeout = setTimeout(wifi_scan_clean, NULL, WIFI_SCAN_RESULT_CACHE);

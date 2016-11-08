@@ -5,6 +5,9 @@
 	
 	#define MAX_STATUS_LEN   50
 	
+	#define SINT8_MIN         -128
+	#define SINT8_MAX         127
+	
 	typedef unsigned long int _uint64_;
 	typedef signed long int _sint64_;
 	

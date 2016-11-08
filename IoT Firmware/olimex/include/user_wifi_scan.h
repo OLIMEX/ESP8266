@@ -5,6 +5,9 @@
 	
 	#define WIFI_SCAN_URL            "/wifi-scan"
 	#define WIFI_SCAN_RESULT_CACHE   30000
+	#define WIFI_SCAN_LIMIT          5
+	
+	#define WIFI_SSID_LEN            32
 	
 	typedef struct {
 		char ssid[32];
