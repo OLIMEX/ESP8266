@@ -5,13 +5,15 @@
  *  for 'on' and 'off' commands. Every 60 seconds, it will publishes te current
  *  state on house/2/attic/cv/thermostat/relay_state
  *
- *  Dimitar Manovski
- *  support@smart-republic.com
+ *  
+ *  Richard Arends
+ *  richard@unixguru.nl
+ *  
+ *  21 june 2015
  *
  * 
  *
  */
-
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
