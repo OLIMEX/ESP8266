@@ -1,0 +1,45 @@
+Partlist exported from J:/SVN/OLIMEX_OTHER/ESP8266_EVB-BAT/Hardware/trunk/BRD/ESP8266-EVB-BAT_Rev_B.sch at 14/07/2015 16:39:08 
+
+Qty Value                       Device                      Parts                                                                     
+4   1.1k/1%                     R-EU_R0603_5MIL_DWS         R5, R9, R13, R21                                                          
+1   1.5k                        R-EU_R0603_5MIL_DWS         R17                                                                       
+3   1N5822/SS34/SMA             SCHOTKKY7.62SS2             D1, D2, D4                                                                
+6   2.2k                        R-EU_R0603_5MIL_DWS         R1, R4, R14, R15, R16, R22                                                
+2   2.2uH/1.5A/DCR<0.1R/CD32    L-CD32                      L1, L2                                                                    
+4   4.99k/1%                    R-EU_R0603_5MIL_DWS         R8, R10, R11, R19                                                         
+1   8.2k/1%                     R-EU_R0603_5MIL_DWS         R12                                                                       
+2   10k                         R-EU_R0603_5MIL_DWS         R6, R18                                                                   
+1   10n                         C-EUC0603_DWS               C9                                                                        
+1   22k/1%                      R-EU_R0603_5MIL_DWS         R20                                                                       
+1   22pF                        C-EUC0603_DWS               C3                                                                        
+7   22uF/6.3V                   C-EUC0603_DWS               C2, C4, C5, C6, C7, C8, C10                                               
+1   47k                         R-EU_R0603_5MIL_DWS         R3                                                                        
+2   220                         R-EU_R0603_5MIL_DWS         R7, R24                                                                   
+2   470uF/10V/105C              CPOL-EUE2.5-6.3             C1, C11                                                                   
+1   0603/GREEN                  LED0603DWS_L                CH_CMPL                                                                   
+1   0603/RED                    LED0603DWS_L                PG                                                                        
+1   0603/YELLOW                 LED0603DWS_L                CH_PRGR                                                                   
+1   BC817-40(SMD)               NPN-TRANSISTOR_SOT23        T1                                                                        
+1   BH10S                       ML10SMD                     UEXT                                                                      
+1   BH20S                       ML20CHANGED                 CON1                                                                      
+1   CON3HD-515R8_3P+HD-515H8_3P CON3HD-515R8_3P+HD-515H8_3P CON2                                                                      
+1   DW02R                       CON2DW02R                   BAT                                                                       
+3   FIDUCIAL                    FIDUCIAL                    U$1, U$2, U$8                                                             
+1   IRLML6402                   IRLML6402                   FET1                                                                      
+1   MCP73833-AMI/UN             MCP73833                    U3                                                                        
+1   NA                          R-EU_R0603_5MIL_DWS         R23                                                                       
+1   NA(2.2k)                    R-EU_R0603_5MIL_DWS         R2                                                                        
+1   PWRJ-2mm                    PWR-JAKPWR_JACK_UNI_MILLING PWR                                                                       
+1   RAS-05-15                   RELAYH200F                  RELAY                                                                     
+1   SMBJ6.0A                    SMBJ16A                     D3                                                                        
+1   SW-TAKTIT1185AU2            SW-TAKTIT1185AU2            RST                                                                       
+1   SY7208(SOT23-6)             SY7208                      U2                                                                        
+1   SY8009AAAC(SOT23-5)         SY8008                      U1                                                                        
+1   TESTPAD                     TESTPAD                     THERM                                                                     
+1   TESTPAD3                    TESTPAD3                    GND                                                                       
+1   TESTPAD40/60/SQUARE         TESTPAD40/60/SQUARE         1                                                                         
+21  TESTPAD40/66                TESTPAD40/66                2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
+1   TV-06B                      31-XX                       BUT                                                                       
+1   close                       SJSJ_1_SMALLER_CLOSE_10MILS 400MA_E                                                                   
+1   green/0603                  LED0603DWS_L                REL                                                                       
+1   open                        SJSJ_SMALLER                +5V_E                                                                     

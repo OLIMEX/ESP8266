@@ -1,0 +1,40 @@
+Drill Station Info File: C:/maria/MOD-WiFi-ESP8266-DEV_Rev_B1---2-LayerPCB-za-Lub/MOD-WiFi-ESP8266-DEV_Rev_B1.dri
+
+ Date              :  9/11/2018 11:48:50a
+ Drills            : generated
+ Device            : Excellon drill station
+
+Parameter settings:
+
+ Tolerance Drill + :  2.50 %
+ Tolerance Drill - :  2.50 %
+ Rotate            : no
+ Mirror            : no
+ Optimize          : yes
+ Auto fit          : yes
+ OffsetX           : 0inch
+ OffsetY           : 0inch
+ Layers            : Drills Holes
+
+Drill File Info:
+
+ Data Mode         : Absolute
+ Units             : 1/1000 Inch
+
+Drills used:
+
+ Code  Size       used
+
+ T01   0.0118inch    49
+ T02   0.0157inch    12
+ T03   0.0236inch    11
+ T04   0.0276inch     3
+ T05   0.0400inch    22
+ T06   0.0472inch     1
+ T07   0.0500inch    22
+
+Total number of drills: 120
+
+Plotfiles:
+
+ C:/maria/MOD-WiFi-ESP8266-DEV_Rev_B1---2-LayerPCB-za-Lub/MOD-WiFi-ESP8266-DEV_Rev_B1.drd

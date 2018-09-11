@@ -1,0 +1,30 @@
+Partlist exported from J:/SVN/OLIMEX_OTHER/ESP8266-EVB/Hardware/trunk/BRD/ESP8266-EVB_Rev_A1.sch at 28/01/2015 11:49:35 
+
+Qty Value                      Device                           Parts                                                                     
+2   1.1k/1%                    R-EU_R0603_5MIL_DWS              R5, R9                                                                    
+1   1N5819(S4SOD-123)          SCHOTKKY7.62SS-1N5819(S4SOD-123) D1                                                                        
+2   2.2k                       R-EU_R0603_5MIL_DWS              R1, R4                                                                    
+1   2.2uH/1.5A/DCR<0.1R/CD32   L-CD32                           L1                                                                        
+1   4.99k/1%                   R-EU_R0603_5MIL_DWS              R8                                                                        
+1   10k                        R-EU_R0603_5MIL_DWS              R6                                                                        
+1   22pF                       C-EUC0603_DWS                    C3                                                                        
+3   22uF/6.3V                  C-EUC0603_DWS                    C2, C4, C5                                                                
+1   47k                        R-EU_R0603_5MIL_DWS              R3                                                                        
+1   220                        R-EU_R0603_5MIL_DWS              R7                                                                        
+1   470uF/10V/105C             CPOL-EUE2.5-6.3                  C1                                                                        
+1   BC817-40(SMD)              NPN-TRANSISTOR_SOT23             T1                                                                        
+1   BH10S                      ML10                             UEXT                                                                      
+1   CON3-DG306-5.0_3P(TB3-5MM) CON3-DG306-5.0_3P(TB3-5MM)       CON4                                                                      
+1   DTSM24R(12x12x10)          SW-TAKTSS                        BUT                                                                       
+3   FIDUCIAL                   FIDUCIAL                         U$1, U$2, U$8                                                             
+1   HN1X16                     CON16-HN1X16                     CON3                                                                      
+1   NA(2.2k)                   R-EU_R0603_5MIL_DWS              R2                                                                        
+1   NA(TB2/3.5mm)              CON2-DG306-5.0_2P(TB2-5MM)       PWR.                                                                      
+1   RAS-05-15                  RELAYH200F                       REL                                                                       
+1   SMBJ6.0A                   SMBJ16A                          D2                                                                        
+1   SY8009AAAC(SOT23-5)        SY8008                           U1                                                                        
+1   TESTPAD3                   TESTPAD3                         GND_PIN                                                                   
+1   TESTPAD40/60/SQUARE        TESTPAD40/60/SQUARE              1                                                                         
+21  TESTPAD40/66               TESTPAD40/66                     2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
+1   YDJ-1136                   PWR-JAKPWR_JACK_UNI_MILLING      PWR                                                                       
+1   green/0603                 LED0603DWS_L                     LED                                                                       

@@ -1,0 +1,45 @@
+Drill Station Info File: C:/maria/ESP8266-EVB-BAT_Rev_B---2-LayersPCB-za-luibcho/ESP8266-EVB-BAT_Rev_B.dri
+
+ Date              :  9/11/2018 11:42:09a
+ Drills            : generated
+ Device            : Excellon drill station
+
+Parameter settings:
+
+ Tolerance Drill + :  2.50 %
+ Tolerance Drill - :  2.50 %
+ Rotate            : no
+ Mirror            : no
+ Optimize          : yes
+ Auto fit          : yes
+ OffsetX           : 0inch
+ OffsetY           : 0inch
+ Layers            : Drills Holes
+
+Drill File Info:
+
+ Data Mode         : Absolute
+ Units             : 1/1000 Inch
+
+Drills used:
+
+ Code  Size       used
+
+ T01   0.0236inch   100
+ T02   0.0276inch     2
+ T03   0.0340inch     5
+ T04   0.0354inch     2
+ T05   0.0394inch    21
+ T06   0.0400inch    25
+ T07   0.0510inch     4
+ T08   0.0590inch     2
+ T09   0.0630inch     3
+ T10   0.0710inch     1
+ T11   0.1299inch     5
+ T12   0.2598inch     2
+
+Total number of drills: 172
+
+Plotfiles:
+
+ C:/maria/ESP8266-EVB-BAT_Rev_B---2-LayersPCB-za-luibcho/ESP8266-EVB-BAT_Rev_B.drd
