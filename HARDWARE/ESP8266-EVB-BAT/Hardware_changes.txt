@@ -1,6 +1,6 @@
 ESP8266-EVB-BAT
 
-Design made with Eagle CAD
+Designed with Eagle CAD
 
 ---
 

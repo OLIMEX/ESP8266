@@ -10,7 +10,7 @@ MOD-WIFI-ESP8266-DEV hardware revision B1 - latest hardware revision - notable c
 
 ---
 
-MOD-WIFI-ESP8266-DEV hardware revision B - latest hardware revision - notable changes:
+MOD-WIFI-ESP8266-DEV hardware revision B - notable changes:
 
 1. Removed cream layer from UEXT connector, decreased the width of ESP8266's pads
 2. Added a button and R11 = 200R
