@@ -1,0 +1,17 @@
+MOD-WIFI-ESP8266
+
+Designed with Eagle CAD
+
+---
+
+MOD-WIFI-ESP8266 hardware revision B - latest hardware revision - notable changes:
+
+1. R7, R8, R9 changed to 2k (up from 200R)
+2. Added pads R10(NA) and R11(NA) for connecting I2C to UEXT. Note that the I2C pins are like ESP8266-EVB's, and not like MOD-WIFI-ESP8266-DEV's - SCL is multiplexed with hardware SPI CS
+3. Added pad R12 - 2k(NA) for SCL pull-up
+4. Added R13 and SW button for easier boot mode enter
+5. Added 4 pads in the bottom (SP1-4) for back soldering
+
+---
+
+MOD-WIFI-ESP8266 hardware revision A - initial release

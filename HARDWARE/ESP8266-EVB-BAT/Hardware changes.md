@@ -1,0 +1,13 @@
+ESP8266-EVB-BAT
+
+Design made with Eagle CAD
+
+---
+
+ESP8266-EVB-BAT hardware revision B - latest hardware revision - notable changes:
+
+1. Added a reset button and resistor for easier access to bootloader mode
+
+---
+
+ESP8266-EVB-BAT hardware revision A - initial release
