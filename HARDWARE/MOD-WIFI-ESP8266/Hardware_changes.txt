@@ -4,7 +4,11 @@ Designed with Eagle CAD
 
 ---
 
-MOD-WIFI-ESP8266 hardware revision B - latest hardware revision - notable changes:
+MOD-WIFI-ESP8266 hardware revision B1 - latest hardware revision - notable changes:
+
+1. Due to memory shortages and unavailability, SPI flash memory chip changed from W25Q16J16JVSSIG to EN25Q16B-104HIP. This might cause programming issues in esptool so make to write_flash parameters to add "-fm qout".
+
+MOD-WIFI-ESP8266 hardware revision B - notable changes:
 
 1. R7, R8, R9 changed to 2k (up from 200R)
 2. Added pads R10(NA) and R11(NA) for connecting I2C to UEXT. Note that the I2C pins are like ESP8266-EVB's, and not like MOD-WIFI-ESP8266-DEV's - SCL is multiplexed with hardware SPI CS
